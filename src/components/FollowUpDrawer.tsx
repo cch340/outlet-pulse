@@ -3,9 +3,13 @@ import { useData } from '../data/queries/useData'
 import { fuVM } from '../data/derived'
 import { pill } from '../theme'
 import { Icon } from './Icon'
+import { useToggleTask, useMarkFollowUpDone, useToggleFollowUpStatus } from '../data/queries/useFollowUpMutations'
 
 export function FollowUpDrawer() {
-  const { state, closeFu, toggleTask, markDone, toggleStatus } = useStore()
+  const { state, closeFu } = useStore()
+  const toggleTask = useToggleTask()
+  const markDone = useMarkFollowUpDone()
+  const toggleStatus = useToggleFollowUpStatus()
   const { data } = useData()
   const S = state
   const openF = S.openFuId ? data.followups.find((f) => f.id === S.openFuId) : null
@@ -62,7 +66,7 @@ export function FollowUpDrawer() {
             {openF.tasks.map((t, i) => (
               <button
                 key={i}
-                onClick={() => toggleTask(openF.id, i)}
+                onClick={() => toggleTask.mutate({ taskId: t.id!, done: !t.done })}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -109,7 +113,7 @@ export function FollowUpDrawer() {
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
           {openF.status === 'done' ? (
             <button
-              onClick={() => toggleStatus(openF.id)}
+              onClick={() => toggleStatus.mutate({ followUpId: openF.id, status: openF.status })}
               style={{
                 flex: 1,
                 border: '1px solid var(--border)',
@@ -127,7 +131,7 @@ export function FollowUpDrawer() {
             </button>
           ) : (
             <button
-              onClick={() => markDone(openF.id)}
+              onClick={() => markDone.mutate({ followUpId: openF.id })}
               style={{
                 flex: 1,
                 border: 'none',

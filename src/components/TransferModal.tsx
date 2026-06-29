@@ -4,6 +4,7 @@ import { useData } from '../data/queries/useData'
 import { brandById, initials, outletById } from '../data/derived'
 import { chip, tint } from '../theme'
 import { Icon } from './Icon'
+import { useTransferStaff } from '../data/queries/useStaffMutations'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -26,7 +27,8 @@ const input: CSSProperties = {
 }
 
 export function TransferModal() {
-  const { state, closeTransfer, setTf, confirmTransfer } = useStore()
+  const { state, closeTransfer, setTf } = useStore()
+  const transfer = useTransferStaff()
   const { data } = useData()
   const S = state
   if (!S.transferStaffId || !S.transferForm) return null
@@ -163,7 +165,12 @@ export function TransferModal() {
             Cancel
           </button>
           <button
-            onClick={confirmTransfer}
+            onClick={() => {
+              transfer.mutate(
+                { staffId: S.transferStaffId!, brandId: tf.brandId, outletId: tf.outletId, reason: tf.reason, date: tf.date },
+                { onSuccess: () => closeTransfer() },
+              )
+            }}
             style={{
               border: 'none',
               background: 'var(--accent)',

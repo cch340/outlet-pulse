@@ -5,6 +5,7 @@ import { brandById, outletById } from '../data/derived'
 import { DEFAULT_TASKS } from '../data/model'
 import { chip } from '../theme'
 import { Icon } from './Icon'
+import { useCreateFollowUp } from '../data/queries/useFollowUpMutations'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -16,7 +17,8 @@ const fieldLabel: CSSProperties = {
 }
 
 export function ScheduleModal() {
-  const { state, closeAdd, setAf, toggleAfTask, confirmAdd } = useStore()
+  const { state, closeAdd, setAf, toggleAfTask } = useStore()
+  const create = useCreateFollowUp()
   const { data } = useData()
   const S = state
   if (!S.addOpen || !S.addForm) return null
@@ -159,7 +161,14 @@ export function ScheduleModal() {
               Cancel
             </button>
             <button
-              onClick={confirmAdd}
+              onClick={() => {
+                const [sb, so] = af.storeKey.split('|')
+                const taskLabels = DEFAULT_TASKS.filter((_, i) => af.tasks[i])
+                create.mutate(
+                  { brandId: sb, outletId: so, staffId: af.staffId || null, date: af.date, taskLabels },
+                  { onSuccess: () => closeAdd() },
+                )
+              }}
               style={{
                 border: 'none',
                 background: 'var(--accent)',
