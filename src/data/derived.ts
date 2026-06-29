@@ -1,5 +1,5 @@
 import type { DataSnapshot } from './queries/useData'
-import type { Brand, FollowUp, Outlet, Staff } from './model'
+import type { Brand, Visit, Outlet, Staff } from './model'
 
 // Production "today" comes from the real clock. The prototype fixed it at 2026-06-29.
 export const today = () => {
@@ -21,7 +21,7 @@ export const brandById = (s: DataSnapshot, id: string): Brand => s.brands.find((
 export const outletById = (s: DataSnapshot, id: string): Outlet => s.outlets.find((o) => o.id === id)!
 export const staffById = (s: DataSnapshot, id: string): Staff => s.staff.find((x) => x.id === id)!
 
-export const isOverdue = (f: FollowUp) => f.status === 'pending' && new Date(f.date + 'T00:00:00') < today()
+export const isOverdue = (f: Visit) => f.status === 'pending' && new Date(f.date + 'T00:00:00') < today()
 
 export const linked = (s: DataSnapshot, bId: string, oId: string) =>
   s.stores.some((st) => st.brandId === bId && st.outletId === oId)
@@ -46,7 +46,7 @@ export const STATUS_COLOR: Record<DerivedStatus, string> = {
   overdue: '#dc2626',
 }
 
-export interface FollowUpVM {
+export interface VisitVM {
   id: string
   brandName: string
   brandColor: string
@@ -66,7 +66,7 @@ export interface FollowUpVM {
   isOverdue: boolean
 }
 
-export function fuVM(s: DataSnapshot, f: FollowUp): FollowUpVM {
+export function visitVM(s: DataSnapshot, f: Visit): VisitVM {
   const b = brandById(s, f.brandId)
   const o = outletById(s, f.outletId)
   const st = f.staffId ? staffById(s, f.staffId) : null

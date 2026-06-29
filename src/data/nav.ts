@@ -12,13 +12,13 @@ export const NAV: NavDef[] = [
   { key: 'brands', label: 'Brands', short: 'Brands', icon: 'sell' },
   { key: 'outlets', label: 'Outlets', short: 'Outlets', icon: 'storefront' },
   { key: 'staff', label: 'Staff', short: 'Staff', icon: 'groups' },
-  { key: 'followups', label: 'Follow-ups', short: 'Visits', icon: 'fact_check' },
+  { key: 'visits', label: 'Visits', short: 'Visits', icon: 'fact_check' },
 ]
 
 export const TITLES: Record<Screen, [string, string]> = {
-  dashboard: ['Summary', 'Year & month follow-up overview'],
+  dashboard: ['Summary', 'Year & month visit overview'],
   brands: ['Brand Management', 'Brands and the outlets they operate in'],
   outlets: ['Outlet Management', 'Malls and the brands hosted'],
   staff: ['Staff Management', 'Assignments and transfers'],
-  followups: ['Follow-ups', 'Scheduled store visits & checks'],
+  visits: ['Visits', 'Scheduled store visits & checks'],
 }

@@ -5,7 +5,7 @@ import { brandById, outletById } from '../data/derived'
 import { DEFAULT_TASKS } from '../data/model'
 import { chip } from '../theme'
 import { Icon } from './Icon'
-import { useCreateFollowUp } from '../data/queries/useFollowUpMutations'
+import { useCreateVisit } from '../data/queries/useVisitMutations'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -18,7 +18,7 @@ const fieldLabel: CSSProperties = {
 
 export function ScheduleModal() {
   const { state, closeAdd, setAf, toggleAfTask } = useStore()
-  const create = useCreateFollowUp()
+  const create = useCreateVisit()
   const { data } = useData()
   const S = state
   if (!S.addOpen || !S.addForm) return null
@@ -52,7 +52,7 @@ export function ScheduleModal() {
         {/* header */}
         <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>Schedule a follow-up</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>Schedule a visit</div>
             <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>Plan a store visit and the checks to perform</div>
           </div>
           <button onClick={closeAdd} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)' }}>

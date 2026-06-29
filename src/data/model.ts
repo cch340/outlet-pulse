@@ -44,15 +44,15 @@ export interface Task {
   done: boolean
 }
 
-export type FollowUpStatus = 'done' | 'pending'
+export type VisitStatus = 'done' | 'pending'
 
-export interface FollowUp {
+export interface Visit {
   id: string
   date: string // ISO date
   staffId: string | null
   brandId: string
   outletId: string
-  status: FollowUpStatus
+  status: VisitStatus
   tasks: Task[]
 }
 

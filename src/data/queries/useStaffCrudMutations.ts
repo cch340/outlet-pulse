@@ -60,7 +60,7 @@ export function useDeleteStaff() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.staff })
-      qc.invalidateQueries({ queryKey: queryKeys.followups })
+      qc.invalidateQueries({ queryKey: queryKeys.visits })
     },
   })
 }

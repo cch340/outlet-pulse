@@ -9,7 +9,7 @@ export function Sidebar() {
   const { state, go } = useStore()
   const { data } = useData()
   const { session, signOut } = useSession()
-  const overdueCount = data.followups.filter(isOverdue).length
+  const overdueCount = data.visits.filter(isOverdue).length
   const email = session?.user.email ?? ''
   const initials = email.slice(0, 2).toUpperCase()
 
@@ -59,7 +59,7 @@ export function Sidebar() {
       </div>
       {NAV.map((n) => {
         const active = n.key === state.activeScreen
-        const badge = n.key === 'followups' && overdueCount ? String(overdueCount) : ''
+        const badge = n.key === 'visits' && overdueCount ? String(overdueCount) : ''
         return (
           <button
             key={n.key}

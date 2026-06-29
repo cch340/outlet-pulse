@@ -1,6 +1,6 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { fuVM, isOverdue, linked, staffCount, today } from '../data/derived'
+import { visitVM, isOverdue, linked, staffCount, today } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
@@ -9,7 +9,7 @@ const MK: [string, string][] = [
 ]
 
 export function Dashboard() {
-  const { state, setPeriod, openFu } = useStore()
+  const { state, setPeriod, openVisit } = useStore()
   const { data } = useData()
   const S = state
 
@@ -19,8 +19,8 @@ export function Dashboard() {
   const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const yearLabel = `Year ${yr}`
 
-  const yearFus = data.followups.filter((f) => f.date.startsWith(yr))
-  const monthFus = data.followups.filter((f) => f.date.startsWith(mo))
+  const yearFus = data.visits.filter((f) => f.date.startsWith(yr))
+  const monthFus = data.visits.filter((f) => f.date.startsWith(mo))
   const periodFus = S.period === 'month' ? monthFus : yearFus
   const periodLabel = S.period === 'month' ? monthLabel : yearLabel
   const pDone = periodFus.filter((f) => f.status === 'done').length
@@ -36,7 +36,7 @@ export function Dashboard() {
   ]
 
   const kpis = [
-    { label: 'Follow-ups', value: periodFus.length, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
+    { label: 'Visits', value: periodFus.length, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
     { label: 'Completion', value: `${compRate}%`, sub: `${pDone} completed`, icon: 'task_alt', tone: '#16a34a' },
     { label: 'Pending', value: pPend, sub: 'awaiting completion', icon: 'pending', tone: '#d97706' },
     { label: 'Overdue', value: pOver, sub: 'past scheduled date', icon: 'warning', tone: '#dc2626' },
@@ -62,11 +62,11 @@ export function Dashboard() {
     return { name: o.name, location: o.location, staff, brands, pct: Math.round((staff / omax) * 100) }
   })
 
-  const overdueList = data.followups.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => fuVM(data, f))
-  const upcomingList = data.followups
+  const overdueList = data.visits.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => visitVM(data, f))
+  const upcomingList = data.visits
     .filter((f) => f.status === 'pending' && !isOverdue(f))
     .sort((a, b) => (a.date < b.date ? -1 : 1))
-    .map((f) => fuVM(data, f))
+    .map((f) => visitVM(data, f))
 
   const sectionTitle = { fontSize: 14, fontWeight: 700 } as const
   const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
@@ -101,7 +101,7 @@ export function Dashboard() {
 
       {/* period toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>Follow-up performance — {periodLabel}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>Visit performance — {periodLabel}</div>
         <div
           style={{
             display: 'inline-flex',
@@ -138,7 +138,7 @@ export function Dashboard() {
         {/* trend */}
         <div style={{ ...card, padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <div style={sectionTitle}>Follow-ups by month</div>
+            <div style={sectionTitle}>Visits by month</div>
             <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--dim)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--accent)' }} />Done
@@ -240,7 +240,7 @@ export function Dashboard() {
       {/* breakdowns */}
       <div style={grid2}>
         <div style={{ ...card, padding: '16px 18px' }}>
-          <div style={{ ...sectionTitle, marginBottom: 14 }}>Follow-ups by brand</div>
+          <div style={{ ...sectionTitle, marginBottom: 14 }}>Visits by brand</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
             {brandBreakdown.map((b) => (
               <div key={b.name}>
@@ -287,14 +287,14 @@ export function Dashboard() {
         <div style={{ ...card, padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Icon name="warning" size={19} color="#dc2626" />
-            <div style={sectionTitle}>Overdue follow-ups</div>
+            <div style={sectionTitle}>Overdue visits</div>
             <span style={{ ...mono, fontSize: 12, fontWeight: 600, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '1px 8px' }}>
               {overdueList.length}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {overdueList.map((f) => (
-              <AttentionRow key={f.id} dot="#dc2626" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="#dc2626" onClick={() => openFu(f.id)} />
+              <AttentionRow key={f.id} dot="#dc2626" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="#dc2626" onClick={() => openVisit(f.id)} />
             ))}
             {overdueList.length === 0 && <div style={{ fontSize: 13, color: 'var(--dim)', padding: '8px 2px' }}>Nothing overdue.</div>}
           </div>
@@ -306,7 +306,7 @@ export function Dashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {upcomingList.map((f) => (
-              <AttentionRow key={f.id} dot="#2563eb" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="var(--dim)" onClick={() => openFu(f.id)} />
+              <AttentionRow key={f.id} dot="#2563eb" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="var(--dim)" onClick={() => openVisit(f.id)} />
             ))}
           </div>
         </div>

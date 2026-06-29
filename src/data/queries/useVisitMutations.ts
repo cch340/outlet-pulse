@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { queryKeys } from './keys'
 
-export function useCreateFollowUp() {
+export function useCreateVisit() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
@@ -12,8 +12,8 @@ export function useCreateFollowUp() {
       date: string
       taskLabels: string[]
     }) => {
-      const { data: fu, error } = await supabase
-        .from('follow_ups')
+      const { data: v, error } = await supabase
+        .from('visits')
         .insert({
           brand_id: input.brandId,
           outlet_id: input.outletId,
@@ -26,16 +26,16 @@ export function useCreateFollowUp() {
       if (error) throw error
       if (input.taskLabels.length) {
         const rows = input.taskLabels.map((label, i) => ({
-          follow_up_id: fu.id,
+          visit_id: v.id,
           label,
           done: false,
           sort: i,
         }))
-        const { error: tErr } = await supabase.from('follow_up_tasks').insert(rows)
+        const { error: tErr } = await supabase.from('visit_tasks').insert(rows)
         if (tErr) throw tErr
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.followups }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
   })
 }
 
@@ -44,45 +44,45 @@ export function useToggleTask() {
   return useMutation({
     mutationFn: async (input: { taskId: string; done: boolean }) => {
       const { error } = await supabase
-        .from('follow_up_tasks')
+        .from('visit_tasks')
         .update({ done: input.done })
         .eq('id', input.taskId)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.followups }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
   })
 }
 
-export function useMarkFollowUpDone() {
+export function useMarkVisitDone() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { followUpId: string }) => {
+    mutationFn: async (input: { visitId: string }) => {
       const { error } = await supabase
-        .from('follow_up_tasks')
+        .from('visit_tasks')
         .update({ done: true })
-        .eq('follow_up_id', input.followUpId)
+        .eq('visit_id', input.visitId)
       if (error) throw error
       const { error: fErr } = await supabase
-        .from('follow_ups')
+        .from('visits')
         .update({ status: 'done' })
-        .eq('id', input.followUpId)
+        .eq('id', input.visitId)
       if (fErr) throw fErr
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.followups }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
   })
 }
 
-export function useToggleFollowUpStatus() {
+export function useToggleVisitStatus() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { followUpId: string; status: 'done' | 'pending' }) => {
+    mutationFn: async (input: { visitId: string; status: 'done' | 'pending' }) => {
       const next = input.status === 'done' ? 'pending' : 'done'
       const { error } = await supabase
-        .from('follow_ups')
+        .from('visits')
         .update({ status: next })
-        .eq('id', input.followUpId)
+        .eq('id', input.visitId)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.followups }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
   })
 }

@@ -8,10 +8,10 @@ function detectMobile(): boolean {
   return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
 }
 
-export type Screen = 'dashboard' | 'brands' | 'outlets' | 'staff' | 'followups'
+export type Screen = 'dashboard' | 'brands' | 'outlets' | 'staff' | 'visits'
 export type Period = 'month' | 'year'
 export type StaffBrandFilter = 'all' | string
-export type FuFilter = 'all' | 'pending' | 'overdue' | 'done'
+export type VisitFilter = 'all' | 'pending' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
 export type Density = 'comfortable' | 'compact'
 
@@ -38,9 +38,9 @@ export interface AppState {
   selectedBrandId: string
   selectedOutletId: string
   staffBrandFilter: StaffBrandFilter
-  fuFilter: FuFilter
+  visitFilter: VisitFilter
   // overlays
-  openFuId: string | null
+  openVisitId: string | null
   transferStaffId: string | null
   transferForm: TransferForm | null
   addOpen: boolean
@@ -63,8 +63,8 @@ function seed(): AppState {
     selectedBrandId: '',
     selectedOutletId: '',
     staffBrandFilter: 'all',
-    fuFilter: 'all',
-    openFuId: null,
+    visitFilter: 'all',
+    openVisitId: null,
     transferStaffId: null,
     transferForm: null,
     addOpen: false,
@@ -85,9 +85,9 @@ export interface StoreActions {
   selBrand(id: string): void
   selOutlet(id: string): void
   setStaffBrandFilter(id: StaffBrandFilter): void
-  setFuFilter(f: FuFilter): void
-  openFu(id: string): void
-  closeFu(): void
+  setVisitFilter(f: VisitFilter): void
+  openVisit(id: string): void
+  closeVisit(): void
   openTransfer(id: string, brandId: string, outletId: string): void
   closeTransfer(): void
   setTf(k: keyof TransferForm, v: string): void
@@ -116,15 +116,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const actions = useMemo<StoreActions>(() => {
     const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }))
     return {
-      go: (activeScreen) => patch({ activeScreen, openFuId: null }),
+      go: (activeScreen) => patch({ activeScreen, openVisitId: null }),
       setPeriod: (period) => patch({ period }),
       setSearch: (q) => patch({ q }),
       selBrand: (selectedBrandId) => patch({ selectedBrandId }),
       selOutlet: (selectedOutletId) => patch({ selectedOutletId }),
       setStaffBrandFilter: (staffBrandFilter) => patch({ staffBrandFilter }),
-      setFuFilter: (fuFilter) => patch({ fuFilter }),
-      openFu: (openFuId) => patch({ openFuId }),
-      closeFu: () => patch({ openFuId: null }),
+      setVisitFilter: (visitFilter) => patch({ visitFilter }),
+      openVisit: (openVisitId) => patch({ openVisitId }),
+      closeVisit: () => patch({ openVisitId: null }),
       openTransfer: (id, brandId, outletId) =>
         patch({
           transferStaffId: id,
