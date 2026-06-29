@@ -24,7 +24,9 @@ export function ScheduleModal() {
   const af = S.addForm
   const selN = af.tasks.filter(Boolean).length
   const [sb, so] = af.storeKey.split('|')
-  const summary = `${brandById(data, sb).name} · ${outletById(data, so).name} · ${selN} tasks`
+  const bName = brandById(data, sb)?.name ?? '—'
+  const oName = outletById(data, so)?.name ?? '—'
+  const summary = `${bName} · ${oName} · ${selN} tasks`
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
 
   return (
