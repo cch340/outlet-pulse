@@ -76,7 +76,7 @@ export function Brands() {
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{b.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--dim)' }}>{b.category}</div>
                 </div>
-                <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0, paddingRight: 60 }}>
                   <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{storeCount} outlets</div>
                   <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{staffCount} staff</div>
                 </div>

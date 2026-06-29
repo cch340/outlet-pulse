@@ -53,7 +53,7 @@ function Shell() {
         <FollowUpDrawer />
         <TransferModal />
         <ScheduleModal />
-        <BrandModal />
+        {state.brandModal && <BrandModal />}
       </div>
     </div>
   )

@@ -34,8 +34,17 @@ export function BrandModal() {
         { onSuccess: () => closeBrandModal() },
       )
     } else {
-      update.mutate({ id: m.id, name: name.trim(), color, category: category.trim() })
-      setStores.mutate({ brandId: m.id, outletIds }, { onSuccess: () => closeBrandModal() })
+      update.mutate(
+        { id: m.id, name: name.trim(), color, category: category.trim() },
+        {
+          onSuccess: () =>
+            setStores.mutate(
+              { brandId: m.id, outletIds },
+              { onSuccess: () => closeBrandModal(), onError: (e) => alert(e.message) },
+            ),
+          onError: (e) => alert(e.message),
+        },
+      )
     }
   }
 
