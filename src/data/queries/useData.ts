@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import type { Brand, FollowUp, Outlet, Staff, Store } from '../model'
-import { rowToFollowUp, rowToStaff, rowToStore } from './mappers'
+import type { Brand, Visit, Outlet, Staff, Store, TaskTemplate } from '../model'
+import { rowToVisit, rowToStaff, rowToStore, rowToTaskTemplate } from './mappers'
 import { queryKeys } from './keys'
 
 export interface DataSnapshot {
@@ -9,7 +9,8 @@ export interface DataSnapshot {
   outlets: Outlet[]
   stores: Store[]
   staff: Staff[]
-  followups: FollowUp[]
+  visits: Visit[]
+  taskTemplates: TaskTemplate[]
 }
 
 async function fetchBrands(): Promise<Brand[]> {
@@ -39,13 +40,19 @@ async function fetchStaff(): Promise<Staff[]> {
   return data.map(rowToStaff)
 }
 
-async function fetchFollowups(): Promise<FollowUp[]> {
+async function fetchVisits(): Promise<Visit[]> {
   const { data, error } = await supabase
-    .from('follow_ups')
-    .select('*, follow_up_tasks(*)')
+    .from('visits')
+    .select('*, visit_tasks(*)')
     .order('date')
   if (error) throw error
-  return data.map(rowToFollowUp)
+  return data.map(rowToVisit)
+}
+
+async function fetchTaskTemplates(): Promise<TaskTemplate[]> {
+  const { data, error } = await supabase.from('task_templates').select('*').order('sort')
+  if (error) throw error
+  return data.map(rowToTaskTemplate)
 }
 
 export function useData(): { data: DataSnapshot; isLoading: boolean; isError: boolean } {
@@ -53,16 +60,18 @@ export function useData(): { data: DataSnapshot; isLoading: boolean; isError: bo
   const outlets = useQuery({ queryKey: queryKeys.outlets, queryFn: fetchOutlets })
   const stores = useQuery({ queryKey: queryKeys.stores, queryFn: fetchStores })
   const staff = useQuery({ queryKey: queryKeys.staff, queryFn: fetchStaff })
-  const followups = useQuery({ queryKey: queryKeys.followups, queryFn: fetchFollowups })
+  const visits = useQuery({ queryKey: queryKeys.visits, queryFn: fetchVisits })
+  const taskTemplates = useQuery({ queryKey: queryKeys.taskTemplates, queryFn: fetchTaskTemplates })
 
-  const queries = [brands, outlets, stores, staff, followups]
+  const queries = [brands, outlets, stores, staff, visits, taskTemplates]
   return {
     data: {
       brands: brands.data ?? [],
       outlets: outlets.data ?? [],
       stores: stores.data ?? [],
       staff: staff.data ?? [],
-      followups: followups.data ?? [],
+      visits: visits.data ?? [],
+      taskTemplates: taskTemplates.data ?? [],
     },
     isLoading: queries.some((q) => q.isLoading),
     isError: queries.some((q) => q.isError),

@@ -9,16 +9,12 @@ export interface NavDef {
 
 export const NAV: NavDef[] = [
   { key: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'space_dashboard' },
-  { key: 'brands', label: 'Brands', short: 'Brands', icon: 'sell' },
-  { key: 'outlets', label: 'Outlets', short: 'Outlets', icon: 'storefront' },
-  { key: 'staff', label: 'Staff', short: 'Staff', icon: 'groups' },
-  { key: 'followups', label: 'Follow-ups', short: 'Visits', icon: 'fact_check' },
+  { key: 'visits', label: 'Visits', short: 'Visits', icon: 'fact_check' },
+  { key: 'manage', label: 'Manage', short: 'Manage', icon: 'tune' },
 ]
 
 export const TITLES: Record<Screen, [string, string]> = {
-  dashboard: ['Summary', 'Year & month follow-up overview'],
-  brands: ['Brand Management', 'Brands and the outlets they operate in'],
-  outlets: ['Outlet Management', 'Malls and the brands hosted'],
-  staff: ['Staff Management', 'Assignments and transfers'],
-  followups: ['Follow-ups', 'Scheduled store visits & checks'],
+  dashboard: ['Summary', 'Year & month visit overview'],
+  visits: ['Visits', 'Scheduled store visits & checks'],
+  manage: ['Manage', 'Brands, outlets, staff & visit tasks'],
 }

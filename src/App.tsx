@@ -7,11 +7,9 @@ import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { BottomNav } from './components/BottomNav'
 import { Dashboard } from './screens/Dashboard'
-import { Brands } from './screens/Brands'
-import { Outlets } from './screens/Outlets'
-import { Staff } from './screens/Staff'
-import { Followups } from './screens/Followups'
-import { FollowUpDrawer } from './components/FollowUpDrawer'
+import { Visits } from './screens/Visits'
+import { Manage } from './screens/Manage'
+import { VisitDrawer } from './components/VisitDrawer'
 import { TransferModal } from './components/TransferModal'
 import { ScheduleModal } from './components/ScheduleModal'
 import { BrandModal } from './components/BrandModal'
@@ -45,16 +43,14 @@ function Shell() {
           <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--pad)' }}>
             <div style={{ maxWidth: 1300, margin: '0 auto' }}>
               {state.activeScreen === 'dashboard' && <Dashboard />}
-              {state.activeScreen === 'brands' && <Brands />}
-              {state.activeScreen === 'outlets' && <Outlets />}
-              {state.activeScreen === 'staff' && <Staff />}
-              {state.activeScreen === 'followups' && <Followups />}
+              {state.activeScreen === 'visits' && <Visits />}
+              {state.activeScreen === 'manage' && <Manage />}
             </div>
           </main>
           {isMobile && <BottomNav />}
         </div>
 
-        <FollowUpDrawer />
+        <VisitDrawer />
         <TransferModal />
         <ScheduleModal />
         {state.brandModal && <BrandModal />}

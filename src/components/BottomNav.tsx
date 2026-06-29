@@ -7,7 +7,7 @@ import { Icon } from './Icon'
 export function BottomNav() {
   const { state, go } = useStore()
   const { data } = useData()
-  const overdueCount = data.followups.filter(isOverdue).length
+  const overdueCount = data.visits.filter(isOverdue).length
 
   return (
     <nav
@@ -21,7 +21,7 @@ export function BottomNav() {
     >
       {NAV.map((n) => {
         const active = n.key === state.activeScreen
-        const badge = n.key === 'followups' && overdueCount ? String(overdueCount) : ''
+        const badge = n.key === 'visits' && overdueCount ? String(overdueCount) : ''
         return (
           <button
             key={n.key}

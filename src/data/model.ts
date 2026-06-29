@@ -44,23 +44,20 @@ export interface Task {
   done: boolean
 }
 
-export type FollowUpStatus = 'done' | 'pending'
+export type VisitStatus = 'done' | 'pending'
 
-export interface FollowUp {
+export interface Visit {
   id: string
   date: string // ISO date
   staffId: string | null
   brandId: string
   outletId: string
-  status: FollowUpStatus
+  status: VisitStatus
   tasks: Task[]
 }
 
-/** Default checklist seeded when scheduling a follow-up. */
-export const DEFAULT_TASKS = [
-  'Stock & display',
-  'Grooming & attendance',
-  'Sales target review',
-  'Store cleanliness',
-  'Promo / POSM setup',
-]
+export interface TaskTemplate {
+  id: string
+  label: string
+  sort: number
+}

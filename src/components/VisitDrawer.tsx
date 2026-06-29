@@ -1,26 +1,26 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { fuVM } from '../data/derived'
+import { visitVM } from '../data/derived'
 import { pill } from '../theme'
 import { Icon } from './Icon'
-import { useToggleTask, useMarkFollowUpDone, useToggleFollowUpStatus } from '../data/queries/useFollowUpMutations'
+import { useToggleTask, useMarkVisitDone, useToggleVisitStatus } from '../data/queries/useVisitMutations'
 
-export function FollowUpDrawer() {
-  const { state, closeFu } = useStore()
+export function VisitDrawer() {
+  const { state, closeVisit } = useStore()
   const toggleTask = useToggleTask()
-  const markDone = useMarkFollowUpDone()
-  const toggleStatus = useToggleFollowUpStatus()
+  const markDone = useMarkVisitDone()
+  const toggleStatus = useToggleVisitStatus()
   const { data } = useData()
   const S = state
-  const openF = S.openFuId ? data.followups.find((f) => f.id === S.openFuId) : null
+  const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
   if (!openF) return null
 
-  const vm = fuVM(data, openF)
+  const vm = visitVM(data, openF)
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
 
   return (
     <div
-      onClick={closeFu}
+      onClick={closeVisit}
       style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end' }}
     >
       <div
@@ -40,7 +40,7 @@ export function FollowUpDrawer() {
         <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--dim)', fontWeight: 600, marginBottom: 5 }}>
-              Follow-up · {vm.dateLabel}
+              Visit · {vm.dateLabel}
             </div>
             <div style={{ fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 11, height: 11, borderRadius: 3, background: vm.brandColor }} />
@@ -49,7 +49,7 @@ export function FollowUpDrawer() {
             <div style={{ fontSize: 13, color: 'var(--dim)', marginTop: 4 }}>Staff on duty · {vm.staffName}</div>
           </div>
           <span style={pill(vm.statusColor)}>{vm.statusLabel}</span>
-          <button onClick={closeFu} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2 }}>
+          <button onClick={closeVisit} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2 }}>
             <Icon name="close" size={22} />
           </button>
         </div>
@@ -113,7 +113,7 @@ export function FollowUpDrawer() {
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
           {openF.status === 'done' ? (
             <button
-              onClick={() => toggleStatus.mutate({ followUpId: openF.id, status: openF.status }, { onError: (e) => alert(e.message) })}
+              onClick={() => toggleStatus.mutate({ visitId: openF.id, status: openF.status }, { onError: (e) => alert(e.message) })}
               style={{
                 flex: 1,
                 border: '1px solid var(--border)',
@@ -127,11 +127,11 @@ export function FollowUpDrawer() {
                 cursor: 'pointer',
               }}
             >
-              Reopen follow-up
+              Reopen visit
             </button>
           ) : (
             <button
-              onClick={() => markDone.mutate({ followUpId: openF.id }, { onSuccess: () => closeFu(), onError: (e) => alert(e.message) })}
+              onClick={() => markDone.mutate({ visitId: openF.id }, { onSuccess: () => closeVisit(), onError: (e) => alert(e.message) })}
               style={{
                 flex: 1,
                 border: 'none',

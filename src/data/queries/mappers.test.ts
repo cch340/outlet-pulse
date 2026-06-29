@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rowToStaff, rowToFollowUp, rowToStore } from './mappers'
+import { rowToStaff, rowToVisit, rowToStore } from './mappers'
 
 describe('rowToStore', () => {
   it('maps snake_case to camelCase', () => {
@@ -29,22 +29,22 @@ describe('rowToStaff', () => {
   })
 })
 
-describe('rowToFollowUp', () => {
+describe('rowToVisit', () => {
   it('maps fields and orders tasks by sort', () => {
-    const fu = rowToFollowUp({
+    const v = rowToVisit({
       id: 'f1',
       date: '2026-06-25',
       staff_id: null,
       brand_id: 'b1',
       outlet_id: 'o1',
       status: 'pending',
-      follow_up_tasks: [
-        { id: 't2', follow_up_id: 'f1', label: 'B', done: true, sort: 1 },
-        { id: 't1', follow_up_id: 'f1', label: 'A', done: false, sort: 0 },
+      visit_tasks: [
+        { id: 't2', visit_id: 'f1', label: 'B', done: true, sort: 1 },
+        { id: 't1', visit_id: 'f1', label: 'A', done: false, sort: 0 },
       ],
     })
-    expect(fu.staffId).toBeNull()
-    expect(fu.tasks.map((t) => t.label)).toEqual(['A', 'B'])
-    expect(fu.tasks[0].id).toBe('t1')
+    expect(v.staffId).toBeNull()
+    expect(v.tasks.map((t) => t.label)).toEqual(['A', 'B'])
+    expect(v.tasks[0].id).toBe('t1')
   })
 })

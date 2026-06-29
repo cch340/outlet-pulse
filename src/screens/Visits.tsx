@@ -1,29 +1,29 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { useMarkFollowUpDone } from '../data/queries/useFollowUpMutations'
-import { brandById, fuVM, isOverdue, outletById, staffById } from '../data/derived'
-import type { FuFilter } from '../data/store'
+import { useMarkVisitDone } from '../data/queries/useVisitMutations'
+import { brandById, visitVM, isOverdue, outletById, staffById } from '../data/derived'
+import type { VisitFilter } from '../data/store'
 import { card, chip, pill } from '../theme'
 import { Icon } from '../components/Icon'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-export function Followups() {
-  const { state, setFuFilter, openFu } = useStore()
+export function Visits() {
+  const { state, setVisitFilter, openVisit } = useStore()
   const { data } = useData()
-  const markDoneMutation = useMarkFollowUpDone()
+  const markDoneMutation = useMarkVisitDone()
   const S = state
   const q = S.q.trim().toLowerCase()
   const isMobile = S.isMobile
 
-  const allF = data.followups.slice().sort((a, b) => (a.date < b.date ? -1 : 1))
+  const allF = data.visits.slice().sort((a, b) => (a.date < b.date ? -1 : 1))
   const counts = {
     all: allF.length,
     pending: allF.filter((f) => f.status === 'pending' && !isOverdue(f)).length,
     overdue: allF.filter(isOverdue).length,
     done: allF.filter((f) => f.status === 'done').length,
   }
-  const filterDefs: [FuFilter, string][] = [
+  const filterDefs: [VisitFilter, string][] = [
     ['all', 'All'],
     ['pending', 'Pending'],
     ['overdue', 'Overdue'],
@@ -31,9 +31,9 @@ export function Followups() {
   ]
 
   let filtered = allF
-  if (S.fuFilter === 'pending') filtered = allF.filter((f) => f.status === 'pending' && !isOverdue(f))
-  else if (S.fuFilter === 'overdue') filtered = allF.filter(isOverdue)
-  else if (S.fuFilter === 'done') filtered = allF.filter((f) => f.status === 'done')
+  if (S.visitFilter === 'pending') filtered = allF.filter((f) => f.status === 'pending' && !isOverdue(f))
+  else if (S.visitFilter === 'overdue') filtered = allF.filter(isOverdue)
+  else if (S.visitFilter === 'done') filtered = allF.filter((f) => f.status === 'done')
   if (q) {
     filtered = filtered.filter((f) => {
       const b = brandById(data, f.brandId)
@@ -44,7 +44,7 @@ export function Followups() {
   }
 
   const rows = filtered.map((f) => {
-    const vm = fuVM(data, f)
+    const vm = visitVM(data, f)
     const d = new Date(f.date + 'T00:00:00')
     return { ...vm, day: String(d.getDate()).padStart(2, '0'), mon: MON[d.getMonth()], canComplete: vm.status !== 'done' }
   })
@@ -53,7 +53,7 @@ export function Followups() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
         {filterDefs.map(([k, label]) => (
-          <button key={k} onClick={() => setFuFilter(k)} style={chip(S.fuFilter === k)}>
+          <button key={k} onClick={() => setVisitFilter(k)} style={chip(S.visitFilter === k)}>
             {label} <span style={{ fontFamily: "'IBM Plex Mono'", opacity: 0.7 }}>{counts[k]}</span>
           </button>
         ))}
@@ -61,14 +61,14 @@ export function Followups() {
 
       <div style={{ ...card, overflow: 'hidden' }}>
         {rows.length === 0 && (
-          <div style={{ padding: 28, textAlign: 'center', color: 'var(--dim)', fontSize: 13 }}>No follow-ups match this filter.</div>
+          <div style={{ padding: 28, textAlign: 'center', color: 'var(--dim)', fontSize: 13 }}>No visits match this filter.</div>
         )}
 
         {!isMobile &&
           rows.map((f) => (
             <div
               key={f.id}
-              onClick={() => openFu(f.id)}
+              onClick={() => openVisit(f.id)}
               style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
             >
               <div style={{ width: 46, textAlign: 'center', flexShrink: 0 }}>
@@ -98,7 +98,7 @@ export function Followups() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    markDoneMutation.mutate({ followUpId: f.id })
+                    markDoneMutation.mutate({ visitId: f.id })
                   }}
                   style={{
                     display: 'flex',
@@ -127,7 +127,7 @@ export function Followups() {
           rows.map((f) => (
             <div
               key={f.id}
-              onClick={() => openFu(f.id)}
+              onClick={() => openVisit(f.id)}
               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
             >
               <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>

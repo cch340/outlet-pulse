@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { ScheduleTaskItem } from './queries/scheduleTasks'
 
 /** Viewport width (px) at or below which we render the mobile layout. */
 export const MOBILE_BREAKPOINT = 768
@@ -8,10 +9,11 @@ function detectMobile(): boolean {
   return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
 }
 
-export type Screen = 'dashboard' | 'brands' | 'outlets' | 'staff' | 'followups'
+export type Screen = 'dashboard' | 'visits' | 'manage'
+export type ManageTab = 'brands' | 'outlets' | 'staff' | 'tasks'
 export type Period = 'month' | 'year'
 export type StaffBrandFilter = 'all' | string
-export type FuFilter = 'all' | 'pending' | 'overdue' | 'done'
+export type VisitFilter = 'all' | 'pending' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
 export type Density = 'comfortable' | 'compact'
 
@@ -26,21 +28,22 @@ export interface AddForm {
   storeKey: string
   date: string
   staffId: string
-  tasks: boolean[]
+  tasks: ScheduleTaskItem[]
 }
 
 export interface AppState {
   // navigation / view
   activeScreen: Screen
+  manageTab: ManageTab
   isMobile: boolean
   period: Period
   q: string
   selectedBrandId: string
   selectedOutletId: string
   staffBrandFilter: StaffBrandFilter
-  fuFilter: FuFilter
+  visitFilter: VisitFilter
   // overlays
-  openFuId: string | null
+  openVisitId: string | null
   transferStaffId: string | null
   transferForm: TransferForm | null
   addOpen: boolean
@@ -57,14 +60,15 @@ export interface AppState {
 function seed(): AppState {
   return {
     activeScreen: 'dashboard',
+    manageTab: 'brands',
     isMobile: detectMobile(),
     period: 'month',
     q: '',
     selectedBrandId: '',
     selectedOutletId: '',
     staffBrandFilter: 'all',
-    fuFilter: 'all',
-    openFuId: null,
+    visitFilter: 'all',
+    openVisitId: null,
     transferStaffId: null,
     transferForm: null,
     addOpen: false,
@@ -85,22 +89,22 @@ export interface StoreActions {
   selBrand(id: string): void
   selOutlet(id: string): void
   setStaffBrandFilter(id: StaffBrandFilter): void
-  setFuFilter(f: FuFilter): void
-  openFu(id: string): void
-  closeFu(): void
+  setVisitFilter(f: VisitFilter): void
+  openVisit(id: string): void
+  closeVisit(): void
   openTransfer(id: string, brandId: string, outletId: string): void
   closeTransfer(): void
   setTf(k: keyof TransferForm, v: string): void
   openAdd(): void
   closeAdd(): void
   setAf<K extends keyof AddForm>(k: K, v: AddForm[K]): void
-  toggleAfTask(i: number): void
   openBrandModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeBrandModal(): void
   openOutletModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeOutletModal(): void
   openStaffModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeStaffModal(): void
+  setManageTab(tab: ManageTab): void
   setAccent(c: string): void
   setThemeMode(m: ThemeMode): void
   setDensity(d: Density): void
@@ -116,15 +120,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const actions = useMemo<StoreActions>(() => {
     const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }))
     return {
-      go: (activeScreen) => patch({ activeScreen, openFuId: null }),
+      go: (activeScreen) => patch({ activeScreen, openVisitId: null }),
       setPeriod: (period) => patch({ period }),
       setSearch: (q) => patch({ q }),
       selBrand: (selectedBrandId) => patch({ selectedBrandId }),
       selOutlet: (selectedOutletId) => patch({ selectedOutletId }),
       setStaffBrandFilter: (staffBrandFilter) => patch({ staffBrandFilter }),
-      setFuFilter: (fuFilter) => patch({ fuFilter }),
-      openFu: (openFuId) => patch({ openFuId }),
-      closeFu: () => patch({ openFuId: null }),
+      setVisitFilter: (visitFilter) => patch({ visitFilter }),
+      openVisit: (openVisitId) => patch({ openVisitId }),
+      closeVisit: () => patch({ openVisitId: null }),
       openTransfer: (id, brandId, outletId) =>
         patch({
           transferStaffId: id,
@@ -135,21 +139,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openAdd: () =>
         patch({
           addOpen: true,
-          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [true, true, true, false, false] },
+          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [] },
         }),
       closeAdd: () => patch({ addOpen: false, addForm: null }),
       setAf: (k, v) => setState((s) => ({ ...s, addForm: { ...s.addForm!, [k]: v } })),
-      toggleAfTask: (i) =>
-        setState((s) => ({
-          ...s,
-          addForm: { ...s.addForm!, tasks: s.addForm!.tasks.map((t, j) => (j === i ? !t : t)) },
-        })),
       openBrandModal: (brandModal) => patch({ brandModal }),
       closeBrandModal: () => patch({ brandModal: null }),
       openOutletModal: (outletModal) => patch({ outletModal }),
       closeOutletModal: () => patch({ outletModal: null }),
       openStaffModal: (staffModal) => patch({ staffModal }),
       closeStaffModal: () => patch({ staffModal: null }),
+      setManageTab: (manageTab) => patch({ manageTab }),
       setAccent: (accent) => patch({ accent }),
       setThemeMode: (themeMode) => patch({ themeMode }),
       setDensity: (density) => patch({ density }),
