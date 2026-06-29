@@ -1,5 +1,7 @@
 import { StoreProvider, useStore } from './data/store'
 import { useData } from './data/queries/useData'
+import { useSession } from './auth/AuthProvider'
+import { Login } from './screens/Login'
 import { rootStyle, appShellStyle } from './theme'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
@@ -64,6 +66,11 @@ function Shell() {
 }
 
 export function App() {
+  const { session, loading } = useSession()
+
+  if (loading) return <div style={{ padding: 40, fontFamily: "'IBM Plex Sans'" }}>Loading…</div>
+  if (!session) return <Login />
+
   return (
     <StoreProvider>
       <Shell />

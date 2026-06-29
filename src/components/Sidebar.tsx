@@ -1,15 +1,17 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
+import { useSession } from '../auth/AuthProvider'
 import { isOverdue } from '../data/derived'
 import { NAV } from '../data/nav'
 import { Icon } from './Icon'
 
-const manager = { name: 'Aisha Karim', role: 'Area Manager · Penang', initials: 'AK' }
-
 export function Sidebar() {
   const { state, go } = useStore()
   const { data } = useData()
+  const { session, signOut } = useSession()
   const overdueCount = data.followups.filter(isOverdue).length
+  const email = session?.user.email ?? ''
+  const initials = email.slice(0, 2).toUpperCase()
 
   return (
     <aside
@@ -124,9 +126,9 @@ export function Sidebar() {
             fontFamily: "'IBM Plex Mono'",
           }}
         >
-          {manager.initials}
+          {initials}
         </div>
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
               color: '#fff',
@@ -137,20 +139,25 @@ export function Sidebar() {
               textOverflow: 'ellipsis',
             }}
           >
-            {manager.name}
+            {email}
           </div>
-          <div
-            style={{
-              color: 'var(--sidebar-text)',
-              fontSize: 11,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {manager.role}
-          </div>
+          <div style={{ color: 'var(--sidebar-text)', fontSize: 11 }}>Signed in</div>
         </div>
+        <button
+          onClick={() => signOut()}
+          title="Sign out"
+          style={{
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'var(--sidebar-text)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: 4,
+          }}
+        >
+          <Icon name="logout" size={20} />
+        </button>
       </div>
     </aside>
   )
