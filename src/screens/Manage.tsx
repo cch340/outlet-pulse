@@ -3,6 +3,7 @@ import { chip } from '../theme'
 import { Brands } from './Brands'
 import { Outlets } from './Outlets'
 import { Staff } from './Staff'
+import { TaskTemplatesPanel } from '../components/TaskTemplatesPanel'
 
 const TABS: [ManageTab, string][] = [
   ['brands', 'Brands'],
@@ -27,11 +28,7 @@ export function Manage() {
       {tab === 'brands' && <Brands />}
       {tab === 'outlets' && <Outlets />}
       {tab === 'staff' && <Staff />}
-      {tab === 'tasks' && (
-        <div style={{ padding: 28, textAlign: 'center', color: 'var(--dim)', fontSize: 13 }}>
-          Task library — coming up next.
-        </div>
-      )}
+      {tab === 'tasks' && <TaskTemplatesPanel />}
     </div>
   )
 }
