@@ -52,8 +52,8 @@ function seed(): AppState {
     isMobile: false,
     period: 'month',
     q: '',
-    selectedBrandId: 'b1',
-    selectedOutletId: 'o1',
+    selectedBrandId: '',
+    selectedOutletId: '',
     staffBrandFilter: 'all',
     fuFilter: 'all',
     openFuId: null,
@@ -129,7 +129,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openAdd: () =>
         patch({
           addOpen: true,
-          addForm: { storeKey: 'b1|o1', date: '2026-07-01', staffId: '', tasks: [true, true, true, false, false] },
+          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [true, true, true, false, false] },
         }),
       closeAdd: () => patch({ addOpen: false, addForm: null }),
       setAf: (k, v) => setState((s) => ({ ...s, addForm: { ...s.addForm!, [k]: v } })),

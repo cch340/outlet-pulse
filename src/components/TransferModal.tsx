@@ -168,7 +168,7 @@ export function TransferModal() {
             onClick={() => {
               transfer.mutate(
                 { staffId: S.transferStaffId!, brandId: tf.brandId, outletId: tf.outletId, reason: tf.reason, date: tf.date },
-                { onSuccess: () => closeTransfer() },
+                { onSuccess: () => closeTransfer(), onError: (e) => alert(e.message) },
               )
             }}
             style={{

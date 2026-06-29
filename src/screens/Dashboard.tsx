@@ -1,6 +1,6 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { fuVM, isOverdue, linked, staffCount } from '../data/derived'
+import { fuVM, isOverdue, linked, staffCount, today } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
@@ -13,10 +13,16 @@ export function Dashboard() {
   const { data } = useData()
   const S = state
 
-  const yearFus = data.followups.filter((f) => f.date.startsWith('2026'))
-  const monthFus = data.followups.filter((f) => f.date.startsWith('2026-06'))
+  const t = today()
+  const yr = String(t.getFullYear())
+  const mo = `${yr}-${String(t.getMonth() + 1).padStart(2, '0')}`
+  const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const yearLabel = `Year ${yr}`
+
+  const yearFus = data.followups.filter((f) => f.date.startsWith(yr))
+  const monthFus = data.followups.filter((f) => f.date.startsWith(mo))
   const periodFus = S.period === 'month' ? monthFus : yearFus
-  const periodLabel = S.period === 'month' ? 'June 2026' : 'Year 2026'
+  const periodLabel = S.period === 'month' ? monthLabel : yearLabel
   const pDone = periodFus.filter((f) => f.status === 'done').length
   const pPend = periodFus.filter((f) => f.status === 'pending').length
   const pOver = periodFus.filter(isOverdue).length
@@ -107,7 +113,7 @@ export function Dashboard() {
           }}
         >
           <button onClick={() => setPeriod('month')} style={periodBtn(S.period === 'month')}>This month</button>
-          <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>Year 2026</button>
+          <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>{yearLabel}</button>
         </div>
       </div>
 

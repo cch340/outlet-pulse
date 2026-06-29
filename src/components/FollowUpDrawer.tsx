@@ -66,7 +66,7 @@ export function FollowUpDrawer() {
             {openF.tasks.map((t, i) => (
               <button
                 key={i}
-                onClick={() => toggleTask.mutate({ taskId: t.id!, done: !t.done })}
+                onClick={() => toggleTask.mutate({ taskId: t.id!, done: !t.done }, { onError: (e) => alert(e.message) })}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -113,7 +113,7 @@ export function FollowUpDrawer() {
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
           {openF.status === 'done' ? (
             <button
-              onClick={() => toggleStatus.mutate({ followUpId: openF.id, status: openF.status })}
+              onClick={() => toggleStatus.mutate({ followUpId: openF.id, status: openF.status }, { onError: (e) => alert(e.message) })}
               style={{
                 flex: 1,
                 border: '1px solid var(--border)',
@@ -131,7 +131,7 @@ export function FollowUpDrawer() {
             </button>
           ) : (
             <button
-              onClick={() => markDone.mutate({ followUpId: openF.id })}
+              onClick={() => markDone.mutate({ followUpId: openF.id }, { onError: (e) => alert(e.message) })}
               style={{
                 flex: 1,
                 border: 'none',

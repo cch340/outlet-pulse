@@ -163,10 +163,11 @@ export function ScheduleModal() {
             <button
               onClick={() => {
                 const [sb, so] = af.storeKey.split('|')
+                if (!sb || !so) return
                 const taskLabels = DEFAULT_TASKS.filter((_, i) => af.tasks[i])
                 create.mutate(
                   { brandId: sb, outletId: so, staffId: af.staffId || null, date: af.date, taskLabels },
-                  { onSuccess: () => closeAdd() },
+                  { onSuccess: () => closeAdd(), onError: (e) => alert(e.message) },
                 )
               }}
               style={{

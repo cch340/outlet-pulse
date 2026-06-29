@@ -90,7 +90,7 @@ export function fuVM(s: DataSnapshot, f: FollowUp): FollowUpVM {
     statusColor: STATUS_COLOR[status],
     total,
     doneT,
-    progressPct: Math.round((doneT / total) * 100),
+    progressPct: total ? Math.round((doneT / total) * 100) : 0,
     isOverdue: od,
   }
 }
