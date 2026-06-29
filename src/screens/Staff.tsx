@@ -47,6 +47,8 @@ export function Staff() {
       name: s.name,
       initials: initials(s.name),
       role: s.role,
+      brandId: s.brandId,
+      outletId: s.outletId,
       brandName: b.name,
       brandColor: b.color,
       outletName: o.name,
@@ -126,7 +128,7 @@ export function Staff() {
                 <div style={{ flex: 1.4, minWidth: 90, fontSize: 12.5 }}>{r.outletName}</div>
                 <div style={{ flex: 1, minWidth: 70, fontFamily: "'IBM Plex Mono'", fontSize: 12, color: 'var(--dim)' }}>{r.tenure}</div>
                 <div style={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
-                  <button onClick={() => openTransfer(r.id)} style={transferBtn}>
+                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={transferBtn}>
                     <Icon name="swap_horiz" size={16} />
                     Transfer
                   </button>
@@ -151,7 +153,7 @@ export function Staff() {
                   <div style={{ fontSize: 12, color: 'var(--dim)' }}>{r.role}</div>
                 </div>
                 <button
-                  onClick={() => openTransfer(r.id)}
+                  onClick={() => openTransfer(r.id, r.brandId, r.outletId)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

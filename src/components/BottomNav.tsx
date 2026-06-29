@@ -1,11 +1,13 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { isOverdue } from '../data/derived'
 import { NAV } from '../data/nav'
 import { Icon } from './Icon'
 
 export function BottomNav() {
   const { state, go } = useStore()
-  const overdueCount = state.followups.filter(isOverdue).length
+  const { data } = useData()
+  const overdueCount = data.followups.filter(isOverdue).length
 
   return (
     <nav

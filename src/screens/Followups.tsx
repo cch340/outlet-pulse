@@ -1,5 +1,6 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
+import { useMarkFollowUpDone } from '../data/queries/useFollowUpMutations'
 import { brandById, fuVM, isOverdue, outletById, staffById } from '../data/derived'
 import type { FuFilter } from '../data/store'
 import { card, chip, pill } from '../theme'
@@ -8,8 +9,9 @@ import { Icon } from '../components/Icon'
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function Followups() {
-  const { state, setFuFilter, openFu, markDone } = useStore()
+  const { state, setFuFilter, openFu } = useStore()
   const { data } = useData()
+  const markDoneMutation = useMarkFollowUpDone()
   const S = state
   const q = S.q.trim().toLowerCase()
   const isMobile = S.isMobile
@@ -96,7 +98,7 @@ export function Followups() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    markDone(f.id)
+                    markDoneMutation.mutate({ followUpId: f.id })
                   }}
                   style={{
                     display: 'flex',
