@@ -41,7 +41,6 @@ const dark: Palette = {
 export function rootStyle(s: AppState): CSSProperties {
   const t = s.themeMode === 'dark' ? dark : light
   const dense = s.density === 'compact'
-  const page = s.isMobile ? (s.themeMode === 'dark' ? '#000' : '#d6d3d1') : t.bg
   return {
     // CSS variables consumed throughout the tree
     ['--accent' as string]: s.accent,
@@ -58,7 +57,7 @@ export function rootStyle(s: AppState): CSSProperties {
     ['--rowpad' as string]: dense ? '8px 12px' : '12px 14px',
     minHeight: '100vh',
     width: '100%',
-    background: page,
+    background: t.bg,
     color: 'var(--text)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     WebkitFontSmoothing: 'antialiased',
@@ -70,15 +69,10 @@ export function appShellStyle(isMobile: boolean): CSSProperties {
     ? {
         display: 'flex',
         flexDirection: 'column',
-        width: 404,
-        height: 880,
-        maxHeight: '96vh',
-        margin: '18px auto',
-        border: '11px solid #0c0a09',
-        borderRadius: 42,
+        height: '100vh',
+        width: '100%',
         overflow: 'hidden',
         background: 'var(--bg)',
-        boxShadow: '0 40px 90px rgba(0,0,0,.35)',
         position: 'relative',
       }
     : { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden' }

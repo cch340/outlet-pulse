@@ -3,11 +3,9 @@ import { TITLES } from '../data/nav'
 import { Icon } from './Icon'
 
 export function TopBar() {
-  const { state, setSearch, toggleView, openAdd } = useStore()
+  const { state, setSearch, openAdd } = useStore()
   const isMobile = state.isMobile
   const [title, subtitle] = TITLES[state.activeScreen]
-  const viewIcon = isMobile ? 'desktop_windows' : 'smartphone'
-  const viewLabel = isMobile ? 'Desktop' : 'Mobile'
 
   return (
     <header
@@ -96,28 +94,6 @@ export function TopBar() {
           />
         </div>
       )}
-      <button
-        onClick={toggleView}
-        title="Toggle view"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          height: 38,
-          padding: '0 12px',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--surface2)',
-          color: 'var(--text)',
-          fontFamily: "'IBM Plex Sans'",
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: 'pointer',
-        }}
-      >
-        <Icon name={viewIcon} size={18} />
-        {!isMobile && <span>{viewLabel}</span>}
-      </button>
       <button
         onClick={openAdd}
         style={{
