@@ -64,6 +64,22 @@ export function ScheduleModal() {
         <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
             <div style={fieldLabel}>Store (brand · outlet)</div>
+            {data.stores.length === 0 && (
+              <div
+                style={{
+                  border: '1px dashed var(--border)',
+                  borderRadius: 9,
+                  padding: '12px 14px',
+                  fontSize: 13,
+                  color: 'var(--dim)',
+                  lineHeight: 1.5,
+                }}
+              >
+                No stores yet. A store is a brand linked to an outlet — go to{' '}
+                <strong style={{ color: 'var(--text)' }}>Brands</strong>, edit a brand, and tick the
+                outlet it operates in under <strong style={{ color: 'var(--text)' }}>Operates in outlets</strong>.
+              </div>
+            )}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {data.stores.map((s) => {
                 const b = brandById(data, s.brandId)
