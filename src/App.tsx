@@ -13,6 +13,7 @@ import { FollowUpDrawer } from './components/FollowUpDrawer'
 import { TransferModal } from './components/TransferModal'
 import { ScheduleModal } from './components/ScheduleModal'
 import { BrandModal } from './components/BrandModal'
+import { OutletModal } from './components/OutletModal'
 
 function Shell() {
   const { state } = useStore()
@@ -54,6 +55,7 @@ function Shell() {
         <TransferModal />
         <ScheduleModal />
         {state.brandModal && <BrandModal />}
+        {state.outletModal && <OutletModal />}
       </div>
     </div>
   )

@@ -3,6 +3,7 @@ import { useData } from '../data/queries/useData'
 import { brandById, initials } from '../data/derived'
 import { card, cardSel, tint } from '../theme'
 import { Icon } from '../components/Icon'
+import { useDeleteOutlet } from '../data/queries/useOutletMutations'
 
 const sectionLabel = {
   fontSize: 11,
@@ -13,8 +14,9 @@ const sectionLabel = {
 }
 
 export function Outlets() {
-  const { state, selOutlet } = useStore()
+  const { state, selOutlet, openOutletModal } = useStore()
   const { data } = useData()
+  const del = useDeleteOutlet()
   const S = state
 
   const selO = data.outlets.find((o) => o.id === S.selectedOutletId) ?? data.outlets[0]
@@ -32,35 +34,72 @@ export function Outlets() {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, alignItems: 'start' }}>
       {/* left list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ ...sectionLabel, padding: 2 }}>All outlets</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 2 }}>
+          <div style={sectionLabel}>All outlets</div>
+          <button
+            onClick={() => openOutletModal({ mode: 'add' })}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 11px', borderRadius: 8, cursor: 'pointer',
+              fontFamily: "'IBM Plex Sans'", fontSize: 12.5, fontWeight: 600,
+              border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+            }}
+          >
+            <Icon name="add" size={16} />
+            Add outlet
+          </button>
+        </div>
         {data.outlets.map((o) => {
           const brandCount = data.stores.filter((s) => s.outletId === o.id).length
           const staffCount = data.staff.filter((s) => s.outletId === o.id).length
           return (
-            <button key={o.id} onClick={() => selOutlet(o.id)} style={cardSel(o.id === S.selectedOutletId)}>
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 10,
-                  background: tint('var(--accent)', 13),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name="storefront" size={22} color="var(--accent)" />
+            <div key={o.id} style={{ position: 'relative' }}>
+              <button onClick={() => selOutlet(o.id)} style={{ ...cardSel(o.id === S.selectedOutletId), width: '100%' }}>
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 10,
+                    background: tint('var(--accent)', 13),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon name="storefront" size={22} color="var(--accent)" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>{o.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--dim)' }}>{o.location}</div>
+                </div>
+                <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0, paddingRight: 60 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{brandCount} brands</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{staffCount} staff</div>
+                </div>
+              </button>
+              <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openOutletModal({ mode: 'edit', id: o.id }) }}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6 }}
+                >
+                  <Icon name="edit" size={15} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm('Delete this outlet?')) {
+                      del.mutate(o.id, {
+                        onError: () => alert('Cannot delete: this outlet still has staff or store links.'),
+                      })
+                    }
+                  }}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6 }}
+                >
+                  <Icon name="delete" size={15} />
+                </button>
               </div>
-              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{o.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--dim)' }}>{o.location}</div>
-              </div>
-              <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{brandCount} brands</div>
-                <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{staffCount} staff</div>
-              </div>
-            </button>
+            </div>
           )
         })}
       </div>
