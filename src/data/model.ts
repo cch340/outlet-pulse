@@ -61,12 +61,3 @@ export interface TaskTemplate {
   label: string
   sort: number
 }
-
-/** Default checklist seeded when scheduling a follow-up. */
-export const DEFAULT_TASKS = [
-  'Stock & display',
-  'Grooming & attendance',
-  'Sales target review',
-  'Store cleanliness',
-  'Promo / POSM setup',
-]

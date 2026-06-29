@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { ScheduleTaskItem } from './queries/scheduleTasks'
 
 /** Viewport width (px) at or below which we render the mobile layout. */
 export const MOBILE_BREAKPOINT = 768
@@ -27,7 +28,7 @@ export interface AddForm {
   storeKey: string
   date: string
   staffId: string
-  tasks: boolean[]
+  tasks: ScheduleTaskItem[]
 }
 
 export interface AppState {
@@ -97,7 +98,6 @@ export interface StoreActions {
   openAdd(): void
   closeAdd(): void
   setAf<K extends keyof AddForm>(k: K, v: AddForm[K]): void
-  toggleAfTask(i: number): void
   openBrandModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeBrandModal(): void
   openOutletModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
@@ -139,15 +139,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openAdd: () =>
         patch({
           addOpen: true,
-          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [true, true, true, false, false] },
+          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [] },
         }),
       closeAdd: () => patch({ addOpen: false, addForm: null }),
       setAf: (k, v) => setState((s) => ({ ...s, addForm: { ...s.addForm!, [k]: v } })),
-      toggleAfTask: (i) =>
-        setState((s) => ({
-          ...s,
-          addForm: { ...s.addForm!, tasks: s.addForm!.tasks.map((t, j) => (j === i ? !t : t)) },
-        })),
       openBrandModal: (brandModal) => patch({ brandModal }),
       closeBrandModal: () => patch({ brandModal: null }),
       openOutletModal: (outletModal) => patch({ outletModal }),
