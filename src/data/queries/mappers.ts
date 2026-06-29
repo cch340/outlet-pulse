@@ -1,4 +1,4 @@
-import type { Visit, HistoryEntry, Staff, Store, Task } from '../model'
+import type { Visit, HistoryEntry, Staff, Store, Task, TaskTemplate } from '../model'
 
 export interface StaffHistoryRow {
   id: string
@@ -38,6 +38,18 @@ export interface VisitRow {
   status: 'done' | 'pending'
   visit_tasks: TaskRow[]
 }
+
+export interface TaskTemplateRow {
+  id: string
+  label: string
+  sort: number
+}
+
+export const rowToTaskTemplate = (r: TaskTemplateRow): TaskTemplate => ({
+  id: r.id,
+  label: r.label,
+  sort: r.sort,
+})
 
 export const rowToStore = (r: { brand_id: string; outlet_id: string }): Store => ({
   brandId: r.brand_id,

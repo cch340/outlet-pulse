@@ -4,4 +4,5 @@ export const queryKeys = {
   stores: ['stores'] as const,
   staff: ['staff'] as const,
   visits: ['visits'] as const,
+  taskTemplates: ['taskTemplates'] as const,
 }

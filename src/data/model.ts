@@ -56,6 +56,12 @@ export interface Visit {
   tasks: Task[]
 }
 
+export interface TaskTemplate {
+  id: string
+  label: string
+  sort: number
+}
+
 /** Default checklist seeded when scheduling a follow-up. */
 export const DEFAULT_TASKS = [
   'Stock & display',

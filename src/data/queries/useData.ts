@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import type { Brand, Visit, Outlet, Staff, Store } from '../model'
-import { rowToVisit, rowToStaff, rowToStore } from './mappers'
+import type { Brand, Visit, Outlet, Staff, Store, TaskTemplate } from '../model'
+import { rowToVisit, rowToStaff, rowToStore, rowToTaskTemplate } from './mappers'
 import { queryKeys } from './keys'
 
 export interface DataSnapshot {
@@ -10,6 +10,7 @@ export interface DataSnapshot {
   stores: Store[]
   staff: Staff[]
   visits: Visit[]
+  taskTemplates: TaskTemplate[]
 }
 
 async function fetchBrands(): Promise<Brand[]> {
@@ -48,14 +49,21 @@ async function fetchVisits(): Promise<Visit[]> {
   return data.map(rowToVisit)
 }
 
+async function fetchTaskTemplates(): Promise<TaskTemplate[]> {
+  const { data, error } = await supabase.from('task_templates').select('*').order('sort')
+  if (error) throw error
+  return data.map(rowToTaskTemplate)
+}
+
 export function useData(): { data: DataSnapshot; isLoading: boolean; isError: boolean } {
   const brands = useQuery({ queryKey: queryKeys.brands, queryFn: fetchBrands })
   const outlets = useQuery({ queryKey: queryKeys.outlets, queryFn: fetchOutlets })
   const stores = useQuery({ queryKey: queryKeys.stores, queryFn: fetchStores })
   const staff = useQuery({ queryKey: queryKeys.staff, queryFn: fetchStaff })
   const visits = useQuery({ queryKey: queryKeys.visits, queryFn: fetchVisits })
+  const taskTemplates = useQuery({ queryKey: queryKeys.taskTemplates, queryFn: fetchTaskTemplates })
 
-  const queries = [brands, outlets, stores, staff, visits]
+  const queries = [brands, outlets, stores, staff, visits, taskTemplates]
   return {
     data: {
       brands: brands.data ?? [],
@@ -63,6 +71,7 @@ export function useData(): { data: DataSnapshot; isLoading: boolean; isError: bo
       stores: stores.data ?? [],
       staff: staff.data ?? [],
       visits: visits.data ?? [],
+      taskTemplates: taskTemplates.data ?? [],
     },
     isLoading: queries.some((q) => q.isLoading),
     isError: queries.some((q) => q.isError),
