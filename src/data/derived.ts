@@ -7,8 +7,13 @@ export const today = () => {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
-export const fmt = (iso: string) =>
-  new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+export const fmt = (iso: string) => {
+  const d = new Date(iso + 'T00:00:00')
+  const rest = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  return `${WEEKDAY[d.getDay()]}, ${rest}`
+}
 
 export const initials = (n: string) =>
   n
