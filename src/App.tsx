@@ -14,6 +14,7 @@ import { TransferModal } from './components/TransferModal'
 import { ScheduleModal } from './components/ScheduleModal'
 import { BrandModal } from './components/BrandModal'
 import { OutletModal } from './components/OutletModal'
+import { StaffModal } from './components/StaffModal'
 
 function Shell() {
   const { state } = useStore()
@@ -56,6 +57,7 @@ function Shell() {
         <ScheduleModal />
         {state.brandModal && <BrandModal />}
         {state.outletModal && <OutletModal />}
+        {state.staffModal && <StaffModal />}
       </div>
     </div>
   )

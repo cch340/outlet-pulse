@@ -1,5 +1,6 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
+import { useDeleteStaff } from '../data/queries/useStaffCrudMutations'
 import { brandById, initials, outletById, tenure } from '../data/derived'
 import { card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
@@ -22,7 +23,8 @@ const transferredBadge = (label: string, small = false) => (
 )
 
 export function Staff() {
-  const { state, setStaffBrandFilter, openTransfer } = useStore()
+  const { state, setStaffBrandFilter, openTransfer, openStaffModal } = useStore()
+  const del = useDeleteStaff()
   const { data } = useData()
   const S = state
   const q = S.q.trim().toLowerCase()
@@ -74,12 +76,34 @@ export function Staff() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-        {filters.map((f) => (
-          <button key={f.id} onClick={() => setStaffBrandFilter(f.id)} style={chip(S.staffBrandFilter === f.id)}>
-            {f.label}
-          </button>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+          {filters.map((f) => (
+            <button key={f.id} onClick={() => setStaffBrandFilter(f.id)} style={chip(S.staffBrandFilter === f.id)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => openStaffModal({ mode: 'add' })}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--surface2)',
+            color: 'var(--text)',
+            borderRadius: 7,
+            padding: '6px 11px',
+            fontFamily: "'IBM Plex Sans'",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="add" size={16} />
+          Add staff
+        </button>
       </div>
 
       {!isMobile && (
@@ -102,7 +126,7 @@ export function Staff() {
               <div style={{ flex: 1.4, minWidth: 90 }}>Brand</div>
               <div style={{ flex: 1.4, minWidth: 90 }}>Outlet</div>
               <div style={{ flex: 1, minWidth: 70 }}>Tenure</div>
-              <div style={{ width: 120, textAlign: 'right' }}>Action</div>
+              <div style={{ width: 200, textAlign: 'right' }}>Action</div>
             </div>
             {rows.map((r) => (
               <div
@@ -127,10 +151,26 @@ export function Staff() {
                 </div>
                 <div style={{ flex: 1.4, minWidth: 90, fontSize: 12.5 }}>{r.outletName}</div>
                 <div style={{ flex: 1, minWidth: 70, fontFamily: "'IBM Plex Mono'", fontSize: 12, color: 'var(--dim)' }}>{r.tenure}</div>
-                <div style={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ width: 200, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
+                    style={transferBtn}
+                  >
+                    <Icon name="edit" size={16} />
+                    Edit
+                  </button>
                   <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={transferBtn}>
                     <Icon name="swap_horiz" size={16} />
                     Transfer
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
+                    }}
+                    style={{ ...transferBtn, color: '#dc2626' }}
+                  >
+                    <Icon name="delete" size={16} />
                   </button>
                 </div>
               </div>
@@ -152,26 +192,68 @@ export function Staff() {
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--dim)' }}>{r.role}</div>
                 </div>
-                <button
-                  onClick={() => openTransfer(r.id, r.brandId, r.outletId)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface2)',
-                    color: 'var(--text)',
-                    borderRadius: 8,
-                    padding: '8px 12px',
-                    fontFamily: "'IBM Plex Sans'",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name="swap_horiz" size={16} />
-                </button>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface2)',
+                      color: 'var(--text)',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontFamily: "'IBM Plex Sans'",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Icon name="edit" size={16} />
+                  </button>
+                  <button
+                    onClick={() => openTransfer(r.id, r.brandId, r.outletId)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface2)',
+                      color: 'var(--text)',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontFamily: "'IBM Plex Sans'",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Icon name="swap_horiz" size={16} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface2)',
+                      color: '#dc2626',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontFamily: "'IBM Plex Sans'",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Icon name="delete" size={16} />
+                  </button>
+                </div>
               </div>
               <div
                 style={{

@@ -39,6 +39,7 @@ export interface AppState {
   addForm: AddForm | null
   brandModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
   outletModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
+  staffModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
   // theme
   accent: string
   themeMode: ThemeMode
@@ -62,6 +63,7 @@ function seed(): AppState {
     addForm: null,
     brandModal: null,
     outletModal: null,
+    staffModal: null,
     accent: '#64748b',
     themeMode: 'light',
     density: 'comfortable',
@@ -90,6 +92,8 @@ export interface StoreActions {
   closeBrandModal(): void
   openOutletModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeOutletModal(): void
+  openStaffModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
+  closeStaffModal(): void
   setAccent(c: string): void
   setThemeMode(m: ThemeMode): void
   setDensity(d: Density): void
@@ -138,6 +142,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       closeBrandModal: () => patch({ brandModal: null }),
       openOutletModal: (outletModal) => patch({ outletModal }),
       closeOutletModal: () => patch({ outletModal: null }),
+      openStaffModal: (staffModal) => patch({ staffModal }),
+      closeStaffModal: () => patch({ staffModal: null }),
       setAccent: (accent) => patch({ accent }),
       setThemeMode: (themeMode) => patch({ themeMode }),
       setDensity: (density) => patch({ density }),
