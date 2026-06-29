@@ -39,6 +39,7 @@ export interface Staff {
 }
 
 export interface Task {
+  id?: string // present once persisted; absent for default checklist templates
   label: string
   done: boolean
 }
