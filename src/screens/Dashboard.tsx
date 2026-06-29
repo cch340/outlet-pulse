@@ -1,0 +1,358 @@
+import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
+import { fuVM, isOverdue, linked, staffCount, today } from '../data/derived'
+import { card, mono, periodBtn, tint } from '../theme'
+import { Icon } from '../components/Icon'
+
+const MK: [string, string][] = [
+  ['Jan', '01'], ['Feb', '02'], ['Mar', '03'], ['Apr', '04'], ['May', '05'], ['Jun', '06'], ['Jul', '07'],
+]
+
+export function Dashboard() {
+  const { state, setPeriod, openFu } = useStore()
+  const { data } = useData()
+  const S = state
+
+  const t = today()
+  const yr = String(t.getFullYear())
+  const mo = `${yr}-${String(t.getMonth() + 1).padStart(2, '0')}`
+  const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const yearLabel = `Year ${yr}`
+
+  const yearFus = data.followups.filter((f) => f.date.startsWith(yr))
+  const monthFus = data.followups.filter((f) => f.date.startsWith(mo))
+  const periodFus = S.period === 'month' ? monthFus : yearFus
+  const periodLabel = S.period === 'month' ? monthLabel : yearLabel
+  const pDone = periodFus.filter((f) => f.status === 'done').length
+  const pPend = periodFus.filter((f) => f.status === 'pending').length
+  const pOver = periodFus.filter(isOverdue).length
+  const compRate = periodFus.length ? Math.round((pDone / periodFus.length) * 100) : 0
+
+  const stats = [
+    { icon: 'sell', label: 'Brands', value: data.brands.length },
+    { icon: 'storefront', label: 'Outlets', value: data.outlets.length },
+    { icon: 'store', label: 'Active stores', value: data.stores.length },
+    { icon: 'groups', label: 'Staff monitored', value: data.staff.length },
+  ]
+
+  const kpis = [
+    { label: 'Follow-ups', value: periodFus.length, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
+    { label: 'Completion', value: `${compRate}%`, sub: `${pDone} completed`, icon: 'task_alt', tone: '#16a34a' },
+    { label: 'Pending', value: pPend, sub: 'awaiting completion', icon: 'pending', tone: '#d97706' },
+    { label: 'Overdue', value: pOver, sub: 'past scheduled date', icon: 'warning', tone: '#dc2626' },
+  ]
+
+  const mdata = MK.map(([label, mm]) => {
+    const fs = yearFus.filter((f) => f.date.slice(5, 7) === mm)
+    return { label, done: fs.filter((x) => x.status === 'done').length, pending: fs.filter((x) => x.status === 'pending').length }
+  })
+  const tmax = Math.max(1, ...mdata.map((m) => m.done + m.pending))
+  const H = 108
+
+  const bmax = Math.max(1, ...data.brands.map((b) => yearFus.filter((f) => f.brandId === b.id).length))
+  const brandBreakdown = data.brands.map((b) => {
+    const fs = yearFus.filter((f) => f.brandId === b.id)
+    return { name: b.name, color: b.color, done: fs.filter((x) => x.status === 'done').length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
+  })
+
+  const omax = Math.max(1, ...data.outlets.map((o) => staffCount(data, null, o.id)))
+  const outletBreakdown = data.outlets.map((o) => {
+    const staff = staffCount(data, null, o.id)
+    const brands = data.stores.filter((s) => s.outletId === o.id).length
+    return { name: o.name, location: o.location, staff, brands, pct: Math.round((staff / omax) * 100) }
+  })
+
+  const overdueList = data.followups.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => fuVM(data, f))
+  const upcomingList = data.followups
+    .filter((f) => f.status === 'pending' && !isOverdue(f))
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+    .map((f) => fuVM(data, f))
+
+  const sectionTitle = { fontSize: 14, fontWeight: 700 } as const
+  const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* stat strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{ ...card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 9,
+                background: tint('var(--accent)', 12),
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name={s.icon} size={21} color="var(--accent)" />
+            </div>
+            <div>
+              <div style={{ ...mono, fontSize: 23, fontWeight: 600, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 500, marginTop: 3 }}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* period toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>Follow-up performance — {periodLabel}</div>
+        <div
+          style={{
+            display: 'inline-flex',
+            background: 'var(--surface2)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: 3,
+            gap: 2,
+          }}
+        >
+          <button onClick={() => setPeriod('month')} style={periodBtn(S.period === 'month')}>This month</button>
+          <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>{yearLabel}</button>
+        </div>
+      </div>
+
+      {/* KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+        {kpis.map((k) => (
+          <div key={k.label} style={{ ...card, padding: '15px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 11, letterSpacing: '.04em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--dim)' }}>
+                {k.label}
+              </div>
+              <Icon name={k.icon} size={18} color={k.tone} />
+            </div>
+            <div style={{ ...mono, fontSize: 30, fontWeight: 600, lineHeight: 1, marginTop: 10, color: k.tone }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 5 }}>{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* trend + matrix */}
+      <div style={grid2}>
+        {/* trend */}
+        <div style={{ ...card, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={sectionTitle}>Follow-ups by month</div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--dim)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--accent)' }} />Done
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 2, background: tint('var(--accent)', 22) }} />Pending
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 158, paddingTop: 18 }}>
+            {mdata.map((m) => {
+              const total = m.done + m.pending
+              return (
+                <div
+                  key={m.label}
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, height: '100%', justifyContent: 'flex-end' }}
+                >
+                  <div style={{ ...mono, fontSize: 11, fontWeight: 600, color: 'var(--dim)' }}>{total}</div>
+                  <div
+                    style={{
+                      width: '100%',
+                      maxWidth: 30,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                      borderRadius: 5,
+                      overflow: 'hidden',
+                      background: 'var(--surface2)',
+                    }}
+                  >
+                    <div style={{ height: Math.round((m.pending / tmax) * H), background: tint('var(--accent)', 22) }} />
+                    <div style={{ height: Math.round((m.done / tmax) * H), background: 'var(--accent)' }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 500 }}>{m.label}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* matrix */}
+        <div style={{ ...card, padding: '16px 18px' }}>
+          <div style={{ ...sectionTitle, marginBottom: 3 }}>Brand × Outlet coverage</div>
+          <div style={{ fontSize: 11.5, color: 'var(--dim)', marginBottom: 12 }}>Stores per location · number = staff on site</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'separate', borderSpacing: 6, width: '100%' }}>
+              <thead>
+                <tr>
+                  <th />
+                  {data.outlets.map((o) => (
+                    <th key={o.id} style={{ fontSize: 11, fontWeight: 600, color: 'var(--dim)', textAlign: 'center', paddingBottom: 2 }}>
+                      {o.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.brands.map((b) => (
+                  <tr key={b.id}>
+                    <td style={{ paddingRight: 8 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color }} />
+                        {b.name}
+                      </span>
+                    </td>
+                    {data.outlets.map((o) => {
+                      const isLinked = linked(data, b.id, o.id)
+                      const cnt = staffCount(data, b.id, o.id)
+                      return (
+                        <td key={o.id}>
+                          <div
+                            style={{
+                              height: 34,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 7,
+                              ...mono,
+                              fontSize: 13,
+                              fontWeight: 600,
+                              ...(isLinked
+                                ? { background: tint(b.color, 14), color: b.color }
+                                : { background: 'var(--surface2)', color: 'var(--border)' }),
+                            }}
+                          >
+                            {isLinked ? String(cnt) : '–'}
+                          </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* breakdowns */}
+      <div style={grid2}>
+        <div style={{ ...card, padding: '16px 18px' }}>
+          <div style={{ ...sectionTitle, marginBottom: 14 }}>Follow-ups by brand</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+            {brandBreakdown.map((b) => (
+              <div key={b.name}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color }} />
+                    {b.name}
+                  </span>
+                  <span style={{ ...mono, color: 'var(--dim)', fontSize: 12 }}>
+                    {b.done}/{b.total} done
+                  </span>
+                </div>
+                <div style={{ height: 8, borderRadius: 5, background: 'var(--surface2)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: 5 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ ...card, padding: '16px 18px' }}>
+          <div style={{ ...sectionTitle, marginBottom: 14 }}>Staff distribution by outlet</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+            {outletBreakdown.map((o) => (
+              <div key={o.name}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>
+                    {o.name} <span style={{ color: 'var(--dim)', fontWeight: 400 }}>· {o.location}</span>
+                  </span>
+                  <span style={{ ...mono, color: 'var(--dim)', fontSize: 12 }}>
+                    {o.staff} staff · {o.brands} brands
+                  </span>
+                </div>
+                <div style={{ height: 8, borderRadius: 5, background: 'var(--surface2)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${o.pct}%`, background: 'var(--accent)', borderRadius: 5 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* attention lists */}
+      <div style={grid2}>
+        <div style={{ ...card, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Icon name="warning" size={19} color="#dc2626" />
+            <div style={sectionTitle}>Overdue follow-ups</div>
+            <span style={{ ...mono, fontSize: 12, fontWeight: 600, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '1px 8px' }}>
+              {overdueList.length}
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {overdueList.map((f) => (
+              <AttentionRow key={f.id} dot="#dc2626" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="#dc2626" onClick={() => openFu(f.id)} />
+            ))}
+            {overdueList.length === 0 && <div style={{ fontSize: 13, color: 'var(--dim)', padding: '8px 2px' }}>Nothing overdue.</div>}
+          </div>
+        </div>
+        <div style={{ ...card, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Icon name="event_upcoming" size={19} color="#2563eb" />
+            <div style={sectionTitle}>Upcoming visits</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {upcomingList.map((f) => (
+              <AttentionRow key={f.id} dot="#2563eb" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="var(--dim)" onClick={() => openFu(f.id)} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AttentionRow({
+  dot,
+  title,
+  sub,
+  date,
+  dateColor,
+  onClick,
+}: {
+  dot: string
+  title: string
+  sub: string
+  date: string
+  dateColor: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 11,
+        width: '100%',
+        textAlign: 'left',
+        color: 'var(--text)',
+        border: '1px solid var(--border)',
+        background: 'var(--surface2)',
+        borderRadius: 9,
+        padding: '10px 12px',
+        cursor: 'pointer',
+      }}
+    >
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+        <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{sub}</div>
+      </div>
+      <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 12, fontWeight: 600, color: dateColor, whiteSpace: 'nowrap' }}>{date}</span>
+    </button>
+  )
+}
