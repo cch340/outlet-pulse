@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,400,0,0&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border,#e7e5e4);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{transform:translateX(100%)}to{transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+<div style="{{ appShellStyle }}">
+
+  <!-- ===== SIDEBAR (desktop) ===== -->
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+  <aside style="width:228px;flex-shrink:0;background:var(--sidebar,#1c1917);display:flex;flex-direction:column;padding:18px 14px;gap:4px">
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 8px 18px">
+      <div style="width:30px;height:30px;border-radius:8px;background:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px">P</div>
+      <div style="color:#fff;font-weight:700;font-size:15px;letter-spacing:-.01em">OutletPulse</div>
+    </div>
+    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--sidebar-text,#a8a29e);font-weight:600;padding:8px 8px 6px;opacity:.7">Monitoring</div>
+    <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
+      <button onClick="{{ item.onClick }}" style="{{ item.style }}">
+        <span style="font-family:'Material Symbols Outlined';font-size:20px">{{ item.icon }}</span>
+        <span style="flex:1;text-align:left">{{ item.label }}</span>
+        <sc-if value="{{ item.badge }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono';font-size:11px;font-weight:600;background:#dc2626;color:#fff;border-radius:10px;padding:1px 7px">{{ item.badge }}</span></sc-if>
+      </button>
+    </sc-for>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:12px;font-family:'IBM Plex Mono'">{{ manager.initials }}</div>
+      <div style="min-width:0">
+        <div style="color:#fff;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ manager.name }}</div>
+        <div style="color:var(--sidebar-text,#a8a29e);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ manager.role }}</div>
+      </div>
+    </div>
+  </aside>
+  </sc-if>
+
+  <!-- ===== MAIN ===== -->
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg,#f5f5f4)">
+
+    <!-- topbar -->
+    <header style="flex-shrink:0;background:var(--surface,#fff);border-bottom:1px solid var(--border,#e7e5e4);padding:0 var(--pad,16px);height:60px;display:flex;align-items:center;gap:14px">
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+        <div style="width:26px;height:26px;border-radius:7px;background:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">P</div>
+      </sc-if>
+      <div style="min-width:0">
+        <div style="font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pageTitle }}</div>
+        <div style="font-size:12px;color:var(--dim,#78716c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pageSubtitle }}</div>
+      </div>
+      <div style="flex:1"></div>
+      <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface2,#fafaf9);border:1px solid var(--border,#e7e5e4);border-radius:8px;padding:7px 10px;width:230px">
+        <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--dim,#78716c)">search</span>
+        <input value="{{ q }}" onInput="{{ onSearch }}" placeholder="Search staff, outlets…" style="border:none;background:none;outline:none;font-family:'IBM Plex Sans';font-size:13px;color:var(--text);width:100%"/>
+      </div>
+      </sc-if>
+      <button onClick="{{ onToggleView }}" title="Toggle view" style="display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:8px;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);color:var(--text);font-family:'IBM Plex Sans';font-size:12px;font-weight:600;cursor:pointer">
+        <span style="font-family:'Material Symbols Outlined';font-size:18px">{{ viewIcon }}</span>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}"><span>{{ viewLabel }}</span></sc-if>
+      </button>
+      <button onClick="{{ onAdd }}" style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:8px;border:none;background:var(--accent,#ea580c);color:#fff;font-family:'IBM Plex Sans';font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+        <span style="font-family:'Material Symbols Outlined';font-size:18px">add</span>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}"><span>Schedule</span></sc-if>
+      </button>
+    </header>
+
+    <!-- scroll content -->
+    <main style="flex:1;min-height:0;overflow:auto;padding:var(--pad,16px)">
+      <div style="max-width:1300px;margin:0 auto">
+
+      <!-- ============ DASHBOARD ============ -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:14px">
+
+        <!-- stat strip -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+            <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px">
+              <div style="width:38px;height:38px;border-radius:9px;background:color-mix(in srgb,var(--accent,#ea580c) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'Material Symbols Outlined';font-size:21px;color:var(--accent,#ea580c)">{{ s.icon }}</span>
+              </div>
+              <div>
+                <div style="font-family:'IBM Plex Mono';font-size:23px;font-weight:600;line-height:1">{{ s.value }}</div>
+                <div style="font-size:11.5px;color:var(--dim,#78716c);font-weight:500;margin-top:3px">{{ s.label }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- period toggle + KPIs -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="font-size:13px;font-weight:600;color:var(--dim,#78716c)">Follow-up performance — {{ periodLabel }}</div>
+          <div style="display:inline-flex;background:var(--surface2,#fafaf9);border:1px solid var(--border,#e7e5e4);border-radius:8px;padding:3px;gap:2px">
+            <button onClick="{{ onPeriodMonth }}" style="{{ monthBtn }}">This month</button>
+            <button onClick="{{ onPeriodYear }}" style="{{ yearBtn }}">Year 2026</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+            <div style="{{ k.style }}">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;color:var(--dim,#78716c)">{{ k.label }}</div>
+                <span style="font-family:'Material Symbols Outlined';font-size:18px;color:{{ k.tone }}">{{ k.icon }}</span>
+              </div>
+              <div style="font-family:'IBM Plex Mono';font-size:30px;font-weight:600;line-height:1;margin-top:10px;color:{{ k.tone }}">{{ k.value }}</div>
+              <div style="font-size:12px;color:var(--dim,#78716c);margin-top:5px">{{ k.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- trend + matrix -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px">
+          <!-- trend -->
+          <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <div style="font-size:14px;font-weight:700">Follow-ups by month</div>
+              <div style="display:flex;gap:14px;font-size:11.5px;color:var(--dim,#78716c)">
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:var(--accent,#ea580c)"></span>Done</span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:color-mix(in srgb,var(--accent,#ea580c) 22%,transparent)"></span>Pending</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:10px;height:158px;padding-top:18px">
+              <sc-for list="{{ trendMonths }}" as="m" hint-placeholder-count="7">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end">
+                  <div style="font-family:'IBM Plex Mono';font-size:11px;font-weight:600;color:var(--dim,#78716c)">{{ m.total }}</div>
+                  <div style="width:100%;max-width:30px;display:flex;flex-direction:column;justify-content:flex-end;border-radius:5px;overflow:hidden;background:var(--surface2,#fafaf9)">
+                    <div style="{{ m.pendingStyle }}"></div>
+                    <div style="{{ m.doneStyle }}"></div>
+                  </div>
+                  <div style="font-size:11px;color:var(--dim,#78716c);font-weight:500">{{ m.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- matrix -->
+          <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:16px 18px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:3px">Brand × Outlet coverage</div>
+            <div style="font-size:11.5px;color:var(--dim,#78716c);margin-bottom:12px">Stores per location · number = staff on site</div>
+            <div style="overflow-x:auto">
+              <table style="border-collapse:separate;border-spacing:6px;width:100%">
+                <thead><tr>
+                  <th></th>
+                  <sc-for list="{{ outletsHead }}" as="o" hint-placeholder-count="3"><th style="font-size:11px;font-weight:600;color:var(--dim,#78716c);text-align:center;padding-bottom:2px">{{ o.name }}</th></sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ matrix }}" as="row" hint-placeholder-count="3">
+                    <tr>
+                      <td style="padding-right:8px"><span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;white-space:nowrap"><span style="width:9px;height:9px;border-radius:3px;background:{{ row.color }}"></span>{{ row.name }}</span></td>
+                      <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="3"><td><div style="{{ c.style }}">{{ c.text }}</div></td></sc-for>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- breakdowns -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px">
+          <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:16px 18px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px">Follow-ups by brand</div>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ brandBreakdown }}" as="b" hint-placeholder-count="3">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px">
+                    <span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:{{ b.color }}"></span>{{ b.name }}</span>
+                    <span style="font-family:'IBM Plex Mono';color:var(--dim,#78716c);font-size:12px">{{ b.done }}/{{ b.total }} done</span>
+                  </div>
+                  <div style="height:8px;border-radius:5px;background:var(--surface2,#fafaf9);overflow:hidden"><div style="{{ b.barStyle }}"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:16px 18px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px">Staff distribution by outlet</div>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ outletBreakdown }}" as="o" hint-placeholder-count="3">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px">
+                    <span style="font-weight:600">{{ o.name }} <span style="color:var(--dim,#78716c);font-weight:400">· {{ o.location }}</span></span>
+                    <span style="font-family:'IBM Plex Mono';color:var(--dim,#78716c);font-size:12px">{{ o.staff }} staff · {{ o.brands }} brands</span>
+                  </div>
+                  <div style="height:8px;border-radius:5px;background:var(--surface2,#fafaf9);overflow:hidden"><div style="{{ o.barStyle }}"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- attention lists -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px">
+          <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:16px 18px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-family:'Material Symbols Outlined';font-size:19px;color:#dc2626">warning</span><div style="font-size:14px;font-weight:700">Overdue follow-ups</div><span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600;background:#fee2e2;color:#dc2626;border-radius:10px;padding:1px 8px">{{ overdueCount }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ overdueList }}" as="f" hint-placeholder-count="3">
+                <button onClick="{{ f.onOpen }}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;color:var(--text);border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:9px;padding:10px 12px;cursor:pointer">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0"></span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.title }}</div><div style="font-size:11.5px;color:var(--dim,#78716c)">{{ f.sub }}</div></div>
+                  <span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:#dc2626;white-space:nowrap">{{ f.dateLabel }}</span>
+                </button>
+              </sc-for>
+              <sc-if value="{{ noOverdue }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:var(--dim,#78716c);padding:8px 2px">Nothing overdue. </div></sc-if>
+            </div>
+          </div>
+          <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:16px 18px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-family:'Material Symbols Outlined';font-size:19px;color:#2563eb">event_upcoming</span><div style="font-size:14px;font-weight:700">Upcoming visits</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ upcomingList }}" as="f" hint-placeholder-count="3">
+                <button onClick="{{ f.onOpen }}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;color:var(--text);border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:9px;padding:10px 12px;cursor:pointer">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#2563eb;flex-shrink:0"></span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.title }}</div><div style="font-size:11.5px;color:var(--dim,#78716c)">{{ f.sub }}</div></div>
+                  <span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--dim,#78716c);white-space:nowrap">{{ f.dateLabel }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </sc-if>
+      <!-- ============ BRANDS ============ -->
+      <sc-if value="{{ isBrands }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Brands" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--dim,#78716c);padding:2px">All brands</div>
+          <sc-for list="{{ brandCards }}" as="b" hint-placeholder-count="3">
+            <button onClick="{{ b.onOpen }}" style="{{ b.style }}">
+              <div style="width:42px;height:42px;border-radius:10px;background:{{ b.color }};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0">{{ b.initials }}</div>
+              <div style="flex:1;min-width:0;text-align:left">
+                <div style="font-size:15px;font-weight:700">{{ b.name }}</div>
+                <div style="font-size:12px;color:var(--dim,#78716c)">{{ b.category }}</div>
+              </div>
+              <div style="text-align:right;white-space:nowrap;flex-shrink:0">
+                <div style="font-family:'IBM Plex Mono';font-size:13px;font-weight:600">{{ b.storeCount }} outlets</div>
+                <div style="font-size:11.5px;color:var(--dim,#78716c)">{{ b.staffCount }} staff</div>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+        <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:18px">
+          <div style="display:flex;align-items:center;gap:13px;padding-bottom:16px;border-bottom:1px solid var(--border,#e7e5e4)">
+            <div style="width:48px;height:48px;border-radius:11px;background:{{ brandDetail.color }};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px">{{ brandDetail.initials }}</div>
+            <div style="flex:1">
+              <div style="font-size:18px;font-weight:700">{{ brandDetail.name }}</div>
+              <div style="font-size:13px;color:var(--dim,#78716c)">{{ brandDetail.category }} · operates in {{ brandDetail.storeCount }} outlets · {{ brandDetail.staffCount }} staff</div>
+            </div>
+          </div>
+          <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--dim,#78716c);margin:16px 0 10px">Outlets &amp; on-site staff</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ brandDetail.outlets }}" as="o" hint-placeholder-count="3">
+              <div style="border:1px solid var(--border,#e7e5e4);border-radius:10px;padding:12px 14px;background:var(--surface2,#fafaf9)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--dim,#78716c)">storefront</span><div><span style="font-size:14px;font-weight:600">{{ o.name }}</span> <span style="font-size:12px;color:var(--dim,#78716c)">· {{ o.location }}</span></div></div>
+                  <span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--dim,#78716c)">{{ o.staffCount }} staff</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px">
+                  <sc-for list="{{ o.staff }}" as="p" hint-placeholder-count="2">
+                    <span style="display:inline-flex;align-items:center;gap:7px;background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:20px;padding:4px 11px 4px 4px;font-size:12px">
+                      <span style="width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,var(--accent,#ea580c) 16%,transparent);color:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:10px;font-weight:600">{{ p.initials }}</span>
+                      <span style="font-weight:600">{{ p.name }}</span><span style="color:var(--dim,#78716c)">{{ p.role }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ OUTLETS ============ -->
+      <sc-if value="{{ isOutlets }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Outlets" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--dim,#78716c);padding:2px">All outlets</div>
+          <sc-for list="{{ outletCards }}" as="o" hint-placeholder-count="3">
+            <button onClick="{{ o.onOpen }}" style="{{ o.style }}">
+              <div style="width:42px;height:42px;border-radius:10px;background:color-mix(in srgb,var(--accent,#ea580c) 13%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'Material Symbols Outlined';font-size:22px;color:var(--accent,#ea580c)">storefront</span></div>
+              <div style="flex:1;min-width:0;text-align:left">
+                <div style="font-size:15px;font-weight:700">{{ o.name }}</div>
+                <div style="font-size:12px;color:var(--dim,#78716c)">{{ o.location }}</div>
+              </div>
+              <div style="text-align:right;white-space:nowrap;flex-shrink:0">
+                <div style="font-family:'IBM Plex Mono';font-size:13px;font-weight:600">{{ o.brandCount }} brands</div>
+                <div style="font-size:11.5px;color:var(--dim,#78716c)">{{ o.staffCount }} staff</div>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+        <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:18px">
+          <div style="display:flex;align-items:center;gap:13px;padding-bottom:16px;border-bottom:1px solid var(--border,#e7e5e4)">
+            <div style="width:48px;height:48px;border-radius:11px;background:color-mix(in srgb,var(--accent,#ea580c) 13%,transparent);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:24px;color:var(--accent,#ea580c)">storefront</span></div>
+            <div style="flex:1">
+              <div style="font-size:18px;font-weight:700">{{ outletDetail.name }}</div>
+              <div style="font-size:13px;color:var(--dim,#78716c)">{{ outletDetail.location }} · hosts {{ outletDetail.brandCount }} brands · {{ outletDetail.staffCount }} staff</div>
+            </div>
+          </div>
+          <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--dim,#78716c);margin:16px 0 10px">Brands hosted here</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ outletDetail.brands }}" as="b" hint-placeholder-count="3">
+              <div style="border:1px solid var(--border,#e7e5e4);border-radius:10px;padding:12px 14px;background:var(--surface2,#fafaf9)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:3px;background:{{ b.color }}"></span><span style="font-size:14px;font-weight:600">{{ b.name }}</span></div>
+                  <span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--dim,#78716c)">{{ b.staffCount }} staff</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px">
+                  <sc-for list="{{ b.staff }}" as="p" hint-placeholder-count="2">
+                    <span style="display:inline-flex;align-items:center;gap:7px;background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:20px;padding:4px 11px 4px 4px;font-size:12px">
+                      <span style="width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,{{ b.color }} 18%,transparent);color:{{ b.color }};display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:10px;font-weight:600">{{ p.initials }}</span>
+                      <span style="font-weight:600">{{ p.name }}</span><span style="color:var(--dim,#78716c)">{{ p.role }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ STAFF ============ -->
+      <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Staff" style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <sc-for list="{{ brandFilters }}" as="f" hint-placeholder-count="4">
+            <button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+        <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;overflow-x:auto">
+          <div style="min-width:600px">
+          <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border,#e7e5e4);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;color:var(--dim,#78716c)">
+            <div style="flex:2.4;min-width:140px">Staff member</div>
+            <div style="flex:1.4;min-width:90px">Brand</div>
+            <div style="flex:1.4;min-width:90px">Outlet</div>
+            <div style="flex:1;min-width:70px">Tenure</div>
+            <div style="width:120px;text-align:right">Action</div>
+          </div>
+          <sc-for list="{{ staffRows }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;padding:var(--rowpad,12px 14px);padding-left:16px;padding-right:16px;border-bottom:1px solid var(--border,#e7e5e4)">
+              <div style="flex:2.4;min-width:140px;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--accent,#ea580c) 14%,transparent);color:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;flex-shrink:0">{{ r.initials }}</div>
+                <div style="min-width:0"><div style="font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px">{{ r.name }}<sc-if value="{{ r.transferred }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;background:color-mix(in srgb,#2563eb 14%,transparent);color:#2563eb;border-radius:5px;padding:2px 6px">Transferred</span></sc-if></div><div style="font-size:11.5px;color:var(--dim,#78716c)">{{ r.role }}</div></div>
+              </div>
+              <div style="flex:1.4;min-width:90px"><span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500"><span style="width:9px;height:9px;border-radius:3px;background:{{ r.brandColor }}"></span>{{ r.brandName }}</span></div>
+              <div style="flex:1.4;min-width:90px;font-size:12.5px">{{ r.outletName }}</div>
+              <div style="flex:1;min-width:70px;font-family:'IBM Plex Mono';font-size:12px;color:var(--dim,#78716c)">{{ r.tenure }}</div>
+              <div style="width:120px;display:flex;justify-content:flex-end">
+                <button onClick="{{ r.onTransfer }}" style="display:flex;align-items:center;gap:6px;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);color:var(--text);border-radius:7px;padding:6px 11px;font-family:'IBM Plex Sans';font-size:12px;font-weight:600;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:16px">swap_horiz</span>Transfer</button>
+              </div>
+            </div>
+          </sc-for>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ staffRows }}" as="r" hint-placeholder-count="6">
+            <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;align-items:center;gap:11px">
+                <div style="width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--accent,#ea580c) 14%,transparent);color:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;flex-shrink:0">{{ r.initials }}</div>
+                <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px">{{ r.name }}<sc-if value="{{ r.transferred }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;background:color-mix(in srgb,#2563eb 14%,transparent);color:#2563eb;border-radius:5px;padding:2px 6px">Moved</span></sc-if></div><div style="font-size:12px;color:var(--dim,#78716c)">{{ r.role }}</div></div>
+                <button onClick="{{ r.onTransfer }}" style="display:flex;align-items:center;gap:5px;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);color:var(--text);border-radius:8px;padding:8px 12px;font-family:'IBM Plex Sans';font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0"><span style="font-family:'Material Symbols Outlined';font-size:16px">swap_horiz</span></button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;padding-top:10px;border-top:1px solid var(--border,#e7e5e4)">
+                <span style="display:inline-flex;align-items:center;gap:6px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:{{ r.brandColor }}"></span>{{ r.brandName }}</span>
+                <span style="color:var(--dim,#78716c)">· {{ r.outletName }}</span>
+                <span style="color:var(--dim,#78716c);font-family:'IBM Plex Mono';margin-left:auto">{{ r.tenure }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <!-- ============ FOLLOW-UPS ============ -->
+      <sc-if value="{{ isFollowups }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Follow-ups" style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+          <sc-for list="{{ fuFilters }}" as="f" hint-placeholder-count="4">
+            <button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }} <span style="font-family:'IBM Plex Mono';opacity:.7">{{ f.count }}</span></button>
+          </sc-for>
+        </div>
+        <div style="background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;overflow:hidden">
+          <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ fuRows }}" as="f" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--border,#e7e5e4);cursor:pointer" onClick="{{ f.onOpen }}">
+              <div style="width:46px;text-align:center;flex-shrink:0"><div style="font-family:'IBM Plex Mono';font-size:17px;font-weight:600;line-height:1">{{ f.day }}</div><div style="font-size:10.5px;color:var(--dim,#78716c);text-transform:uppercase;letter-spacing:.03em">{{ f.mon }}</div></div>
+              <div style="width:1px;height:34px;background:var(--border,#e7e5e4);flex-shrink:0"></div>
+              <div style="flex:1.6;min-width:0"><div style="font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:3px;background:{{ f.brandColor }};flex-shrink:0"></span>{{ f.brandName }} · {{ f.outletName }}</div><div style="font-size:11.5px;color:var(--dim,#78716c);margin-top:2px">{{ f.staffName }}</div></div>
+              <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}"><div style="flex:1;min-width:90px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:4px;background:var(--surface2,#fafaf9);overflow:hidden;max-width:90px"><div style="{{ f.progressStyle }}"></div></div><span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--dim,#78716c)">{{ f.doneT }}/{{ f.total }}</span></div></div></sc-if>
+              <span style="{{ f.pillStyle }}">{{ f.statusLabel }}</span>
+              <sc-if value="{{ f.canComplete }}" hint-placeholder-val="{{ false }}"><button onClick="{{ f.onMarkDone }}" style="display:flex;align-items:center;gap:5px;border:1px solid #16a34a;background:color-mix(in srgb,#16a34a 8%,transparent);color:#16a34a;border-radius:7px;padding:6px 10px;font-family:'IBM Plex Sans';font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0"><span style="font-family:'Material Symbols Outlined';font-size:16px">check</span>Done</button></sc-if>
+            </div>
+          </sc-for>
+          </sc-if>
+          <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{ fuRows }}" as="f" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-bottom:1px solid var(--border,#e7e5e4);cursor:pointer" onClick="{{ f.onOpen }}">
+              <div style="width:40px;text-align:center;flex-shrink:0"><div style="font-family:'IBM Plex Mono';font-size:16px;font-weight:600;line-height:1">{{ f.day }}</div><div style="font-size:10px;color:var(--dim,#78716c);text-transform:uppercase;letter-spacing:.03em">{{ f.mon }}</div></div>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="width:8px;height:8px;border-radius:2px;background:{{ f.brandColor }};flex-shrink:0"></span>{{ f.brandName }} · {{ f.outletName }}</div><div style="font-size:11.5px;color:var(--dim,#78716c);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.staffName }}</div></div>
+              <span style="{{ f.pillStyle }}">{{ f.statusLabel }}</span>
+            </div>
+          </sc-for>
+          </sc-if>
+          <sc-if value="{{ noFuRows }}" hint-placeholder-val="{{ false }}"><div style="padding:28px;text-align:center;color:var(--dim,#78716c);font-size:13px">No follow-ups match this filter.</div></sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      </div>
+    </main>
+
+    <!-- bottom nav (mobile) -->
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <nav style="flex-shrink:0;background:var(--surface,#fff);border-top:1px solid var(--border,#e7e5e4);display:flex;padding:6px 4px 8px">
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
+        <button onClick="{{ item.onClick }}" style="{{ item.mstyle }}">
+          <span style="font-family:'Material Symbols Outlined';font-size:22px">{{ item.icon }}</span>
+          <span style="font-size:10px;font-weight:600">{{ item.short }}</span>
+        </button>
+      </sc-for>
+    </nav>
+    </sc-if>
+
+  </div>
+
+  <!-- ============ FOLLOW-UP DRAWER ============ -->
+  <sc-if value="{{ fuOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onCloseFu }}" style="position:{{ ovPos }};inset:0;z-index:50;background:rgba(0,0,0,.42);display:flex;justify-content:flex-end">
+    <div onClick="{{ stop }}" style="width:430px;max-width:100%;height:100%;background:var(--surface,#fff);display:flex;flex-direction:column;border-left:1px solid var(--border,#e7e5e4)">
+      <div style="padding:18px 20px;border-bottom:1px solid var(--border,#e7e5e4);display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1">
+          <div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim,#78716c);font-weight:600;margin-bottom:5px">Follow-up · {{ fuDetail.dateLabel }}</div>
+          <div style="font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:3px;background:{{ fuDetail.brandColor }}"></span>{{ fuDetail.title }}</div>
+          <div style="font-size:13px;color:var(--dim,#78716c);margin-top:4px">Staff on duty · {{ fuDetail.staffName }}</div>
+        </div>
+        <span style="{{ fuDetail.pillStyle }}">{{ fuDetail.statusLabel }}</span>
+        <button onClick="{{ onCloseFu }}" style="border:none;background:none;cursor:pointer;color:var(--dim,#78716c);padding:2px"><span style="font-family:'Material Symbols Outlined';font-size:22px">close</span></button>
+      </div>
+      <div style="flex:1;overflow:auto;padding:18px 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c)">Checklist</div><div style="font-family:'IBM Plex Mono';font-size:12px;color:var(--dim,#78716c)">{{ fuDetail.doneT }}/{{ fuDetail.total }} complete</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ fuDetail.tasks }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.onToggle }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:9px;padding:11px 13px;cursor:pointer">
+              <span style="{{ t.boxStyle }}"><span style="font-family:'Material Symbols Outlined';font-size:15px;color:#fff">{{ t.icon }}</span></span>
+              <span style="{{ t.labelStyle }}">{{ t.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:16px 20px;border-top:1px solid var(--border,#e7e5e4);display:flex;gap:10px">
+        <sc-if value="{{ fuDetail.isDone }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ fuDetail.onReopen }}" style="flex:1;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);color:var(--text);border-radius:9px;padding:12px;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:600;cursor:pointer">Reopen follow-up</button>
+        </sc-if>
+        <sc-if value="{{ fuDetail.notDone }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ fuDetail.onMarkDone }}" style="flex:1;border:none;background:#16a34a;color:#fff;border-radius:9px;padding:12px;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-family:'Material Symbols Outlined';font-size:18px">task_alt</span>Mark complete</button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ TRANSFER MODAL ============ -->
+  <sc-if value="{{ transferOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onCloseTransfer }}" style="position:{{ ovPos }};inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px">
+    <div onClick="{{ stop }}" style="width:500px;max-width:100%;max-height:92vh;overflow:auto;background:var(--surface,#fff);border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.3)">
+      <div style="padding:18px 22px;border-bottom:1px solid var(--border,#e7e5e4);display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--accent,#ea580c) 14%,transparent);color:var(--accent,#ea580c);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-weight:600;font-size:13px">{{ transfer.staffInitials }}</div>
+        <div style="flex:1"><div style="font-size:17px;font-weight:700">Transfer {{ transfer.staffName }}</div><div style="font-size:12.5px;color:var(--dim,#78716c)">Currently {{ transfer.curBrandName }} · {{ transfer.curOutletName }}</div></div>
+        <button onClick="{{ onCloseTransfer }}" style="border:none;background:none;cursor:pointer;color:var(--dim,#78716c)"><span style="font-family:'Material Symbols Outlined';font-size:22px">close</span></button>
+      </div>
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px">
+        <div>
+          <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">New brand</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ transfer.brandChips }}" as="b" hint-placeholder-count="3"><button onClick="{{ b.onPick }}" style="{{ b.style }}"><span style="width:9px;height:9px;border-radius:3px;background:{{ b.color }}"></span>{{ b.name }}</button></sc-for>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">New outlet</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ transfer.outletChips }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onPick }}" style="{{ o.style }}">{{ o.name }}</button></sc-for>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">Effective date</div>
+            <input type="date" value="{{ transfer.date }}" onInput="{{ transfer.onDate }}" style="width:100%;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:8px;padding:10px 12px;font-family:'IBM Plex Sans';font-size:13px;color:var(--text)"/>
+          </div>
+          <div style="flex:2;min-width:180px">
+            <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">Reason (optional)</div>
+            <input value="{{ transfer.reason }}" onInput="{{ transfer.onReason }}" placeholder="e.g. New store opening" style="width:100%;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:8px;padding:10px 12px;font-family:'IBM Plex Sans';font-size:13px;color:var(--text)"/>
+          </div>
+        </div>
+        <div style="background:color-mix(in srgb,var(--accent,#ea580c) 8%,transparent);border:1px solid color-mix(in srgb,var(--accent,#ea580c) 25%,transparent);border-radius:9px;padding:12px 14px;font-size:13px;display:flex;align-items:center;gap:10px">
+          <span style="font-family:'Material Symbols Outlined';font-size:19px;color:var(--accent,#ea580c)">swap_horiz</span>
+          <span><b>{{ transfer.staffName }}</b> → {{ transfer.newBrandName }} at {{ transfer.newOutletName }}</span>
+        </div>
+      </div>
+      <div style="padding:14px 22px;border-top:1px solid var(--border,#e7e5e4);display:flex;justify-content:flex-end;gap:10px">
+        <button onClick="{{ onCloseTransfer }}" style="border:1px solid var(--border,#e7e5e4);background:var(--surface,#fff);color:var(--text);border-radius:9px;padding:10px 18px;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:600;cursor:pointer">Cancel</button>
+        <button onClick="{{ transfer.onConfirm }}" style="border:none;background:var(--accent,#ea580c);color:#fff;border-radius:9px;padding:10px 18px;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:600;cursor:pointer">Confirm transfer</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ ADD FOLLOW-UP MODAL ============ -->
+  <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onCloseAdd }}" style="position:{{ ovPos }};inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px">
+    <div onClick="{{ stop }}" style="width:520px;max-width:100%;max-height:92vh;overflow:auto;background:var(--surface,#fff);border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.3)">
+      <div style="padding:18px 22px;border-bottom:1px solid var(--border,#e7e5e4);display:flex;align-items:center;gap:12px">
+        <div style="flex:1"><div style="font-size:17px;font-weight:700">Schedule a follow-up</div><div style="font-size:12.5px;color:var(--dim,#78716c)">Plan a store visit and the checks to perform</div></div>
+        <button onClick="{{ onCloseAdd }}" style="border:none;background:none;cursor:pointer;color:var(--dim,#78716c)"><span style="font-family:'Material Symbols Outlined';font-size:22px">close</span></button>
+      </div>
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px">
+        <div>
+          <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">Store (brand · outlet)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ add.storeOptions }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onPick }}" style="{{ s.style }}"><span style="width:8px;height:8px;border-radius:2px;background:{{ s.color }}"></span>{{ s.label }}</button></sc-for>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:150px">
+            <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">Scheduled date</div>
+            <input type="date" value="{{ add.date }}" onInput="{{ add.onDate }}" style="width:100%;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:8px;padding:10px 12px;font-family:'IBM Plex Sans';font-size:13px;color:var(--text)"/>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim,#78716c);margin-bottom:9px">Tasks to check</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ add.taskRows }}" as="t" hint-placeholder-count="5">
+              <button onClick="{{ t.onToggle }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--border,#e7e5e4);background:var(--surface2,#fafaf9);border-radius:9px;padding:10px 13px;cursor:pointer">
+                <span style="{{ t.boxStyle }}"><span style="font-family:'Material Symbols Outlined';font-size:15px;color:#fff">{{ t.icon }}</span></span>
+                <span style="{{ t.labelStyle }}">{{ t.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 22px;border-top:1px solid var(--border,#e7e5e4);display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="font-size:12px;color:var(--dim,#78716c)">{{ add.summary }}</div>
+        <div style="display:flex;gap:10px">
+          <button onClick="{{ onCloseAdd }}" style="border:1px solid var(--border,#e7e5e4);background:var(--surface,#fff);color:var(--text);border-radius:9px;padding:10px 18px;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:600;cursor:pointer">Cancel</button>
+          <button onClick="{{ add.onConfirm }}" style="border:none;background:var(--accent,#ea580c);color:#fff;border-radius:9px;padding:10px 18px;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:600;cursor:pointer">Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#64748b&quot;,&quot;options&quot;:[&quot;#ea580c&quot;,&quot;#2563eb&quot;,&quot;#0d9488&quot;,&quot;#7c3aed&quot;,&quot;#64748b&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;themeMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  static seed(){
+    const TT=['Stock & display','Grooming & attendance','Sales target review','Store cleanliness','Promo / POSM setup'];
+    const mkTasks=(status,seed)=>TT.map((label,i)=>({label,done: status==='done'?true:((seed+i)%3===0)}));
+    const brands=[
+      {id:'b1',name:'Skintific',color:'#0ea5e9',category:'Skincare'},
+      {id:'b2',name:'G2G',color:'#8b5cf6',category:'Cosmetics'},
+      {id:'b3',name:'Facerinna',color:'#ec4899',category:'Beauty'},
+    ];
+    const outlets=[
+      {id:'o1',name:'Gurney Plaza',location:'Georgetown'},
+      {id:'o2',name:'Queensbay Mall',location:'Bayan Lepas'},
+      {id:'o3',name:'Sunway Carnival',location:'Seberang Jaya'},
+    ];
+    const stores=[
+      {brandId:'b1',outletId:'o1'},{brandId:'b1',outletId:'o2'},{brandId:'b1',outletId:'o3'},
+      {brandId:'b2',outletId:'o1'},{brandId:'b2',outletId:'o2'},
+      {brandId:'b3',outletId:'o2'},{brandId:'b3',outletId:'o3'},
+    ];
+    const staff=[
+      {id:'st1',name:'John Tan',brandId:'b1',outletId:'o1',role:'Supervisor',joined:'2023-03-01',history:[{brandId:'b1',outletId:'o1',from:'Mar 2023'}]},
+      {id:'st2',name:'Peter Lim',brandId:'b2',outletId:'o2',role:'Promoter',joined:'2024-01-15',history:[{brandId:'b2',outletId:'o2',from:'Jan 2024'}]},
+      {id:'st3',name:'Ana Rahman',brandId:'b3',outletId:'o3',role:'Beauty Advisor',joined:'2023-08-10',history:[{brandId:'b3',outletId:'o3',from:'Aug 2023'}]},
+      {id:'st4',name:'Kiriko Sato',brandId:'b1',outletId:'o2',role:'Promoter',joined:'2024-06-20',history:[{brandId:'b1',outletId:'o2',from:'Jun 2024'}]},
+      {id:'st5',name:'Mei Ling',brandId:'b2',outletId:'o1',role:'Promoter',joined:'2022-11-05',history:[{brandId:'b2',outletId:'o1',from:'Nov 2022'}]},
+      {id:'st6',name:'Raj Kumar',brandId:'b3',outletId:'o2',role:'Supervisor',joined:'2023-02-14',history:[{brandId:'b3',outletId:'o2',from:'Feb 2023'}]},
+      {id:'st7',name:'Siti Nurul',brandId:'b1',outletId:'o3',role:'Beauty Advisor',joined:'2024-09-01',history:[{brandId:'b1',outletId:'o3',from:'Sep 2024'}]},
+      {id:'st8',name:'Daniel Wong',brandId:'b2',outletId:'o2',role:'Promoter',joined:'2024-03-12',history:[{brandId:'b2',outletId:'o1',from:'Mar 2024',to:'Feb 2025'},{brandId:'b2',outletId:'o2',from:'Feb 2025'}]},
+    ];
+    const fuRaw=[
+      ['f1','2026-01-12','st1','b1','o1','done'],['f2','2026-01-20','st2','b2','o2','done'],
+      ['f3','2026-02-03','st3','b3','o3','done'],['f4','2026-02-18','st4','b1','o2','done'],
+      ['f5','2026-03-05','st5','b2','o1','done'],['f6','2026-03-22','st6','b3','o2','done'],
+      ['f7','2026-04-09','st7','b1','o3','done'],['f8','2026-04-28','st8','b2','o2','pending'],
+      ['f9','2026-05-14','st1','b1','o1','done'],['f10','2026-05-30','st3','b3','o3','pending'],
+      ['f11','2026-06-10','st2','b2','o2','done'],['f12','2026-06-18','st4','b1','o2','pending'],
+      ['f13','2026-06-25','st1','b1','o1','pending'],['f14','2026-06-30','st6','b3','o2','pending'],
+      ['f15','2026-07-04','st7','b1','o3','pending'],['f16','2026-07-15','st5','b2','o1','pending'],
+    ];
+    const followups=fuRaw.map((r,i)=>({id:r[0],date:r[1],staffId:r[2],brandId:r[3],outletId:r[4],status:r[5],tasks:mkTasks(r[5],i)}));
+    return {activeScreen:'dashboard',period:'month',q:'',isMobile:false,
+      brands,outlets,stores,staff,followups,
+      selectedBrandId:'b1',selectedOutletId:'o1',staffBrandFilter:'all',
+      fuFilter:'all',openFuId:null,transferStaffId:null,transferForm:null,addOpen:false,addForm:null};
+  }
+  state = Component.seed();
+  get today(){return new Date('2026-06-29T00:00:00');}
+  fmt(iso){return new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+  brand(id){return this.state.brands.find(b=>b.id===id);}
+  outlet(id){return this.state.outlets.find(o=>o.id===id);}
+  staffOf(id){return this.state.staff.find(s=>s.id===id);}
+  isOverdue(f){return f.status==='pending' && new Date(f.date+'T00:00:00')<this.today;}
+  initials(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('');}
+  linked(bId,oId){return this.state.stores.some(s=>s.brandId===bId&&s.outletId===oId);}
+  staffCount(bId,oId){return this.state.staff.filter(s=>(!bId||s.brandId===bId)&&(!oId||s.outletId===oId)).length;}
+
+  go(s){this.setState({activeScreen:s,openFuId:null});}
+  setPeriod(p){this.setState({period:p});}
+  onSearch(e){this.setState({q:e.target.value});}
+  toggleView(){this.setState(s=>({isMobile:!s.isMobile,activeScreen:s.activeScreen}));}
+  selBrand(id){this.setState({selectedBrandId:id});}
+  selOutlet(id){this.setState({selectedOutletId:id});}
+  setStaffBrandFilter(id){this.setState({staffBrandFilter:id});}
+  setFuFilter(f){this.setState({fuFilter:f});}
+  openFu(id){this.setState({openFuId:id});}
+  closeFu(){this.setState({openFuId:null});}
+  toggleTask(fuId,idx){this.setState(s=>({followups:s.followups.map(f=>f.id===fuId?{...f,tasks:f.tasks.map((t,i)=>i===idx?{...t,done:!t.done}:t)}:f)}));}
+  markDone(fuId){this.setState(s=>({followups:s.followups.map(f=>f.id===fuId?{...f,status:'done',tasks:f.tasks.map(t=>({...t,done:true}))}:f)}));}
+  toggleStatus(fuId){this.setState(s=>({followups:s.followups.map(f=>f.id===fuId?{...f,status:f.status==='done'?'pending':'done'}:f)}));}
+
+  openTransfer(id){const st=this.staffOf(id);this.setState({transferStaffId:id,transferForm:{brandId:st.brandId,outletId:st.outletId,reason:'',date:'2026-06-29'}});}
+  closeTransfer(){this.setState({transferStaffId:null,transferForm:null});}
+  setTf(k,v){this.setState(s=>({transferForm:{...s.transferForm,[k]:v}}));}
+  confirmTransfer(){const id=this.state.transferStaffId,tf=this.state.transferForm;
+    this.setState(s=>({staff:s.staff.map(x=>{if(x.id!==id)return x;
+      const hist=x.history.map(h=>h.to?h:{...h,to:'Jun 2026'});
+      return {...x,brandId:tf.brandId,outletId:tf.outletId,history:[...hist,{brandId:tf.brandId,outletId:tf.outletId,from:'Jun 2026',reason:tf.reason}]};}),
+      transferStaffId:null,transferForm:null}));}
+
+  openAdd(){this.setState({addOpen:true,addForm:{storeKey:'b1|o1',date:'2026-07-01',staffId:'',tasks:[true,true,true,false,false]}});}
+  closeAdd(){this.setState({addOpen:false,addForm:null});}
+  setAf(k,v){this.setState(s=>({addForm:{...s.addForm,[k]:v}}));}
+  toggleAfTask(i){this.setState(s=>({addForm:{...s.addForm,tasks:s.addForm.tasks.map((t,j)=>j===i?!t:t)}}));}
+  confirmAdd(){const af=this.state.addForm;const [brandId,outletId]=af.storeKey.split('|');
+    const TT=['Stock & display','Grooming & attendance','Sales target review','Store cleanliness','Promo / POSM setup'];
+    const tasks=TT.map(label=>({label,done:false})).filter((_,i)=>af.tasks[i]);
+    const id='f'+Date.now();
+    this.setState(s=>({followups:[...s.followups,{id,date:af.date,staffId:af.staffId||null,brandId,outletId,status:'pending',tasks}],addOpen:false,addForm:null,activeScreen:'followups'}));}
+
+  renderVals(){
+    const S=this.state;
+    const accent=this.props.accent ?? '#ea580c';
+    const mode=this.props.themeMode ?? 'light';
+    const dense=(this.props.density ?? 'comfortable')==='compact';
+    const isMobile=S.isMobile;
+    const lt={bg:'#f5f5f4',surface:'#ffffff',surface2:'#fafaf9',border:'#e7e5e4',text:'#1c1917',dim:'#78716c',sidebar:'#1c1917',sidebarText:'#a8a29e',sidebarActive:'rgba(255,255,255,.08)'};
+    const dk={bg:'#1c1917',surface:'#292524',surface2:'#221f1c',border:'#3f3a36',text:'#fafaf9',dim:'#a8a29e',sidebar:'#0c0a09',sidebarText:'#a8a29e',sidebarActive:'rgba(255,255,255,.07)'};
+    const t=mode==='dark'?dk:lt;
+    const page=isMobile?(mode==='dark'?'#000':'#d6d3d1'):t.bg;
+    const rootStyle=`--accent:${accent};--bg:${t.bg};--surface:${t.surface};--surface2:${t.surface2};--border:${t.border};--text:${t.text};--dim:${t.dim};--sidebar:${t.sidebar};--sidebar-text:${t.sidebarText};--sidebar-active:${t.sidebarActive};--pad:${dense?'12px':'18px'};--rowpad:${dense?'8px 12px':'12px 14px'};min-height:100vh;width:100%;background:${page};color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased`;
+    const appShellStyle=isMobile
+      ? `display:flex;flex-direction:column;width:404px;height:880px;max-height:96vh;margin:18px auto;border:11px solid #0c0a09;border-radius:42px;overflow:hidden;background:var(--bg);box-shadow:0 40px 90px rgba(0,0,0,.35);position:relative`
+      : `display:flex;height:100vh;width:100%;overflow:hidden`;
+
+    const NAV=[
+      {key:'dashboard',label:'Dashboard',short:'Home',icon:'space_dashboard'},
+      {key:'brands',label:'Brands',short:'Brands',icon:'sell'},
+      {key:'outlets',label:'Outlets',short:'Outlets',icon:'storefront'},
+      {key:'staff',label:'Staff',short:'Staff',icon:'groups'},
+      {key:'followups',label:'Follow-ups',short:'Visits',icon:'fact_check'},
+    ];
+    const overdueCount=S.followups.filter(f=>this.isOverdue(f)).length;
+    const navItems=NAV.map(n=>{const active=n.key===S.activeScreen;return {...n,active,
+      badge: n.key==='followups'&&overdueCount?String(overdueCount):'',
+      onClick:()=>this.go(n.key),
+      style:`display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;border:none;border-radius:8px;cursor:pointer;font-family:'IBM Plex Sans';font-size:13.5px;font-weight:${active?600:500};background:${active?'var(--accent,#ea580c)':'transparent'};color:${active?'#fff':'var(--sidebar-text,#a8a29e)'}`,
+      mstyle:`flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;border:none;background:none;cursor:pointer;color:${active?'var(--accent,#ea580c)':'var(--dim,#78716c)'};font-family:'IBM Plex Sans'`,
+    };});
+
+    const titles={dashboard:['Summary','Year & month follow-up overview'],brands:['Brand Management','Brands and the outlets they operate in'],outlets:['Outlet Management','Malls and the brands hosted'],staff:['Staff Management','Assignments and transfers'],followups:['Follow-ups','Scheduled store visits & checks']};
+    const pageTitle=titles[S.activeScreen][0];
+    const pageSubtitle=titles[S.activeScreen][1];
+
+    // ----- shared follow-up view model -----
+    const fuVM=(f)=>{const b=this.brand(f.brandId),o=this.outlet(f.outletId),st=f.staffId?this.staffOf(f.staffId):null;
+      const od=this.isOverdue(f);const status=f.status==='done'?'done':(od?'overdue':'pending');
+      const sc={done:'#16a34a',pending:'#d97706',overdue:'#dc2626'}[status];
+      const total=f.tasks.length,doneT=f.tasks.filter(x=>x.done).length;
+      return {id:f.id,brandName:b.name,brandColor:b.color,outletName:o.name,location:o.location,
+        staffName:st?st.name:'Unassigned',staffInitials:st?this.initials(st.name):'–',
+        title:b.name+' · '+o.name,sub:(st?st.name:'Unassigned')+' · '+total+' checks',
+        dateLabel:this.fmt(f.date),status,statusLabel:status.charAt(0).toUpperCase()+status.slice(1),statusColor:sc,
+        total,doneT,progressPct:Math.round(doneT/total*100),isOverdue:od,
+        onOpen:()=>this.openFu(f.id),onMarkDone:()=>this.markDone(f.id)};};
+
+    // ----- dashboard data -----
+    const yearFus=S.followups.filter(f=>f.date.startsWith('2026'));
+    const monthFus=S.followups.filter(f=>f.date.startsWith('2026-06'));
+    const periodFus=S.period==='month'?monthFus:yearFus;
+    const periodLabel=S.period==='month'?'June 2026':'Year 2026';
+    const pDone=periodFus.filter(f=>f.status==='done').length;
+    const pPend=periodFus.filter(f=>f.status==='pending').length;
+    const pOver=periodFus.filter(f=>this.isOverdue(f)).length;
+    const compRate=periodFus.length?Math.round(pDone/periodFus.length*100):0;
+    const stats=[
+      {icon:'sell',label:'Brands',value:S.brands.length},
+      {icon:'storefront',label:'Outlets',value:S.outlets.length},
+      {icon:'store',label:'Active stores',value:S.stores.length},
+      {icon:'groups',label:'Staff monitored',value:S.staff.length},
+    ];
+    const kpiCard=`background:var(--surface,#fff);border:1px solid var(--border,#e7e5e4);border-radius:12px;padding:15px 16px`;
+    const kpis=[
+      {label:'Follow-ups',value:periodFus.length,sub:periodLabel,icon:'fact_check',tone:'var(--text)'},
+      {label:'Completion',value:compRate+'%',sub:pDone+' completed',icon:'task_alt',tone:'#16a34a'},
+      {label:'Pending',value:pPend,sub:'awaiting completion',icon:'pending',tone:'#d97706'},
+      {label:'Overdue',value:pOver,sub:'past scheduled date',icon:'warning',tone:'#dc2626'},
+    ].map(k=>({...k,style:kpiCard}));
+    const pBtn=(a)=>`padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:600;background:${a?'var(--surface,#fff)':'transparent'};color:${a?'var(--text)':'var(--dim,#78716c)'};box-shadow:${a?'0 1px 2px rgba(0,0,0,.1)':'none'}`;
+    const MK=[['Jan','01'],['Feb','02'],['Mar','03'],['Apr','04'],['May','05'],['Jun','06'],['Jul','07']];
+    const mdata=MK.map(([label,mm])=>{const fs=yearFus.filter(f=>f.date.slice(5,7)===mm);return {label,done:fs.filter(x=>x.status==='done').length,pending:fs.filter(x=>x.status==='pending').length};});
+    const tmax=Math.max(1,...mdata.map(m=>m.done+m.pending));const H=108;
+    const trendMonths=mdata.map(m=>{const total=m.done+m.pending;
+      return {label:m.label,total,
+        doneStyle:`height:${Math.round(m.done/tmax*H)}px;background:var(--accent,#ea580c)`,
+        pendingStyle:`height:${Math.round(m.pending/tmax*H)}px;background:color-mix(in srgb,var(--accent,#ea580c) 22%,transparent)`};});
+    const outletsHead=S.outlets.map(o=>({name:o.name}));
+    const matrix=S.brands.map(b=>({name:b.name,color:b.color,
+      cells:S.outlets.map(o=>{const linked=this.linked(b.id,o.id);const cnt=this.staffCount(b.id,o.id);
+        return {text:linked?String(cnt):'–',
+          style:`height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-family:'IBM Plex Mono';font-size:13px;font-weight:600;`+(linked?`background:color-mix(in srgb,${b.color} 14%,transparent);color:${b.color}`:`background:var(--surface2,#fafaf9);color:var(--border,#d6d3d1)`)};})}));
+    const bmax=Math.max(1,...S.brands.map(b=>yearFus.filter(f=>f.brandId===b.id).length));
+    const brandBreakdown=S.brands.map(b=>{const fs=yearFus.filter(f=>f.brandId===b.id);const done=fs.filter(x=>x.status==='done').length;
+      return {name:b.name,color:b.color,done,total:fs.length,barStyle:`height:100%;width:${Math.round(fs.length/bmax*100)}%;background:${b.color};border-radius:5px`};});
+    const omax=Math.max(1,...S.outlets.map(o=>this.staffCount(null,o.id)));
+    const outletBreakdown=S.outlets.map(o=>{const staff=this.staffCount(null,o.id);const brands=S.stores.filter(s=>s.outletId===o.id).length;
+      return {name:o.name,location:o.location,staff,brands,barStyle:`height:100%;width:${Math.round(staff/omax*100)}%;background:var(--accent,#ea580c);border-radius:5px`};});
+    const overdueList=S.followups.filter(f=>this.isOverdue(f)).sort((a,b)=>a.date<b.date?-1:1).map(fuVM);
+    const upcomingList=S.followups.filter(f=>f.status==='pending'&&!this.isOverdue(f)).sort((a,b)=>a.date<b.date?-1:1).map(fuVM);
+
+    // ----- shared styles -----
+    const cardSel=(sel)=>`display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:11px;cursor:pointer;color:var(--text);background:${sel?'color-mix(in srgb,var(--accent,#ea580c) 6%,var(--surface,#fff))':'var(--surface,#fff)'};border:1px solid ${sel?'var(--accent,#ea580c)':'var(--border,#e7e5e4)'}`;
+    const chip=(active)=>`border:1px solid ${active?'var(--accent,#ea580c)':'var(--border,#e7e5e4)'};background:${active?'var(--accent,#ea580c)':'var(--surface,#fff)'};color:${active?'#fff':'var(--text)'};border-radius:20px;padding:7px 13px;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px`;
+    const pill=(c)=>`font-size:11px;font-weight:600;letter-spacing:.02em;background:color-mix(in srgb,${c} 13%,transparent);color:${c};border-radius:6px;padding:4px 9px;flex-shrink:0`;
+    const q=S.q.trim().toLowerCase();
+
+    // ----- brands -----
+    const brandCards=S.brands.map(b=>({id:b.id,name:b.name,color:b.color,category:b.category,initials:b.name.slice(0,2).toUpperCase(),
+      storeCount:S.stores.filter(s=>s.brandId===b.id).length,staffCount:S.staff.filter(s=>s.brandId===b.id).length,
+      style:cardSel(b.id===S.selectedBrandId),onOpen:()=>this.selBrand(b.id)}));
+    const selB=this.brand(S.selectedBrandId)||S.brands[0];
+    const brandDetail={name:selB.name,color:selB.color,category:selB.category,initials:selB.name.slice(0,2).toUpperCase(),
+      storeCount:S.stores.filter(s=>s.brandId===selB.id).length,staffCount:S.staff.filter(s=>s.brandId===selB.id).length,
+      outlets:S.stores.filter(s=>s.brandId===selB.id).map(s=>{const o=this.outlet(s.outletId);const st=S.staff.filter(x=>x.brandId===selB.id&&x.outletId===o.id);
+        return {name:o.name,location:o.location,staffCount:st.length,staff:st.map(p=>({name:p.name,role:p.role,initials:this.initials(p.name)}))};})};
+
+    // ----- outlets -----
+    const outletCards=S.outlets.map(o=>({id:o.id,name:o.name,location:o.location,
+      brandCount:S.stores.filter(s=>s.outletId===o.id).length,staffCount:S.staff.filter(s=>s.outletId===o.id).length,
+      style:cardSel(o.id===S.selectedOutletId),onOpen:()=>this.selOutlet(o.id)}));
+    const selO=this.outlet(S.selectedOutletId)||S.outlets[0];
+    const outletDetail={name:selO.name,location:selO.location,
+      brandCount:S.stores.filter(s=>s.outletId===selO.id).length,staffCount:S.staff.filter(s=>s.outletId===selO.id).length,
+      brands:S.stores.filter(s=>s.outletId===selO.id).map(s=>{const b=this.brand(s.brandId);const st=S.staff.filter(x=>x.outletId===selO.id&&x.brandId===b.id);
+        return {name:b.name,color:b.color,staffCount:st.length,staff:st.map(p=>({name:p.name,role:p.role,initials:this.initials(p.name)}))};})};
+
+    // ----- staff -----
+    const brandFilters=[{id:'all',label:'All staff'}].concat(S.brands.map(b=>({id:b.id,label:b.name}))).map(f=>({label:f.label,onClick:()=>this.setStaffBrandFilter(f.id),style:chip(S.staffBrandFilter===f.id)}));
+    let staffList=S.staff.filter(s=>S.staffBrandFilter==='all'||s.brandId===S.staffBrandFilter);
+    if(q) staffList=staffList.filter(s=>{const b=this.brand(s.brandId),o=this.outlet(s.outletId);return (s.name+' '+s.role+' '+b.name+' '+o.name).toLowerCase().includes(q);});
+    const tenure=(j)=>{const d=new Date(j+'T00:00:00');let m=(this.today.getFullYear()-d.getFullYear())*12+(this.today.getMonth()-d.getMonth());const y=Math.floor(m/12),mm=m%12;return y>0?(y+'y '+mm+'m'):(mm+'m');};
+    const staffRows=staffList.map(s=>{const b=this.brand(s.brandId),o=this.outlet(s.outletId);
+      return {id:s.id,name:s.name,initials:this.initials(s.name),role:s.role,brandName:b.name,brandColor:b.color,
+        outletName:o.name,tenure:tenure(s.joined),transferred:s.history.length>1,onTransfer:()=>this.openTransfer(s.id)};});
+
+    // ----- follow-ups list -----
+    const allF=S.followups.slice().sort((a,b)=>a.date<b.date?-1:1);
+    const counts={all:allF.length,pending:allF.filter(f=>f.status==='pending'&&!this.isOverdue(f)).length,overdue:allF.filter(f=>this.isOverdue(f)).length,done:allF.filter(f=>f.status==='done').length};
+    const fuFilters=[['all','All'],['pending','Pending'],['overdue','Overdue'],['done','Completed']].map(([k,label])=>({label,count:counts[k],onClick:()=>this.setFuFilter(k),style:chip(S.fuFilter===k)}));
+    let filtered=allF;
+    if(S.fuFilter==='pending') filtered=allF.filter(f=>f.status==='pending'&&!this.isOverdue(f));
+    else if(S.fuFilter==='overdue') filtered=allF.filter(f=>this.isOverdue(f));
+    else if(S.fuFilter==='done') filtered=allF.filter(f=>f.status==='done');
+    if(q) filtered=filtered.filter(f=>{const b=this.brand(f.brandId),o=this.outlet(f.outletId);const st=f.staffId?this.staffOf(f.staffId):null;return (b.name+' '+o.name+' '+(st?st.name:'')).toLowerCase().includes(q);});
+    const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fuRows=filtered.map(f=>{const vm=fuVM(f);const d=new Date(f.date+'T00:00:00');
+      return {...vm,day:String(d.getDate()).padStart(2,'0'),mon:MON[d.getMonth()],pillStyle:pill(vm.statusColor),
+        progressStyle:`height:100%;width:${vm.progressPct}%;background:${vm.statusColor}`,canComplete:vm.status!=='done'};});
+
+    // ----- follow-up drawer -----
+    const openF=S.openFuId?S.followups.find(f=>f.id===S.openFuId):null;
+    let fuDetail=null;
+    if(openF){const vm=fuVM(openF);
+      fuDetail={...vm,pillStyle:pill(vm.statusColor),isDone:openF.status==='done',notDone:openF.status!=='done',
+        onReopen:()=>this.toggleStatus(openF.id),onMarkDone:()=>this.markDone(openF.id),
+        tasks:openF.tasks.map((t,i)=>({label:t.label,onToggle:()=>this.toggleTask(openF.id,i),icon:t.done?'check':' ',
+          boxStyle:`width:22px;height:22px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid ${t.done?'#16a34a':'var(--border,#d6d3d1)'};background:${t.done?'#16a34a':'transparent'}`,
+          labelStyle:`font-size:13.5px;${t.done?'color:var(--dim,#78716c);text-decoration:line-through':'color:var(--text)'}`}))};}
+    fuDetail=fuDetail||{dateLabel:'',brandColor:'#ccc',title:'',staffName:'',pillStyle:'',statusLabel:'',doneT:0,total:0,tasks:[],isDone:false,notDone:true,onReopen:()=>{},onMarkDone:()=>{}};
+
+    // ----- transfer modal -----
+    let transfer=null;
+    if(S.transferStaffId){const st=this.staffOf(S.transferStaffId),tf=S.transferForm;
+      const curB=this.brand(st.brandId),curO=this.outlet(st.outletId),nb=this.brand(tf.brandId),no=this.outlet(tf.outletId);
+      transfer={staffName:st.name,staffInitials:this.initials(st.name),curBrandName:curB.name,curOutletName:curO.name,
+        newBrandName:nb.name,newOutletName:no.name,reason:tf.reason,date:tf.date,
+        onReason:e=>this.setTf('reason',e.target.value),onDate:e=>this.setTf('date',e.target.value),onConfirm:()=>this.confirmTransfer(),
+        brandChips:S.brands.map(b=>({name:b.name,color:b.color,onPick:()=>this.setTf('brandId',b.id),style:chip(tf.brandId===b.id)})),
+        outletChips:S.outlets.map(o=>({name:o.name,onPick:()=>this.setTf('outletId',o.id),style:chip(tf.outletId===o.id)}))};}
+    transfer=transfer||{staffName:'',staffInitials:'',curBrandName:'',curOutletName:'',newBrandName:'',newOutletName:'',reason:'',date:'',onReason:()=>{},onDate:()=>{},onConfirm:()=>{},brandChips:[],outletChips:[]};
+
+    // ----- add follow-up modal -----
+    let add=null;
+    if(S.addOpen){const af=S.addForm;const TT=['Stock & display','Grooming & attendance','Sales target review','Store cleanliness','Promo / POSM setup'];
+      const selN=af.tasks.filter(Boolean).length;const [sb,so]=af.storeKey.split('|');
+      add={date:af.date,onDate:e=>this.setAf('date',e.target.value),onConfirm:()=>this.confirmAdd(),
+        summary:this.brand(sb).name+' · '+this.outlet(so).name+' · '+selN+' tasks',
+        storeOptions:S.stores.map(s=>{const b=this.brand(s.brandId),o=this.outlet(s.outletId),key=s.brandId+'|'+s.outletId;
+          return {key,color:b.color,label:b.name+' · '+o.name,onPick:()=>this.setAf('storeKey',key),style:chip(af.storeKey===key)};}),
+        taskRows:TT.map((label,i)=>({label,onToggle:()=>this.toggleAfTask(i),icon:af.tasks[i]?'check':' ',
+          boxStyle:`width:22px;height:22px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid ${af.tasks[i]?'var(--accent,#ea580c)':'var(--border,#d6d3d1)'};background:${af.tasks[i]?'var(--accent,#ea580c)':'transparent'}`,
+          labelStyle:`font-size:13.5px;color:var(--text)`}))};}
+    add=add||{date:'',onDate:()=>{},onConfirm:()=>{},summary:'',storeOptions:[],taskRows:[]};
+
+    return {rootStyle,appShellStyle,isMobile,isDesktop:!isMobile,accent,
+      navItems,pageTitle,pageSubtitle,overdueCount,q:S.q,
+      onSearch:e=>this.onSearch(e),onToggleView:()=>this.toggleView(),onAdd:()=>this.openAdd(),
+      viewIcon:isMobile?'desktop_windows':'smartphone',viewLabel:isMobile?'Desktop':'Mobile',
+      manager:{name:'Aisha Karim',role:'Area Manager · Penang',initials:'AK'},
+      isDashboard:S.activeScreen==='dashboard',isBrands:S.activeScreen==='brands',isOutlets:S.activeScreen==='outlets',isStaff:S.activeScreen==='staff',isFollowups:S.activeScreen==='followups',
+      stats,kpis,periodLabel,monthBtn:pBtn(S.period==='month'),yearBtn:pBtn(S.period==='year'),
+      onPeriodMonth:()=>this.setPeriod('month'),onPeriodYear:()=>this.setPeriod('year'),
+      trendMonths,outletsHead,matrix,brandBreakdown,outletBreakdown,
+      overdueList,upcomingList,noOverdue:overdueList.length===0,
+      brandCards,brandDetail,outletCards,outletDetail,
+      brandFilters,staffRows,
+      fuFilters,fuRows,noFuRows:fuRows.length===0,
+      fuOpen:!!S.openFuId,fuDetail,onCloseFu:()=>this.closeFu(),
+      transferOpen:!!S.transferStaffId,transfer,onCloseTransfer:()=>this.closeTransfer(),
+      addOpen:S.addOpen,add,onCloseAdd:()=>this.closeAdd(),
+      stop:e=>e.stopPropagation(),ovPos:isMobile?'absolute':'fixed',
+    };
+  }
+}
+</script>
+</body>
+</html>
