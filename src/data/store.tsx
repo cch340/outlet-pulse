@@ -1,4 +1,12 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+
+/** Viewport width (px) at or below which we render the mobile layout. */
+export const MOBILE_BREAKPOINT = 768
+
+function detectMobile(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
+}
 
 export type Screen = 'dashboard' | 'brands' | 'outlets' | 'staff' | 'followups'
 export type Period = 'month' | 'year'
@@ -49,7 +57,7 @@ export interface AppState {
 function seed(): AppState {
   return {
     activeScreen: 'dashboard',
-    isMobile: false,
+    isMobile: detectMobile(),
     period: 'month',
     q: '',
     selectedBrandId: '',
@@ -74,7 +82,6 @@ export interface StoreActions {
   go(s: Screen): void
   setPeriod(p: Period): void
   setSearch(q: string): void
-  toggleView(): void
   selBrand(id: string): void
   selOutlet(id: string): void
   setStaffBrandFilter(id: StaffBrandFilter): void
@@ -112,7 +119,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       go: (activeScreen) => patch({ activeScreen, openFuId: null }),
       setPeriod: (period) => patch({ period }),
       setSearch: (q) => patch({ q }),
-      toggleView: () => setState((s) => ({ ...s, isMobile: !s.isMobile })),
       selBrand: (selectedBrandId) => patch({ selectedBrandId }),
       selOutlet: (selectedOutletId) => patch({ selectedOutletId }),
       setStaffBrandFilter: (staffBrandFilter) => patch({ staffBrandFilter }),
@@ -148,6 +154,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setThemeMode: (themeMode) => patch({ themeMode }),
       setDensity: (density) => patch({ density }),
     }
+  }, [])
+
+  // Keep isMobile in sync with the actual viewport width.
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`)
+    const onChange = () => setState((s) => (s.isMobile === mql.matches ? s : { ...s, isMobile: mql.matches }))
+    onChange()
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
   }, [])
 
   return <Ctx.Provider value={{ state, ...actions }}>{children}</Ctx.Provider>
