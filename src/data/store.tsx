@@ -37,6 +37,7 @@ export interface AppState {
   transferForm: TransferForm | null
   addOpen: boolean
   addForm: AddForm | null
+  brandModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
   // theme
   accent: string
   themeMode: ThemeMode
@@ -58,6 +59,7 @@ function seed(): AppState {
     transferForm: null,
     addOpen: false,
     addForm: null,
+    brandModal: null,
     accent: '#64748b',
     themeMode: 'light',
     density: 'comfortable',
@@ -82,6 +84,8 @@ export interface StoreActions {
   closeAdd(): void
   setAf<K extends keyof AddForm>(k: K, v: AddForm[K]): void
   toggleAfTask(i: number): void
+  openBrandModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
+  closeBrandModal(): void
   setAccent(c: string): void
   setThemeMode(m: ThemeMode): void
   setDensity(d: Density): void
@@ -126,6 +130,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...s,
           addForm: { ...s.addForm!, tasks: s.addForm!.tasks.map((t, j) => (j === i ? !t : t)) },
         })),
+      openBrandModal: (brandModal) => patch({ brandModal }),
+      closeBrandModal: () => patch({ brandModal: null }),
       setAccent: (accent) => patch({ accent }),
       setThemeMode: (themeMode) => patch({ themeMode }),
       setDensity: (density) => patch({ density }),

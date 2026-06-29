@@ -12,6 +12,7 @@ import { Followups } from './screens/Followups'
 import { FollowUpDrawer } from './components/FollowUpDrawer'
 import { TransferModal } from './components/TransferModal'
 import { ScheduleModal } from './components/ScheduleModal'
+import { BrandModal } from './components/BrandModal'
 
 function Shell() {
   const { state } = useStore()
@@ -52,6 +53,7 @@ function Shell() {
         <FollowUpDrawer />
         <TransferModal />
         <ScheduleModal />
+        <BrandModal />
       </div>
     </div>
   )
