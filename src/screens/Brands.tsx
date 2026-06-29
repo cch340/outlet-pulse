@@ -1,4 +1,5 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { initials, outletById } from '../data/derived'
 import { card, cardSel, tint } from '../theme'
 import { Icon } from '../components/Icon'
@@ -13,25 +14,28 @@ const sectionLabel = {
 
 export function Brands() {
   const { state, selBrand } = useStore()
+  const { data } = useData()
   const S = state
 
-  const selB = S.brands.find((b) => b.id === S.selectedBrandId) ?? S.brands[0]
-  const detailOutlets = S.stores
-    .filter((s) => s.brandId === selB.id)
-    .map((s) => {
-      const o = outletById(S, s.outletId)
-      const staff = S.staff.filter((x) => x.brandId === selB.id && x.outletId === o.id)
-      return { ...o, staffCount: staff.length, staff }
-    })
+  const selB = data.brands.find((b) => b.id === S.selectedBrandId) ?? data.brands[0]
+  const detailOutlets = selB
+    ? data.stores
+        .filter((s) => s.brandId === selB.id)
+        .map((s) => {
+          const o = outletById(data, s.outletId)
+          const staff = data.staff.filter((x) => x.brandId === selB.id && x.outletId === o.id)
+          return { ...o, staffCount: staff.length, staff }
+        })
+    : []
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, alignItems: 'start' }}>
       {/* left list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ ...sectionLabel, padding: 2 }}>All brands</div>
-        {S.brands.map((b) => {
-          const storeCount = S.stores.filter((s) => s.brandId === b.id).length
-          const staffCount = S.staff.filter((s) => s.brandId === b.id).length
+        {data.brands.map((b) => {
+          const storeCount = data.stores.filter((s) => s.brandId === b.id).length
+          const staffCount = data.staff.filter((s) => s.brandId === b.id).length
           return (
             <button key={b.id} onClick={() => selBrand(b.id)} style={cardSel(b.id === S.selectedBrandId)}>
               <div
@@ -65,7 +69,7 @@ export function Brands() {
       </div>
 
       {/* right detail */}
-      <div style={{ ...card, padding: 18 }}>
+      {selB && <div style={{ ...card, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 13, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
           <div
             style={{
@@ -86,8 +90,8 @@ export function Brands() {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{selB.name}</div>
             <div style={{ fontSize: 13, color: 'var(--dim)' }}>
-              {selB.category} · operates in {S.stores.filter((s) => s.brandId === selB.id).length} outlets ·{' '}
-              {S.staff.filter((s) => s.brandId === selB.id).length} staff
+              {selB.category} · operates in {data.stores.filter((s) => s.brandId === selB.id).length} outlets ·{' '}
+              {data.staff.filter((s) => s.brandId === selB.id).length} staff
             </div>
           </div>
         </div>
@@ -145,7 +149,7 @@ export function Brands() {
             </div>
           ))}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

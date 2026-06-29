@@ -1,4 +1,5 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { fuVM, isOverdue, linked, staffCount } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
@@ -9,10 +10,11 @@ const MK: [string, string][] = [
 
 export function Dashboard() {
   const { state, setPeriod, openFu } = useStore()
+  const { data } = useData()
   const S = state
 
-  const yearFus = S.followups.filter((f) => f.date.startsWith('2026'))
-  const monthFus = S.followups.filter((f) => f.date.startsWith('2026-06'))
+  const yearFus = data.followups.filter((f) => f.date.startsWith('2026'))
+  const monthFus = data.followups.filter((f) => f.date.startsWith('2026-06'))
   const periodFus = S.period === 'month' ? monthFus : yearFus
   const periodLabel = S.period === 'month' ? 'June 2026' : 'Year 2026'
   const pDone = periodFus.filter((f) => f.status === 'done').length
@@ -21,10 +23,10 @@ export function Dashboard() {
   const compRate = periodFus.length ? Math.round((pDone / periodFus.length) * 100) : 0
 
   const stats = [
-    { icon: 'sell', label: 'Brands', value: S.brands.length },
-    { icon: 'storefront', label: 'Outlets', value: S.outlets.length },
-    { icon: 'store', label: 'Active stores', value: S.stores.length },
-    { icon: 'groups', label: 'Staff monitored', value: S.staff.length },
+    { icon: 'sell', label: 'Brands', value: data.brands.length },
+    { icon: 'storefront', label: 'Outlets', value: data.outlets.length },
+    { icon: 'store', label: 'Active stores', value: data.stores.length },
+    { icon: 'groups', label: 'Staff monitored', value: data.staff.length },
   ]
 
   const kpis = [
@@ -41,24 +43,24 @@ export function Dashboard() {
   const tmax = Math.max(1, ...mdata.map((m) => m.done + m.pending))
   const H = 108
 
-  const bmax = Math.max(1, ...S.brands.map((b) => yearFus.filter((f) => f.brandId === b.id).length))
-  const brandBreakdown = S.brands.map((b) => {
+  const bmax = Math.max(1, ...data.brands.map((b) => yearFus.filter((f) => f.brandId === b.id).length))
+  const brandBreakdown = data.brands.map((b) => {
     const fs = yearFus.filter((f) => f.brandId === b.id)
     return { name: b.name, color: b.color, done: fs.filter((x) => x.status === 'done').length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
   })
 
-  const omax = Math.max(1, ...S.outlets.map((o) => staffCount(S, null, o.id)))
-  const outletBreakdown = S.outlets.map((o) => {
-    const staff = staffCount(S, null, o.id)
-    const brands = S.stores.filter((s) => s.outletId === o.id).length
+  const omax = Math.max(1, ...data.outlets.map((o) => staffCount(data, null, o.id)))
+  const outletBreakdown = data.outlets.map((o) => {
+    const staff = staffCount(data, null, o.id)
+    const brands = data.stores.filter((s) => s.outletId === o.id).length
     return { name: o.name, location: o.location, staff, brands, pct: Math.round((staff / omax) * 100) }
   })
 
-  const overdueList = S.followups.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => fuVM(S, f))
-  const upcomingList = S.followups
+  const overdueList = data.followups.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => fuVM(data, f))
+  const upcomingList = data.followups
     .filter((f) => f.status === 'pending' && !isOverdue(f))
     .sort((a, b) => (a.date < b.date ? -1 : 1))
-    .map((f) => fuVM(S, f))
+    .map((f) => fuVM(data, f))
 
   const sectionTitle = { fontSize: 14, fontWeight: 700 } as const
   const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
@@ -180,7 +182,7 @@ export function Dashboard() {
               <thead>
                 <tr>
                   <th />
-                  {S.outlets.map((o) => (
+                  {data.outlets.map((o) => (
                     <th key={o.id} style={{ fontSize: 11, fontWeight: 600, color: 'var(--dim)', textAlign: 'center', paddingBottom: 2 }}>
                       {o.name}
                     </th>
@@ -188,7 +190,7 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {S.brands.map((b) => (
+                {data.brands.map((b) => (
                   <tr key={b.id}>
                     <td style={{ paddingRight: 8 }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -196,9 +198,9 @@ export function Dashboard() {
                         {b.name}
                       </span>
                     </td>
-                    {S.outlets.map((o) => {
-                      const isLinked = linked(S, b.id, o.id)
-                      const cnt = staffCount(S, b.id, o.id)
+                    {data.outlets.map((o) => {
+                      const isLinked = linked(data, b.id, o.id)
+                      const cnt = staffCount(data, b.id, o.id)
                       return (
                         <td key={o.id}>
                           <div

@@ -1,4 +1,5 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { brandById, fuVM, isOverdue, outletById, staffById } from '../data/derived'
 import type { FuFilter } from '../data/store'
 import { card, chip, pill } from '../theme'
@@ -8,11 +9,12 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 
 export function Followups() {
   const { state, setFuFilter, openFu, markDone } = useStore()
+  const { data } = useData()
   const S = state
   const q = S.q.trim().toLowerCase()
   const isMobile = S.isMobile
 
-  const allF = S.followups.slice().sort((a, b) => (a.date < b.date ? -1 : 1))
+  const allF = data.followups.slice().sort((a, b) => (a.date < b.date ? -1 : 1))
   const counts = {
     all: allF.length,
     pending: allF.filter((f) => f.status === 'pending' && !isOverdue(f)).length,
@@ -32,15 +34,15 @@ export function Followups() {
   else if (S.fuFilter === 'done') filtered = allF.filter((f) => f.status === 'done')
   if (q) {
     filtered = filtered.filter((f) => {
-      const b = brandById(S, f.brandId)
-      const o = outletById(S, f.outletId)
-      const st = f.staffId ? staffById(S, f.staffId) : null
+      const b = brandById(data, f.brandId)
+      const o = outletById(data, f.outletId)
+      const st = f.staffId ? staffById(data, f.staffId) : null
       return `${b.name} ${o.name} ${st ? st.name : ''}`.toLowerCase().includes(q)
     })
   }
 
   const rows = filtered.map((f) => {
-    const vm = fuVM(S, f)
+    const vm = fuVM(data, f)
     const d = new Date(f.date + 'T00:00:00')
     return { ...vm, day: String(d.getDate()).padStart(2, '0'), mon: MON[d.getMonth()], canComplete: vm.status !== 'done' }
   })

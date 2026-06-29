@@ -1,4 +1,5 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { brandById, initials } from '../data/derived'
 import { card, cardSel, tint } from '../theme'
 import { Icon } from '../components/Icon'
@@ -13,25 +14,28 @@ const sectionLabel = {
 
 export function Outlets() {
   const { state, selOutlet } = useStore()
+  const { data } = useData()
   const S = state
 
-  const selO = S.outlets.find((o) => o.id === S.selectedOutletId) ?? S.outlets[0]
-  const detailBrands = S.stores
-    .filter((s) => s.outletId === selO.id)
-    .map((s) => {
-      const b = brandById(S, s.brandId)
-      const staff = S.staff.filter((x) => x.outletId === selO.id && x.brandId === b.id)
-      return { ...b, staffCount: staff.length, staff }
-    })
+  const selO = data.outlets.find((o) => o.id === S.selectedOutletId) ?? data.outlets[0]
+  const detailBrands = selO
+    ? data.stores
+        .filter((s) => s.outletId === selO.id)
+        .map((s) => {
+          const b = brandById(data, s.brandId)
+          const staff = data.staff.filter((x) => x.outletId === selO.id && x.brandId === b.id)
+          return { ...b, staffCount: staff.length, staff }
+        })
+    : []
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, alignItems: 'start' }}>
       {/* left list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ ...sectionLabel, padding: 2 }}>All outlets</div>
-        {S.outlets.map((o) => {
-          const brandCount = S.stores.filter((s) => s.outletId === o.id).length
-          const staffCount = S.staff.filter((s) => s.outletId === o.id).length
+        {data.outlets.map((o) => {
+          const brandCount = data.stores.filter((s) => s.outletId === o.id).length
+          const staffCount = data.staff.filter((s) => s.outletId === o.id).length
           return (
             <button key={o.id} onClick={() => selOutlet(o.id)} style={cardSel(o.id === S.selectedOutletId)}>
               <div
@@ -62,7 +66,7 @@ export function Outlets() {
       </div>
 
       {/* right detail */}
-      <div style={{ ...card, padding: 18 }}>
+      {selO && <div style={{ ...card, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 13, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
           <div
             style={{
@@ -80,8 +84,8 @@ export function Outlets() {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{selO.name}</div>
             <div style={{ fontSize: 13, color: 'var(--dim)' }}>
-              {selO.location} · hosts {S.stores.filter((s) => s.outletId === selO.id).length} brands ·{' '}
-              {S.staff.filter((s) => s.outletId === selO.id).length} staff
+              {selO.location} · hosts {data.stores.filter((s) => s.outletId === selO.id).length} brands ·{' '}
+              {data.staff.filter((s) => s.outletId === selO.id).length} staff
             </div>
           </div>
         </div>
@@ -136,7 +140,7 @@ export function Outlets() {
             </div>
           ))}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

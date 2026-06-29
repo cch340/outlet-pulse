@@ -1,4 +1,5 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { brandById, initials, outletById, tenure } from '../data/derived'
 import { card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
@@ -22,24 +23,25 @@ const transferredBadge = (label: string, small = false) => (
 
 export function Staff() {
   const { state, setStaffBrandFilter, openTransfer } = useStore()
+  const { data } = useData()
   const S = state
   const q = S.q.trim().toLowerCase()
   const isMobile = S.isMobile
 
-  const filters = [{ id: 'all', label: 'All staff' }, ...S.brands.map((b) => ({ id: b.id, label: b.name }))]
+  const filters = [{ id: 'all', label: 'All staff' }, ...data.brands.map((b) => ({ id: b.id, label: b.name }))]
 
-  let list = S.staff.filter((s) => S.staffBrandFilter === 'all' || s.brandId === S.staffBrandFilter)
+  let list = data.staff.filter((s) => S.staffBrandFilter === 'all' || s.brandId === S.staffBrandFilter)
   if (q) {
     list = list.filter((s) => {
-      const b = brandById(S, s.brandId)
-      const o = outletById(S, s.outletId)
+      const b = brandById(data, s.brandId)
+      const o = outletById(data, s.outletId)
       return `${s.name} ${s.role} ${b.name} ${o.name}`.toLowerCase().includes(q)
     })
   }
 
   const rows = list.map((s) => {
-    const b = brandById(S, s.brandId)
-    const o = outletById(S, s.outletId)
+    const b = brandById(data, s.brandId)
+    const o = outletById(data, s.outletId)
     return {
       id: s.id,
       name: s.name,

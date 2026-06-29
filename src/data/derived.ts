@@ -1,4 +1,4 @@
-import type { AppState } from './store'
+import type { DataSnapshot } from './queries/useData'
 import type { Brand, FollowUp, Outlet, Staff } from './model'
 
 // Production "today" comes from the real clock. The prototype fixed it at 2026-06-29.
@@ -17,16 +17,16 @@ export const initials = (n: string) =>
     .slice(0, 2)
     .join('')
 
-export const brandById = (s: AppState, id: string): Brand => s.brands.find((b) => b.id === id)!
-export const outletById = (s: AppState, id: string): Outlet => s.outlets.find((o) => o.id === id)!
-export const staffById = (s: AppState, id: string): Staff => s.staff.find((x) => x.id === id)!
+export const brandById = (s: DataSnapshot, id: string): Brand => s.brands.find((b) => b.id === id)!
+export const outletById = (s: DataSnapshot, id: string): Outlet => s.outlets.find((o) => o.id === id)!
+export const staffById = (s: DataSnapshot, id: string): Staff => s.staff.find((x) => x.id === id)!
 
 export const isOverdue = (f: FollowUp) => f.status === 'pending' && new Date(f.date + 'T00:00:00') < today()
 
-export const linked = (s: AppState, bId: string, oId: string) =>
+export const linked = (s: DataSnapshot, bId: string, oId: string) =>
   s.stores.some((st) => st.brandId === bId && st.outletId === oId)
 
-export const staffCount = (s: AppState, bId: string | null, oId: string | null) =>
+export const staffCount = (s: DataSnapshot, bId: string | null, oId: string | null) =>
   s.staff.filter((x) => (!bId || x.brandId === bId) && (!oId || x.outletId === oId)).length
 
 export const tenure = (joined: string) => {
@@ -66,7 +66,7 @@ export interface FollowUpVM {
   isOverdue: boolean
 }
 
-export function fuVM(s: AppState, f: FollowUp): FollowUpVM {
+export function fuVM(s: DataSnapshot, f: FollowUp): FollowUpVM {
   const b = brandById(s, f.brandId)
   const o = outletById(s, f.outletId)
   const st = f.staffId ? staffById(s, f.staffId) : null

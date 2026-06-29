@@ -1,4 +1,5 @@
 import { StoreProvider, useStore } from './data/store'
+import { useData } from './data/queries/useData'
 import { rootStyle, appShellStyle } from './theme'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
@@ -14,7 +15,11 @@ import { ScheduleModal } from './components/ScheduleModal'
 
 function Shell() {
   const { state } = useStore()
+  const { isLoading, isError } = useData()
   const isMobile = state.isMobile
+
+  if (isLoading) return <div style={{ padding: 40 }}>Loading…</div>
+  if (isError) return <div style={{ padding: 40 }}>Failed to load data. Check your Supabase connection.</div>
 
   return (
     <div style={rootStyle(state)}>

@@ -1,15 +1,17 @@
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { fuVM } from '../data/derived'
 import { pill } from '../theme'
 import { Icon } from './Icon'
 
 export function FollowUpDrawer() {
   const { state, closeFu, toggleTask, markDone, toggleStatus } = useStore()
+  const { data } = useData()
   const S = state
-  const openF = S.openFuId ? S.followups.find((f) => f.id === S.openFuId) : null
+  const openF = S.openFuId ? data.followups.find((f) => f.id === S.openFuId) : null
   if (!openF) return null
 
-  const vm = fuVM(S, openF)
+  const vm = fuVM(data, openF)
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
 
   return (

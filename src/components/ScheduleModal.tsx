@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { brandById, outletById } from '../data/derived'
 import { DEFAULT_TASKS } from '../data/model'
 import { chip } from '../theme'
@@ -16,13 +17,14 @@ const fieldLabel: CSSProperties = {
 
 export function ScheduleModal() {
   const { state, closeAdd, setAf, toggleAfTask, confirmAdd } = useStore()
+  const { data } = useData()
   const S = state
   if (!S.addOpen || !S.addForm) return null
 
   const af = S.addForm
   const selN = af.tasks.filter(Boolean).length
   const [sb, so] = af.storeKey.split('|')
-  const summary = `${brandById(S, sb).name} · ${outletById(S, so).name} · ${selN} tasks`
+  const summary = `${brandById(data, sb).name} · ${outletById(data, so).name} · ${selN} tasks`
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
 
   return (
@@ -59,9 +61,9 @@ export function ScheduleModal() {
           <div>
             <div style={fieldLabel}>Store (brand · outlet)</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {S.stores.map((s) => {
-                const b = brandById(S, s.brandId)
-                const o = outletById(S, s.outletId)
+              {data.stores.map((s) => {
+                const b = brandById(data, s.brandId)
+                const o = outletById(data, s.outletId)
                 const key = `${s.brandId}|${s.outletId}`
                 return (
                   <button key={key} onClick={() => setAf('storeKey', key)} style={chip(af.storeKey === key)}>

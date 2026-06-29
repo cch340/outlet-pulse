@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useStore } from '../data/store'
+import { useData } from '../data/queries/useData'
 import { brandById, initials, outletById } from '../data/derived'
 import { chip, tint } from '../theme'
 import { Icon } from './Icon'
@@ -26,15 +27,16 @@ const input: CSSProperties = {
 
 export function TransferModal() {
   const { state, closeTransfer, setTf, confirmTransfer } = useStore()
+  const { data } = useData()
   const S = state
   if (!S.transferStaffId || !S.transferForm) return null
 
-  const st = S.staff.find((x) => x.id === S.transferStaffId)!
+  const st = data.staff.find((x) => x.id === S.transferStaffId)!
   const tf = S.transferForm
-  const curB = brandById(S, st.brandId)
-  const curO = outletById(S, st.outletId)
-  const nb = brandById(S, tf.brandId)
-  const no = outletById(S, tf.outletId)
+  const curB = brandById(data, st.brandId)
+  const curO = outletById(data, st.outletId)
+  const nb = brandById(data, tf.brandId)
+  const no = outletById(data, tf.outletId)
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
 
   return (
@@ -90,7 +92,7 @@ export function TransferModal() {
           <div>
             <div style={fieldLabel}>New brand</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {S.brands.map((b) => (
+              {data.brands.map((b) => (
                 <button key={b.id} onClick={() => setTf('brandId', b.id)} style={chip(tf.brandId === b.id)}>
                   <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color }} />
                   {b.name}
@@ -101,7 +103,7 @@ export function TransferModal() {
           <div>
             <div style={fieldLabel}>New outlet</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {S.outlets.map((o) => (
+              {data.outlets.map((o) => (
                 <button key={o.id} onClick={() => setTf('outletId', o.id)} style={chip(tf.outletId === o.id)}>
                   {o.name}
                 </button>
