@@ -131,7 +131,7 @@ export function FollowUpDrawer() {
             </button>
           ) : (
             <button
-              onClick={() => markDone.mutate({ followUpId: openF.id }, { onError: (e) => alert(e.message) })}
+              onClick={() => markDone.mutate({ followUpId: openF.id }, { onSuccess: () => closeFu(), onError: (e) => alert(e.message) })}
               style={{
                 flex: 1,
                 border: 'none',
