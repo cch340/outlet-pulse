@@ -8,7 +8,8 @@ function detectMobile(): boolean {
   return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
 }
 
-export type Screen = 'dashboard' | 'brands' | 'outlets' | 'staff' | 'visits'
+export type Screen = 'dashboard' | 'visits' | 'manage'
+export type ManageTab = 'brands' | 'outlets' | 'staff' | 'tasks'
 export type Period = 'month' | 'year'
 export type StaffBrandFilter = 'all' | string
 export type VisitFilter = 'all' | 'pending' | 'overdue' | 'done'
@@ -32,6 +33,7 @@ export interface AddForm {
 export interface AppState {
   // navigation / view
   activeScreen: Screen
+  manageTab: ManageTab
   isMobile: boolean
   period: Period
   q: string
@@ -57,6 +59,7 @@ export interface AppState {
 function seed(): AppState {
   return {
     activeScreen: 'dashboard',
+    manageTab: 'brands',
     isMobile: detectMobile(),
     period: 'month',
     q: '',
@@ -101,6 +104,7 @@ export interface StoreActions {
   closeOutletModal(): void
   openStaffModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeStaffModal(): void
+  setManageTab(tab: ManageTab): void
   setAccent(c: string): void
   setThemeMode(m: ThemeMode): void
   setDensity(d: Density): void
@@ -150,6 +154,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       closeOutletModal: () => patch({ outletModal: null }),
       openStaffModal: (staffModal) => patch({ staffModal }),
       closeStaffModal: () => patch({ staffModal: null }),
+      setManageTab: (manageTab) => patch({ manageTab }),
       setAccent: (accent) => patch({ accent }),
       setThemeMode: (themeMode) => patch({ themeMode }),
       setDensity: (density) => patch({ density }),
