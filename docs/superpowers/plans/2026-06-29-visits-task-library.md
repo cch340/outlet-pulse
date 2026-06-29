@@ -13,7 +13,7 @@
 - Build gate: `npm run build` runs `tsc -b` (fails on unused locals/params) then `vite build`. Must stay green at every task boundary.
 - Test gate: `npm test` (`vitest run`). Tests run in the `node` environment; only `src/**/*.test.ts` match. No DOM/component tests — pure logic only.
 - All styling is inline `style={}` objects using CSS variables (`var(--surface)`, `var(--border)`, `var(--accent)`, `var(--dim)`, `var(--text)`, `var(--surface2)`). Reuse helpers from `src/theme.ts` (`chip`, `card`, `pill`).
-- Data is org-wide shared across all signed-in users — no per-user row scoping. New tables get authenticated-only RLS matching the existing pattern.
+- Data is **per-user scoped** (as of `0003_per_user_scoping.sql`): every table has an `owner_id uuid not null references auth.users(id) on delete cascade default auth.uid()` column, set by the DB default, with a per-user RLS policy `"owner access"` of `owner_id = auth.uid()`. The client never sends or selects `owner_id`. **New tables must follow this same pattern**; new mappers/mutations do NOT handle `owner_id` (the DB default fills it, and `select('*')` returns it but mappers ignore it).
 - Migrations live in `supabase/migrations/`, are numbered in order, and are applied manually via the Supabase SQL editor. Plan tasks create the files; they cannot run the SQL.
 - Go through mappers (snake_case row → camelCase model); never pass raw rows around. Domain model lives in `src/data/model.ts`; derived/view-model helpers in `src/data/derived.ts`.
 - Git identity for commits: `git -c user.email=cch340@gmail.com commit ...`.
@@ -27,19 +27,19 @@
 ### Task 1: Database rename migration
 
 **Files:**
-- Create: `supabase/migrations/0003_rename_visits.sql`
+- Create: `supabase/migrations/0004_rename_visits.sql`
 
 **Interfaces:**
-- Produces: tables `visits` (was `follow_ups`), `visit_tasks` (was `follow_up_tasks`), column `visit_tasks.visit_id` (was `follow_up_id`). Policies, indexes, and FK constraints follow the tables automatically through a rename.
+- Produces: tables `visits` (was `follow_ups`), `visit_tasks` (was `follow_up_tasks`), column `visit_tasks.visit_id` (was `follow_up_id`). The `owner_id` column, `"owner access"` RLS policy, indexes, and FK constraints all follow the tables automatically through a rename.
 
 - [ ] **Step 1: Create the migration file**
 
 ```sql
--- 0003_rename_visits.sql
+-- 0004_rename_visits.sql
 -- Rename the "follow-up" domain to "visits".
--- A table rename carries its rows, RLS policies, indexes, and FK constraints
--- with it, so no policy re-creation is needed. Apply AFTER 0002_auth_rls.sql
--- in the Supabase SQL editor.
+-- A table rename carries its rows, owner_id column, "owner access" RLS policy,
+-- indexes, and FK constraints with it, so nothing needs re-creating.
+-- Apply AFTER 0003_per_user_scoping.sql in the Supabase SQL editor.
 
 alter table follow_ups       rename to visits;
 alter table follow_up_tasks  rename to visit_tasks;
@@ -49,7 +49,7 @@ alter table visit_tasks      rename column follow_up_id to visit_id;
 - [ ] **Step 2: Commit**
 
 ```bash
-git add supabase/migrations/0003_rename_visits.sql
+git add supabase/migrations/0004_rename_visits.sql
 git -c user.email=cch340@gmail.com commit -m "feat(db): rename follow_ups/follow_up_tasks to visits/visit_tasks"
 ```
 
@@ -72,7 +72,7 @@ Identifier map applied throughout:
 - Files renamed: `useFollowUpMutations.ts` → `useVisitMutations.ts`, `components/FollowUpDrawer.tsx` → `components/VisitDrawer.tsx`, `screens/Followups.tsx` → `screens/Visits.tsx`
 
 **Files:**
-- Modify: `src/data/queries/keys.ts`, `src/data/model.ts`, `src/data/queries/mappers.ts`, `src/data/queries/useData.ts`, `src/data/derived.ts`, `src/data/store.tsx`, `src/data/nav.ts`, `src/App.tsx`, `src/components/Sidebar.tsx`, `src/components/BottomNav.tsx`, `src/screens/Dashboard.tsx`, `src/components/ScheduleModal.tsx`
+- Modify: `src/data/queries/keys.ts`, `src/data/model.ts`, `src/data/queries/mappers.ts`, `src/data/queries/mappers.test.ts`, `src/data/queries/useData.ts`, `src/data/derived.ts`, `src/data/store.tsx`, `src/data/nav.ts`, `src/App.tsx`, `src/components/Sidebar.tsx`, `src/components/BottomNav.tsx`, `src/screens/Dashboard.tsx`, `src/components/ScheduleModal.tsx`
 - Rename + modify: `src/data/queries/useFollowUpMutations.ts` → `src/data/queries/useVisitMutations.ts`; `src/components/FollowUpDrawer.tsx` → `src/components/VisitDrawer.tsx`; `src/screens/Followups.tsx` → `src/screens/Visits.tsx`
 
 **Interfaces:**
@@ -345,6 +345,32 @@ In both files: `data.followups.filter(isOverdue)` → `data.visits.filter(isOver
 
 `import { useCreateVisit } from '../data/queries/useVisitMutations'`; `const create = useCreateVisit()`. Header `'Schedule a follow-up'` → `'Schedule a visit'`. (The `DEFAULT_TASKS` checklist and submit logic stay as-is until W1.)
 
+- [ ] **Step 13b: `mappers.test.ts` — rename the mapper, row field, and describe block**
+
+The existing test references the old symbols and would fail `npm test`. Update the import on line 2 to `import { rowToStaff, rowToVisit, rowToStore } from './mappers'`, and replace the `rowToFollowUp` block (lines 32–50) with:
+
+```ts
+describe('rowToVisit', () => {
+  it('maps fields and orders tasks by sort', () => {
+    const v = rowToVisit({
+      id: 'f1',
+      date: '2026-06-25',
+      staff_id: null,
+      brand_id: 'b1',
+      outlet_id: 'o1',
+      status: 'pending',
+      visit_tasks: [
+        { id: 't2', visit_id: 'f1', label: 'B', done: true, sort: 1 },
+        { id: 't1', visit_id: 'f1', label: 'A', done: false, sort: 0 },
+      ],
+    })
+    expect(v.staffId).toBeNull()
+    expect(v.tasks.map((t) => t.label)).toEqual(['A', 'B'])
+    expect(v.tasks[0].id).toBe('t1')
+  })
+})
+```
+
 - [ ] **Step 14: Build, test, and verify no stragglers**
 
 Run: `npm run build && npm test`
@@ -475,31 +501,35 @@ git -c user.email=cch340@gmail.com commit -m "feat: consolidate brands/outlets/s
 ### Task 4: `task_templates` table + data layer
 
 **Files:**
-- Create: `supabase/migrations/0004_task_templates.sql`
+- Create: `supabase/migrations/0005_task_templates.sql`
 - Modify: `src/data/model.ts`, `src/data/queries/mappers.ts`, `src/data/queries/keys.ts`, `src/data/queries/useData.ts`
 - Create: `src/data/queries/useTaskTemplateMutations.ts`
 
 **Interfaces:**
-- Produces: `TaskTemplate { id; label; sort }`; `TaskTemplateRow`/`rowToTaskTemplate`; `queryKeys.taskTemplates`; `DataSnapshot.taskTemplates: TaskTemplate[]`; mutations `useCreateTaskTemplate({ label, sort })`, `useRenameTaskTemplate({ id, label })`, `useDeleteTaskTemplate({ id })`, `useReorderTaskTemplates({ ids })`.
+- Produces: `TaskTemplate { id; label; sort }`; `TaskTemplateRow`/`rowToTaskTemplate`; `queryKeys.taskTemplates`; `DataSnapshot.taskTemplates: TaskTemplate[]`; mutations `useCreateTaskTemplate({ label, sort })`, `useRenameTaskTemplate({ id, label })`, `useDeleteTaskTemplate({ id })`, `useReorderTaskTemplates({ ids })`. The DB `owner_id` column is set by its default and never appears in these signatures.
 
 - [ ] **Step 1: Create the migration**
 
+The table follows the per-user scoping pattern established in `0003_per_user_scoping.sql`: an `owner_id` column defaulting to `auth.uid()` plus a per-user `"owner access"` policy. The client code (mapper, mutations below) does NOT reference `owner_id` — the DB fills it.
+
 ```sql
--- 0004_task_templates.sql
--- Reusable visit-task templates shown in the schedule modal. Org-wide shared,
--- authenticated-only (matches the existing tables). Starts empty (no seed rows).
--- Apply AFTER 0003_rename_visits.sql in the Supabase SQL editor.
+-- 0005_task_templates.sql
+-- Reusable visit-task templates shown in the schedule modal. Per-user scoped
+-- (owner_id defaults to auth.uid()), matching every other table after
+-- 0003_per_user_scoping.sql. Starts empty (no seed rows).
+-- Apply AFTER 0004_rename_visits.sql in the Supabase SQL editor.
 
 create table task_templates (
   id         uuid primary key default gen_random_uuid(),
   label      text not null,
   sort       int  not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  owner_id   uuid not null references auth.users(id) on delete cascade default auth.uid()
 );
 
 alter table task_templates enable row level security;
-create policy "authenticated access" on task_templates
-  for all to authenticated using (true) with check (true);
+create policy "owner access" on task_templates
+  for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 ```
 
 - [ ] **Step 2: `model.ts` — add `TaskTemplate`, remove `DEFAULT_TASKS`**

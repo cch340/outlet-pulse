@@ -43,15 +43,16 @@ runs cleanly isolates rename mistakes from the real feature work that follows.
 
 ### Database
 
-New migration `supabase/migrations/0003_rename_visits.sql`, applied manually via the Supabase
-SQL editor after the existing migrations. Uses `ALTER TABLE ... RENAME` so existing rows are
+New migration `supabase/migrations/0004_rename_visits.sql`, applied manually via the Supabase
+SQL editor after `0003_per_user_scoping.sql`. Uses `ALTER TABLE ... RENAME` so existing rows are
 preserved:
 
 - `follow_ups` → `visits`
 - `follow_up_tasks` → `visit_tasks`
 - column `follow_up_tasks.follow_up_id` → `visit_tasks.visit_id`
-- Drop and recreate the authenticated-only RLS policies (from `0002_auth_rls.sql`) under the
-  new table names. Behaviour is identical (org-wide shared, authenticated-only).
+- The `owner_id` column and the per-user `"owner access"` RLS policy (added in
+  `0003_per_user_scoping.sql`) travel with the table automatically through a rename — no policy
+  re-creation needed.
 
 ### Code identifiers (rename throughout `src/`)
 
@@ -113,19 +114,22 @@ items; overdue badge appears on Visits.
 
 ### Database
 
-New table in a dedicated migration `supabase/migrations/0004_task_templates.sql`
-(applied after `0003`):
+New table in a dedicated migration `supabase/migrations/0005_task_templates.sql`
+(applied after `0004_rename_visits.sql`):
 
 ```sql
 create table task_templates (
   id         uuid primary key default gen_random_uuid(),
   label      text not null,
   sort       int  not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  owner_id   uuid not null references auth.users(id) on delete cascade default auth.uid()
 );
 ```
 
-Authenticated-only RLS matching the other tables. Org-wide shared. **No seed rows** (starts
+Per-user scoped with a `"owner access"` RLS policy (`owner_id = auth.uid()`), matching every
+other table after `0003_per_user_scoping.sql`. `owner_id` is set by the DB default, so the
+client code never references it. **No seed rows** (starts
 empty). Table name `task_templates` (chosen over `visit_task_templates` for brevity; these are
 templates for visit checklist tasks).
 
@@ -209,7 +213,8 @@ picked date.
 
 ## Out of scope / YAGNI
 
-- No per-user scoping of templates (app stays org-wide shared, consistent with existing data).
+- Templates follow the existing per-user scoping (`owner_id` default `auth.uid()` + `"owner
+  access"` RLS), so each user manages their own task library — consistent with every other table.
 - No drag-and-drop polish required for reorder beyond simple up/down (can be minimal).
 - No rename of internal-only helpers that don't carry the domain term (e.g. generic utilities).
 
