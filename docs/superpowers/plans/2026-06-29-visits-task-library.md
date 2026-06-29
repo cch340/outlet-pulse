@@ -532,7 +532,7 @@ create policy "owner access" on task_templates
   for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 ```
 
-- [ ] **Step 2: `model.ts` — add `TaskTemplate`, remove `DEFAULT_TASKS`**
+- [ ] **Step 2: `model.ts` — add `TaskTemplate` (keep `DEFAULT_TASKS` for now)**
 
 Add:
 
@@ -544,9 +544,7 @@ export interface TaskTemplate {
 }
 ```
 
-Delete the `DEFAULT_TASKS` const (lines 59–66) and its leading comment. (Its last consumer, `ScheduleModal`, is rewritten in Task 6 — which is committed together with this is NOT required; build stays green because Task 6 follows. To keep THIS task green, keep `DEFAULT_TASKS` and remove it in Task 6 instead.)
-
-> DECISION: Remove `DEFAULT_TASKS` in **Task 6** (where its consumer changes), not here, so this task builds green. In this step, only **add** `TaskTemplate`.
+Do NOT remove `DEFAULT_TASKS` in this task — its consumer (`ScheduleModal`) is not rewritten until Task 6, so removing it now would break the build. `DEFAULT_TASKS` is deleted in Task 6 Step 2, where the consumer changes. In this step, only **add** `TaskTemplate`.
 
 - [ ] **Step 3: `mappers.ts` — add the template row + mapper**
 
