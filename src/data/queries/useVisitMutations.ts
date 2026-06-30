@@ -128,6 +128,41 @@ export function useAddVisitTask() {
   })
 }
 
+export function useAddTaskToVisits() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { label: string; visitIds: string[] }) => {
+      const label = input.label.trim()
+      if (!label || !input.visitIds.length) return
+      // Each visit gets the task appended after its current last task, so we
+      // compute the next sort per visit from the existing rows.
+      const { data: rows, error: qErr } = await supabase
+        .from('visit_tasks')
+        .select('visit_id, sort')
+        .in('visit_id', input.visitIds)
+      if (qErr) throw qErr
+      const maxSort = new Map<string, number>()
+      for (const r of rows ?? []) {
+        const cur = maxSort.get(r.visit_id)
+        if (cur === undefined || r.sort > cur) maxSort.set(r.visit_id, r.sort)
+      }
+      const inserts = input.visitIds.map((visitId) => {
+        const max = maxSort.get(visitId)
+        return {
+          visit_id: visitId,
+          label,
+          status: 'pending',
+          remark: '',
+          sort: max === undefined ? 0 : max + 1,
+        }
+      })
+      const { error } = await supabase.from('visit_tasks').insert(inserts)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
+  })
+}
+
 export function useRemoveVisitTask() {
   const qc = useQueryClient()
   return useMutation({

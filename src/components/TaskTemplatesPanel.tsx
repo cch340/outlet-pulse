@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useData } from '../data/queries/useData'
 import { card } from '../theme'
 import { Icon } from './Icon'
+import { AddTaskToVisitsModal } from './AddTaskToVisitsModal'
 import {
   useCreateTaskTemplate,
   useRenameTaskTemplate,
@@ -16,6 +17,7 @@ export function TaskTemplatesPanel() {
   const deleteT = useDeleteTaskTemplate()
   const reorderT = useReorderTaskTemplates()
   const [newLabel, setNewLabel] = useState('')
+  const [addToVisitsLabel, setAddToVisitsLabel] = useState<string | null>(null)
 
   const templates = data.taskTemplates
   const ids = templates.map((t) => t.id)
@@ -122,6 +124,13 @@ export function TaskTemplatesPanel() {
               }}
               style={{ ...inputStyle, flex: 1, background: 'transparent', border: '1px solid transparent' }}
             />
+            <button
+              onClick={() => setAddToVisitsLabel(t.label)}
+              title="Add to existing visits"
+              style={iconBtn}
+            >
+              <Icon name="add_task" size={18} />
+            </button>
             <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...iconBtn, opacity: i === 0 ? 0.3 : 1 }}>
               <Icon name="arrow_upward" size={18} />
             </button>
@@ -138,6 +147,10 @@ export function TaskTemplatesPanel() {
           </div>
         ))}
       </div>
+
+      {addToVisitsLabel !== null && (
+        <AddTaskToVisitsModal label={addToVisitsLabel} onClose={() => setAddToVisitsLabel(null)} />
+      )}
     </div>
   )
 }
