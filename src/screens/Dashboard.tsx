@@ -1,6 +1,6 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { visitVM, isOverdue, visitStatus, linked, staffCount, today } from '../data/derived'
+import { visitVM, isOverdue, visitStatus, visitComplete, linked, staffCount, today } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
@@ -23,9 +23,8 @@ export function Dashboard() {
   const monthFus = data.visits.filter((f) => f.date.startsWith(mo))
   const periodFus = S.period === 'month' ? monthFus : yearFus
   const periodLabel = S.period === 'month' ? monthLabel : yearLabel
-  const pDone = periodFus.filter((f) => visitStatus(f) === 'done').length
+  const pDone = periodFus.filter(visitComplete).length
   const pPend = periodFus.filter((f) => visitStatus(f) === 'pending').length
-  const pAttn = periodFus.filter((f) => visitStatus(f) === 'attention').length
   const pOver = periodFus.filter(isOverdue).length
   const compRate = periodFus.length ? Math.round((pDone / periodFus.length) * 100) : 0
 
@@ -40,13 +39,12 @@ export function Dashboard() {
     { label: 'Visits', value: periodFus.length, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
     { label: 'Completion', value: `${compRate}%`, sub: `${pDone} completed`, icon: 'task_alt', tone: '#16a34a' },
     { label: 'Pending', value: pPend, sub: 'awaiting completion', icon: 'pending', tone: '#d97706' },
-    { label: 'Attention', value: pAttn, sub: 'needs attention', icon: 'warning', tone: '#dc2626' },
     { label: 'Overdue', value: pOver, sub: 'past scheduled date', icon: 'event_busy', tone: '#ea580c' },
   ]
 
   const mdata = MK.map(([label, mm]) => {
     const fs = yearFus.filter((f) => f.date.slice(5, 7) === mm)
-    const done = fs.filter((x) => visitStatus(x) === 'done').length
+    const done = fs.filter(visitComplete).length
     return { label, done, notDone: fs.length - done }
   })
   const tmax = Math.max(1, ...mdata.map((m) => m.done + m.notDone))
@@ -55,7 +53,7 @@ export function Dashboard() {
   const bmax = Math.max(1, ...data.brands.map((b) => yearFus.filter((f) => f.brandId === b.id).length))
   const brandBreakdown = data.brands.map((b) => {
     const fs = yearFus.filter((f) => f.brandId === b.id)
-    return { name: b.name, color: b.color, done: fs.filter((x) => visitStatus(x) === 'done').length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
+    return { name: b.name, color: b.color, done: fs.filter(visitComplete).length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
   })
 
   const omax = Math.max(1, ...data.outlets.map((o) => staffCount(data, null, o.id)))
@@ -135,6 +133,41 @@ export function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* attention lists */}
+      {(overdueList.length > 0 || upcomingList.length > 0) && (
+        <div style={grid2}>
+          {overdueList.length > 0 && (
+            <div style={{ ...card, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Icon name="warning" size={19} color="#dc2626" />
+                <div style={sectionTitle}>Overdue visits</div>
+                <span style={{ ...mono, fontSize: 12, fontWeight: 600, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '1px 8px' }}>
+                  {overdueList.length}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {overdueList.map((f) => (
+                  <AttentionRow key={f.id} dot="#dc2626" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="#dc2626" onClick={() => openVisit(f.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+          {upcomingList.length > 0 && (
+            <div style={{ ...card, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Icon name="event_upcoming" size={19} color="#2563eb" />
+                <div style={sectionTitle}>Upcoming visits</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {upcomingList.map((f) => (
+                  <AttentionRow key={f.id} dot="#2563eb" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="var(--dim)" onClick={() => openVisit(f.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* trend + matrix */}
       <div style={grid2}>
@@ -280,36 +313,6 @@ export function Dashboard() {
                   <div style={{ height: '100%', width: `${o.pct}%`, background: 'var(--accent)', borderRadius: 5 }} />
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* attention lists */}
-      <div style={grid2}>
-        <div style={{ ...card, padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Icon name="warning" size={19} color="#dc2626" />
-            <div style={sectionTitle}>Overdue visits</div>
-            <span style={{ ...mono, fontSize: 12, fontWeight: 600, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '1px 8px' }}>
-              {overdueList.length}
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {overdueList.map((f) => (
-              <AttentionRow key={f.id} dot="#dc2626" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="#dc2626" onClick={() => openVisit(f.id)} />
-            ))}
-            {overdueList.length === 0 && <div style={{ fontSize: 13, color: 'var(--dim)', padding: '8px 2px' }}>Nothing overdue.</div>}
-          </div>
-        </div>
-        <div style={{ ...card, padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Icon name="event_upcoming" size={19} color="#2563eb" />
-            <div style={sectionTitle}>Upcoming visits</div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {upcomingList.map((f) => (
-              <AttentionRow key={f.id} dot="#2563eb" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="var(--dim)" onClick={() => openVisit(f.id)} />
             ))}
           </div>
         </div>
