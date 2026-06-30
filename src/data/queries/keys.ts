@@ -9,5 +9,6 @@ export const queryKeys = {
   visit: (id: string | null) => ['visits', 'one', id] as const,
   dashboardSummary: (params: unknown) => ['visits', 'dashboard', params] as const,
   visitsMissingLabel: (params: unknown) => ['visits', 'missing', params] as const,
+  latestFailedTasks: ['visits', 'latestFailed'] as const,
   taskTemplates: ['taskTemplates'] as const,
 }
