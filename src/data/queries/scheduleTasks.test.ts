@@ -88,4 +88,12 @@ describe('planSchedule', () => {
     )
     expect(plan.newTemplateLabels).toEqual(['Audit'])
   })
+
+  it('yields no visit tasks when nothing is checked', () => {
+    const plan = planSchedule(
+      [mk({ key: 'a', label: 'A', checked: false }), mk({ key: 'b', label: 'B', checked: false })],
+      [],
+    )
+    expect(plan.taskLabels).toEqual([])
+  })
 })

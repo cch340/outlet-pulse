@@ -49,6 +49,7 @@ export function ScheduleModal() {
   const af = S.addForm
   const items = af.tasks
   const selN = items.filter((t) => t.checked).length
+  const canSubmit = items.some((t) => t.checked && t.label.trim())
   const [sb, so] = af.storeKey.split('|')
   const bName = brandById(data, sb)?.name ?? '—'
   const oName = outletById(data, so)?.name ?? '—'
@@ -308,7 +309,9 @@ export function ScheduleModal() {
 
         {/* footer */}
         <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <div style={{ fontSize: 12, color: 'var(--dim)' }}>{summary}</div>
+          <div style={{ fontSize: 12, color: canSubmit ? 'var(--dim)' : '#dc2626' }}>
+            {canSubmit ? summary : 'Add at least one task'}
+          </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={closeAdd}
@@ -328,6 +331,7 @@ export function ScheduleModal() {
             </button>
             <button
               onClick={submit}
+              disabled={!canSubmit}
               style={{
                 border: 'none',
                 background: 'var(--accent)',
@@ -337,7 +341,8 @@ export function ScheduleModal() {
                 fontFamily: "'IBM Plex Sans'",
                 fontSize: 13.5,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                opacity: canSubmit ? 1 : 0.5,
               }}
             >
               Schedule
