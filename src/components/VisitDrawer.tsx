@@ -145,7 +145,7 @@ export function VisitDrawer() {
         </div>
 
         {/* footer */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             type="button"
             disabled={vm.pendingT === 0}
@@ -153,7 +153,7 @@ export function VisitDrawer() {
               markAll.mutate({ visitId: openF.id }, { onSuccess: () => closeVisit(), onError: (e) => alert(e.message) })
             }
             style={{
-              flex: 1,
+              width: '100%',
               border: 'none',
               background: '#16a34a',
               color: '#fff',
@@ -171,8 +171,13 @@ export function VisitDrawer() {
             }}
           >
             <Icon name="task_alt" size={18} />
-            Mark all success
+            Mark pending as success
           </button>
+          {vm.pendingT > 0 && (
+            <div style={{ fontSize: 11.5, color: 'var(--dim)', textAlign: 'center' }}>
+              Sets the {vm.pendingT} pending {vm.pendingT === 1 ? 'task' : 'tasks'} to success · failed tasks are kept
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -67,6 +67,31 @@ export function Visits() {
           <div style={{ padding: 28, textAlign: 'center', color: 'var(--dim)', fontSize: 13 }}>No visits match this filter.</div>
         )}
 
+        {!isMobile && rows.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '9px 16px',
+              borderBottom: '1px solid var(--border)',
+              background: 'var(--surface2)',
+              fontSize: 10.5,
+              fontWeight: 600,
+              color: 'var(--dim)',
+              textTransform: 'uppercase',
+              letterSpacing: '.05em',
+            }}
+          >
+            <div style={{ width: 46, textAlign: 'center', flexShrink: 0 }}>Date</div>
+            <div style={{ width: 1, flexShrink: 0 }} />
+            <div style={{ flex: 1.6, minWidth: 0 }}>Brand · Outlet</div>
+            <div style={{ flex: 1, minWidth: 90 }}>Tasks</div>
+            <div style={{ width: 116, textAlign: 'right', flexShrink: 0 }}>Action</div>
+            <div style={{ width: 132, textAlign: 'right', flexShrink: 0 }}>Status</div>
+          </div>
+        )}
+
         {!isMobile &&
           rows.map((f) => (
             <div
@@ -88,8 +113,9 @@ export function Visits() {
               </div>
               <div style={{ flex: 1, minWidth: 90 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 90 }}>
-                    <div style={{ height: '100%', width: `${f.progressPct}%`, background: f.statusColor }} />
+                  <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 90, display: 'flex' }}>
+                    {f.successT > 0 && <div style={{ width: `${(f.successT / f.total) * 100}%`, background: '#16a34a' }} />}
+                    {f.failedT > 0 && <div style={{ width: `${(f.failedT / f.total) * 100}%`, background: '#dc2626' }} />}
                   </div>
                   <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)' }}>
                     {f.resolvedT}/{f.total}
@@ -120,7 +146,7 @@ export function Visits() {
                     }}
                   >
                     <Icon name="check" size={16} />
-                    All success
+                    Pass pending
                   </button>
                 )}
               </div>
