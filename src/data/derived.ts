@@ -37,6 +37,11 @@ export function visitBaseStatus(tasks: Task[]): VisitBaseStatus {
 
 export const visitStatus = (f: Visit): VisitBaseStatus => visitBaseStatus(f.tasks)
 
+// A visit counts as complete once its task list is fully resolved (every task
+// marked success or failed) — i.e. no pending tasks remain. Both 'done' and
+// 'attention' base statuses are complete; only 'pending' is not.
+export const visitComplete = (f: Visit): boolean => visitStatus(f) !== 'pending'
+
 export const isOverdue = (f: Visit) =>
   visitStatus(f) === 'pending' && new Date(f.date + 'T00:00:00') < today()
 

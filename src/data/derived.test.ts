@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fmt, staffForStore, visitBaseStatus, visitStatus, isOverdue, visitVM } from './derived'
+import { fmt, staffForStore, visitBaseStatus, visitStatus, visitComplete, isOverdue, visitVM } from './derived'
 import type { DataSnapshot } from './queries/useData'
 
 describe('fmt', () => {
@@ -66,6 +66,16 @@ describe('visitStatus', () => {
   })
   it('returns done when all tasks are success', () => {
     expect(visitStatus(mkVisit('2999-01-01', ['success', 'success']))).toBe('done')
+  })
+})
+
+describe('visitComplete', () => {
+  it('is false while any task is still pending', () => {
+    expect(visitComplete(mkVisit('2999-01-01', ['pending', 'success']))).toBe(false)
+  })
+  it('is true once every task is resolved, even with a failure', () => {
+    expect(visitComplete(mkVisit('2999-01-01', ['failed', 'success']))).toBe(true)
+    expect(visitComplete(mkVisit('2999-01-01', ['success', 'success']))).toBe(true)
   })
 })
 
