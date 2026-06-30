@@ -12,6 +12,8 @@ export interface VisitsPageParams {
   status: string
   latest: boolean
   search: string
+  brand: string | null
+  outlet: string | null
   limit: number
   offset: number
 }
@@ -33,6 +35,8 @@ export function useVisitsPage(p: VisitsPageParams): {
         p_status: p.status,
         p_latest: p.latest,
         p_search: p.search,
+        p_brand: p.brand,
+        p_outlet: p.outlet,
         p_limit: p.limit,
         p_offset: p.offset,
       })
@@ -64,6 +68,8 @@ export interface CountsParams {
   to: string | null
   latest: boolean
   search: string
+  brand: string | null
+  outlet: string | null
 }
 
 const ZERO_COUNTS: StatusCounts = { all: 0, pending: 0, attention: 0, overdue: 0, done: 0 }
@@ -79,6 +85,8 @@ export function useVisitStatusCounts(p: CountsParams): StatusCounts {
         p_to: p.to,
         p_latest: p.latest,
         p_search: p.search,
+        p_brand: p.brand,
+        p_outlet: p.outlet,
       })
       if (error) throw error
       return foldStatusCounts((data ?? []) as { status: string; n: number }[])

@@ -7,7 +7,7 @@ import { visitVM, today, localDateStr, TASK_STATUS_COLOR } from '../data/derived
 import { resolveDateRange, pageCount, type DatePreset } from '../data/queries/visitsQuery'
 import type { VisitFilter } from '../data/store'
 import type { Task } from '../data/model'
-import { card, chip, pill } from '../theme'
+import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -45,6 +45,18 @@ const dateInput = {
   color: 'var(--text)',
 } as const
 
+const selectStyle = {
+  border: '1px solid var(--border)',
+  background: 'var(--surface2)',
+  borderRadius: 8,
+  padding: '6px 9px',
+  fontFamily: "'IBM Plex Sans'",
+  fontSize: 12.5,
+  fontWeight: 600,
+  color: 'var(--text)',
+  cursor: 'pointer',
+} as const
+
 export function Visits() {
   const { state, setVisitFilter, openVisit } = useStore()
   const { data } = useData()
@@ -55,28 +67,47 @@ export function Visits() {
   const [datePreset, setDatePreset] = useState<DatePreset>('all')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
+  const [brandFilter, setBrandFilter] = useState<string>('all')
+  const [outletFilter, setOutletFilter] = useState<string>('all')
   const [latestPerStore, setLatestPerStore] = useState(false)
   const [page, setPage] = useState(0)
   const [allExpanded, setAllExpanded] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  // Mobile-only: the visit id whose status tooltip is currently shown (one at a time).
+  const [openStatusId, setOpenStatusId] = useState<string | null>(null)
 
   const t = today()
   const todayStr = localDateStr(t)
   const { from, to } = resolveDateRange(datePreset, customFrom, customTo, todayStr)
   const search = S.q.trim()
+  const brand = brandFilter === 'all' ? null : brandFilter
+  const outlet = outletFilter === 'all' ? null : outletFilter
 
   // Any filter change returns to the first page.
   useEffect(() => {
     setPage(0)
-  }, [S.visitFilter, datePreset, customFrom, customTo, latestPerStore, search])
+  }, [S.visitFilter, datePreset, customFrom, customTo, brandFilter, outletFilter, latestPerStore, search])
 
   // Collapse all detail views when the page or any filter changes.
   useEffect(() => {
     setAllExpanded(false)
     setExpandedIds(new Set())
-  }, [page, S.visitFilter, datePreset, customFrom, customTo, latestPerStore, search])
+  }, [page, S.visitFilter, datePreset, customFrom, customTo, brandFilter, outletFilter, latestPerStore, search])
 
-  const counts = useVisitStatusCounts({ today: todayStr, from, to, latest: latestPerStore, search })
+  // Mobile status tooltip: dismiss on tap-outside or after a short timeout
+  // (the badge tap itself stops propagation, so it doesn't self-close).
+  useEffect(() => {
+    if (!openStatusId) return
+    const close = () => setOpenStatusId(null)
+    const timer = setTimeout(close, 1500)
+    window.addEventListener('click', close)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('click', close)
+    }
+  }, [openStatusId])
+
+  const counts = useVisitStatusCounts({ today: todayStr, from, to, latest: latestPerStore, search, brand, outlet })
   const { visits, total } = useVisitsPage({
     today: todayStr,
     from,
@@ -84,6 +115,8 @@ export function Visits() {
     status: S.visitFilter,
     latest: latestPerStore,
     search,
+    brand,
+    outlet,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
   })
@@ -125,24 +158,22 @@ export function Visits() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* status chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
-        {filterDefs.map(([k, label]) => (
-          <button key={k} onClick={() => setVisitFilter(k)} style={chip(S.visitFilter === k)}>
-            {label} <span style={{ fontFamily: "'IBM Plex Mono'", opacity: 0.7 }}>{counts[k]}</span>
-          </button>
-        ))}
-      </div>
-
       {/* filter toolbar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-          {PRESETS.map(([k, label]) => (
-            <button key={k} onClick={() => setDatePreset(k)} style={chip(datePreset === k)}>
-              {label}
-            </button>
+        <select aria-label="Status" value={S.visitFilter} onChange={(e) => setVisitFilter(e.target.value as VisitFilter)} style={selectStyle}>
+          {filterDefs.map(([k, label]) => (
+            <option key={k} value={k}>
+              {label} ({counts[k]})
+            </option>
           ))}
-        </div>
+        </select>
+        <select aria-label="Date range" value={datePreset} onChange={(e) => setDatePreset(e.target.value as DatePreset)} style={selectStyle}>
+          {PRESETS.map(([k, label]) => (
+            <option key={k} value={k}>
+              {label}
+            </option>
+          ))}
+        </select>
         {datePreset === 'custom' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input type="date" aria-label="From date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} style={dateInput} />
@@ -150,6 +181,22 @@ export function Visits() {
             <input type="date" aria-label="To date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} style={dateInput} />
           </div>
         )}
+        <select aria-label="Brand" value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All brands</option>
+          {data.brands.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Outlet" value={outletFilter} onChange={(e) => setOutletFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All outlets</option>
+          {data.outlets.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.name}
+            </option>
+          ))}
+        </select>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text)', cursor: 'pointer' }}>
           <input type="checkbox" checked={latestPerStore} onChange={(e) => setLatestPerStore(e.target.checked)} />
           Latest per store
@@ -193,6 +240,7 @@ export function Visits() {
 
         {rows.map((f) => {
           const expanded = expandedIds.has(f.vm.id)
+          const statusOpen = openStatusId === f.vm.id
           const chevron = (
             <button
               type="button"
@@ -300,8 +348,62 @@ export function Visits() {
                     <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {f.vm.staffName}
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                      <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 120, display: 'flex' }}>
+                        {f.vm.successT > 0 && <div style={{ width: `${(f.vm.successT / f.vm.total) * 100}%`, background: '#16a34a' }} />}
+                        {f.vm.failedT > 0 && <div style={{ width: `${(f.vm.failedT / f.vm.total) * 100}%`, background: '#dc2626' }} />}
+                      </div>
+                      <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)', flexShrink: 0 }}>
+                        {f.vm.resolvedT}/{f.vm.total}
+                      </span>
+                    </div>
                   </div>
-                  <span style={pill(f.vm.statusColor)}>{f.vm.statusLabel}</span>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      aria-label={f.vm.statusLabel}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setOpenStatusId((cur) => (cur === f.vm.id ? null : f.vm.id))
+                      }}
+                      style={{
+                        ...pill(f.vm.statusColor),
+                        width: 34,
+                        height: 34,
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 16,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {f.vm.statusLabel[0]}
+                    </button>
+                    {statusOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: 0,
+                          marginTop: 6,
+                          background: 'var(--text)',
+                          color: 'var(--surface)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          whiteSpace: 'nowrap',
+                          zIndex: 5,
+                          boxShadow: '0 4px 12px rgba(0,0,0,.18)',
+                        }}
+                      >
+                        {f.vm.statusLabel}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
