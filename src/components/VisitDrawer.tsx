@@ -23,6 +23,7 @@ export function VisitDrawer() {
   const addTask = useAddVisitTask()
   const removeTask = useRemoveVisitTask()
   const [newTaskLabel, setNewTaskLabel] = useState('')
+  const [storePickerOpen, setStorePickerOpen] = useState(false)
   const { data } = useData()
   const S = state
   const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
@@ -67,30 +68,58 @@ export function VisitDrawer() {
               {vm.title}
             </div>
 
-            {/* Store (brand · outlet) */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {data.stores.map((s) => {
-                const b = brandById(data, s.brandId)
-                const o = outletById(data, s.outletId)
-                const active = s.brandId === openF.brandId && s.outletId === openF.outletId
-                return (
-                  <button
-                    key={`${s.brandId}|${s.outletId}`}
-                    onClick={() => {
-                      if (active) return
-                      const list = staffForStore(data, s.brandId, s.outletId)
-                      updateVisit.mutate(
-                        { visitId: openF.id, brandId: s.brandId, outletId: s.outletId, staffId: list[0]?.id ?? null },
-                        { onError: (e) => alert(e.message) },
-                      )
-                    }}
-                    style={chip(active)}
-                  >
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
-                    {b.name} · {o.name}
-                  </button>
-                )
-              })}
+            {/* Store (brand · outlet) — collapsed, click to choose */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setStorePickerOpen((o) => !o)}
+                aria-expanded={storePickerOpen}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: 'fit-content',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface2)',
+                  borderRadius: 8,
+                  padding: '7px 11px',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: brandById(data, openF.brandId).color }} />
+                {brandById(data, openF.brandId).name} · {outletById(data, openF.outletId).name}
+                <Icon name={storePickerOpen ? 'expand_less' : 'expand_more'} size={18} />
+              </button>
+              {storePickerOpen && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {data.stores.map((s) => {
+                    const b = brandById(data, s.brandId)
+                    const o = outletById(data, s.outletId)
+                    const active = s.brandId === openF.brandId && s.outletId === openF.outletId
+                    return (
+                      <button
+                        key={`${s.brandId}|${s.outletId}`}
+                        onClick={() => {
+                          setStorePickerOpen(false)
+                          if (active) return
+                          const list = staffForStore(data, s.brandId, s.outletId)
+                          updateVisit.mutate(
+                            { visitId: openF.id, brandId: s.brandId, outletId: s.outletId, staffId: list[0]?.id ?? null },
+                            { onError: (e) => alert(e.message) },
+                          )
+                        }}
+                        style={chip(active)}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
+                        {b.name} · {o.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Date */}
