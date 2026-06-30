@@ -57,6 +57,18 @@ describe('visitBaseStatus', () => {
   })
 })
 
+describe('visitStatus', () => {
+  it('returns pending when any task is pending', () => {
+    expect(visitStatus(mkVisit('2999-01-01', ['pending', 'success']))).toBe('pending')
+  })
+  it('returns attention when no pending but at least one failed', () => {
+    expect(visitStatus(mkVisit('2999-01-01', ['failed', 'success']))).toBe('attention')
+  })
+  it('returns done when all tasks are success', () => {
+    expect(visitStatus(mkVisit('2999-01-01', ['success', 'success']))).toBe('done')
+  })
+})
+
 describe('isOverdue', () => {
   it('is true only for a pending visit dated before today', () => {
     expect(isOverdue(mkVisit('2000-01-01', ['pending']))).toBe(true)
