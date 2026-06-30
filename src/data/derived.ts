@@ -1,5 +1,5 @@
 import type { DataSnapshot } from './queries/useData'
-import type { Brand, Visit, Outlet, Staff, Task } from './model'
+import type { Brand, Visit, Outlet, Staff, Task, TaskStatus } from './model'
 
 // Production "today" comes from the real clock. The prototype fixed it at 2026-06-29.
 export const today = () => {
@@ -78,6 +78,13 @@ export const STATUS_LABEL: Record<DerivedStatus, string> = {
   pending: 'Pending',
   overdue: 'Overdue',
   attention: 'Attention required',
+}
+
+// Per-task dot color for read-only checklist displays (mirrors the drawer's segments).
+export const TASK_STATUS_COLOR: Record<TaskStatus, string> = {
+  pending: '#6b7280',
+  failed: '#dc2626',
+  success: '#16a34a',
 }
 
 export interface VisitVM {
