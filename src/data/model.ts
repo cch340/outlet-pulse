@@ -38,13 +38,14 @@ export interface Staff {
   history: HistoryEntry[]
 }
 
+export type TaskStatus = 'pending' | 'failed' | 'success'
+
 export interface Task {
   id?: string // present once persisted; absent for default checklist templates
   label: string
-  done: boolean
+  status: TaskStatus
+  remark: string // '' when empty
 }
-
-export type VisitStatus = 'done' | 'pending'
 
 export interface Visit {
   id: string
@@ -52,7 +53,6 @@ export interface Visit {
   staffId: string | null
   brandId: string
   outletId: string
-  status: VisitStatus
   tasks: Task[]
 }
 

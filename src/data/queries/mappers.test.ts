@@ -30,21 +30,20 @@ describe('rowToStaff', () => {
 })
 
 describe('rowToVisit', () => {
-  it('maps fields and orders tasks by sort', () => {
+  it('maps fields and orders tasks by sort, carrying status + remark', () => {
     const v = rowToVisit({
       id: 'f1',
       date: '2026-06-25',
       staff_id: null,
       brand_id: 'b1',
       outlet_id: 'o1',
-      status: 'pending',
       visit_tasks: [
-        { id: 't2', visit_id: 'f1', label: 'B', done: true, sort: 1 },
-        { id: 't1', visit_id: 'f1', label: 'A', done: false, sort: 0 },
+        { id: 't2', visit_id: 'f1', label: 'B', status: 'success', remark: '', sort: 1 },
+        { id: 't1', visit_id: 'f1', label: 'A', status: 'pending', remark: 'note', sort: 0 },
       ],
     })
     expect(v.staffId).toBeNull()
     expect(v.tasks.map((t) => t.label)).toEqual(['A', 'B'])
-    expect(v.tasks[0].id).toBe('t1')
+    expect(v.tasks[0]).toEqual({ id: 't1', label: 'A', status: 'pending', remark: 'note' })
   })
 })

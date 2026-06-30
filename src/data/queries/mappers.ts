@@ -1,4 +1,4 @@
-import type { Visit, HistoryEntry, Staff, Store, Task, TaskTemplate } from '../model'
+import type { Visit, HistoryEntry, Staff, Store, Task, TaskTemplate, TaskStatus } from '../model'
 
 export interface StaffHistoryRow {
   id: string
@@ -25,7 +25,8 @@ export interface TaskRow {
   id: string
   visit_id: string
   label: string
-  done: boolean
+  status: TaskStatus
+  remark: string
   sort: number
 }
 
@@ -35,7 +36,6 @@ export interface VisitRow {
   staff_id: string | null
   brand_id: string
   outlet_id: string
-  status: 'done' | 'pending'
   visit_tasks: TaskRow[]
 }
 
@@ -76,7 +76,7 @@ export const rowToStaff = (r: StaffRow): Staff => ({
     .map(rowToHistory),
 })
 
-const rowToTask = (r: TaskRow): Task => ({ id: r.id, label: r.label, done: r.done })
+const rowToTask = (r: TaskRow): Task => ({ id: r.id, label: r.label, status: r.status, remark: r.remark })
 
 export const rowToVisit = (r: VisitRow): Visit => ({
   id: r.id,
@@ -84,6 +84,5 @@ export const rowToVisit = (r: VisitRow): Visit => ({
   staffId: r.staff_id,
   brandId: r.brand_id,
   outletId: r.outlet_id,
-  status: r.status,
   tasks: [...r.visit_tasks].sort((a, b) => a.sort - b.sort).map(rowToTask),
 })
