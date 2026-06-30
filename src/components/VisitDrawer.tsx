@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
+import { useVisit } from '../data/queries/useVisit'
 import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
 import { pill, chip } from '../theme'
 import { Icon } from './Icon'
@@ -28,8 +29,8 @@ export function VisitDrawer() {
   const [importOpen, setImportOpen] = useState(false)
   const [selectedImportIds, setSelectedImportIds] = useState<string[]>([])
   const { data } = useData()
+  const { visit: openF } = useVisit(state.openVisitId)
   const S = state
-  const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
   if (!openF) return null
 
   const vm = visitVM(data, openF)
