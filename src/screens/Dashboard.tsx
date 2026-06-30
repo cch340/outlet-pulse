@@ -11,6 +11,16 @@ import { Icon } from '../components/Icon'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+const CARD_IDS = [
+  'latestFailedTasks',
+  'overdue',
+  'upcoming',
+  'trend',
+  'matrix',
+  'visitsByBrand',
+  'staffByOutlet',
+]
+
 export function Dashboard() {
   const { state, setPeriod, openVisit } = useStore()
   const { data } = useData()
@@ -30,17 +40,8 @@ export function Dashboard() {
     listLimit: 20,
   })
 
-  const { rows: latestFailed } = useLatestFailedTasks()
+  const { rows: latestFailed, isError: failedError } = useLatestFailedTasks()
 
-  const CARD_IDS = [
-    'latestFailedTasks',
-    'overdue',
-    'upcoming',
-    'trend',
-    'matrix',
-    'visitsByBrand',
-    'staffByOutlet',
-  ]
   const collapse = useCardCollapse(CARD_IDS)
 
   const kpiSrc = S.period === 'month' ? summary.kpisMonth : summary.kpisYear
@@ -189,7 +190,9 @@ export function Dashboard() {
         open={collapse.isOpen('latestFailedTasks')}
         onToggle={collapse.toggle}
       >
-        {failedRows.length === 0 ? (
+        {failedError ? (
+          <div style={{ fontSize: 12.5, color: '#dc2626' }}>Couldn't load latest failed tasks.</div>
+        ) : failedRows.length === 0 ? (
           <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>No brand × outlet pairs yet.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
