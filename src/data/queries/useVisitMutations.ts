@@ -106,13 +106,21 @@ export function useUpdateVisit() {
 export function useAddVisitTask() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { visitId: string; label: string; sort: number }) => {
+    mutationFn: async (input: { visitId: string; label: string }) => {
+      const { data: rows, error: qErr } = await supabase
+        .from('visit_tasks')
+        .select('sort')
+        .eq('visit_id', input.visitId)
+        .order('sort', { ascending: false })
+        .limit(1)
+      if (qErr) throw qErr
+      const nextSort = rows && rows.length ? rows[0].sort + 1 : 0
       const { error } = await supabase.from('visit_tasks').insert({
         visit_id: input.visitId,
         label: input.label,
         status: 'pending',
         remark: '',
-        sort: input.sort,
+        sort: nextSort,
       })
       if (error) throw error
     },

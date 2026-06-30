@@ -1,14 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nextTaskSort, taskHasResult } from './visitEdit'
-
-describe('nextTaskSort', () => {
-  it('returns 0 for an empty checklist', () => {
-    expect(nextTaskSort([])).toBe(0)
-  })
-  it('returns the count of existing tasks (next append position)', () => {
-    expect(nextTaskSort([{}, {}, {}])).toBe(3)
-  })
-})
+import { taskHasResult } from './visitEdit'
 
 describe('taskHasResult', () => {
   it('is false for a pending task with an empty remark', () => {

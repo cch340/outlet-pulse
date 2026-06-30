@@ -6,7 +6,7 @@ import { pill, chip } from '../theme'
 import { Icon } from './Icon'
 import type { TaskStatus } from '../data/model'
 import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask } from '../data/queries/useVisitMutations'
-import { nextTaskSort, taskHasResult } from '../data/queries/visitEdit'
+import { taskHasResult } from '../data/queries/visitEdit'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
   { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
@@ -30,6 +30,16 @@ export function VisitDrawer() {
 
   const vm = visitVM(data, openF)
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
+  const storeStaff = staffForStore(data, openF.brandId, openF.outletId)
+
+  const submitTask = () => {
+    const label = newTaskLabel.trim()
+    if (!label) return
+    addTask.mutate(
+      { visitId: openF.id, label },
+      { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
+    )
+  }
 
   return (
     <div
@@ -109,10 +119,10 @@ export function VisitDrawer() {
             {/* Staff reassign */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--dim)' }}>Staff on duty</span>
-              {staffForStore(data, openF.brandId, openF.outletId).length === 0 ? (
+              {storeStaff.length === 0 ? (
                 <span style={{ fontSize: 13, color: 'var(--dim)' }}>Unassigned</span>
               ) : (
-                staffForStore(data, openF.brandId, openF.outletId).map((st) => (
+                storeStaff.map((st) => (
                   <button
                     key={st.id}
                     onClick={() =>
@@ -230,19 +240,14 @@ export function VisitDrawer() {
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
             <input
               value={newTaskLabel}
               onChange={(e) => setNewTaskLabel(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== 'Enter') return
                 e.preventDefault()
-                const label = newTaskLabel.trim()
-                if (!label) return
-                addTask.mutate(
-                  { visitId: openF.id, label, sort: nextTaskSort(openF.tasks) },
-                  { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
-                )
+                submitTask()
               }}
               placeholder="Add a task…"
               style={{
@@ -258,14 +263,7 @@ export function VisitDrawer() {
             />
             <button
               type="button"
-              onClick={() => {
-                const label = newTaskLabel.trim()
-                if (!label) return
-                addTask.mutate(
-                  { visitId: openF.id, label, sort: nextTaskSort(openF.tasks) },
-                  { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
-                )
-              }}
+              onClick={submitTask}
               style={{
                 border: '1px solid var(--border)',
                 background: 'var(--surface)',
