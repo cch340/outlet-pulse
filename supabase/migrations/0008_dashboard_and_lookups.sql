@@ -2,7 +2,8 @@
 -- Spec 2: remove the global visits fetch. Two security_invoker functions:
 --   dashboard_summary  — one JSON blob with all Dashboard visit metrics
 --   visits_missing_label — visits lacking a given task label (add-task modal)
--- Both build on the 0007 visit_with_status view and keep owner_id RLS in force.
+-- dashboard_summary builds on the 0007 visit_with_status view; visits_missing_label
+-- queries the base tables directly. Both keep owner_id RLS in force (security_invoker).
 -- Apply AFTER 0007_visit_pagination.sql in the Supabase SQL editor.
 
 create or replace function dashboard_summary(
