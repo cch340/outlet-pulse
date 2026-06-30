@@ -14,12 +14,13 @@ Enrich the visit checklist so each task carries a **3-state status** (`pending` 
 - Visit status is derived from task statuses with a new `attention` state.
 - Per-task status is set from a segmented control rendered **below** the task label, conveying state by **color** (with a small assistive glyph), so it stays compact on mobile.
 - A "Mark all success" shortcut (list + drawer) sets all *pending* tasks to success.
+- A visit cannot be created with zero tasks — creation is blocked in the schedule modal.
 
 ## Non-goals
 
 - No server-side / SQL reporting infrastructure now. Reports are expected to be in-app, computed over already-loaded data, as a later feature. A SQL view or trigger-maintained column is documented below as a non-breaking future option but is **not** built now.
 - No manual override of visit status. Status always reflects the tasks.
-- No change to scheduling/template flows beyond inserting tasks with `status:'pending'`.
+- No change to scheduling/template flows beyond inserting tasks with `status:'pending'` and blocking zero-task creation (see Validation).
 
 ## Status rules (the core state machine)
 
@@ -27,13 +28,13 @@ Enrich the visit checklist so each task carries a **3-state status** (`pending` 
 
 ```
 visitBaseStatus(tasks):
-  total === 0                       → 'pending'    # empty checklist
+  total === 0                       → 'pending'    # defensive only — new visits can't be empty
   any task.status === 'pending'     → 'pending'    # pending takes precedence over failures
   any task.status === 'failed'      → 'attention'  # no pending left, at least one failed
   else (all success)                → 'done'
 ```
 
-Precedence decision (confirmed): when a checklist contains **both** a still-pending task and a failed task, the visit is **`pending`**. A failure only surfaces as `attention` once no task is left un-acted-on. An empty checklist (zero tasks) is `pending`.
+Precedence decision (confirmed): when a checklist contains **both** a still-pending task and a failed task, the visit is **`pending`**. A failure only surfaces as `attention` once no task is left un-acted-on. Zero-task visits are **prevented at creation** (see Validation); the `total === 0 → pending` branch is kept only as a defensive fallback so the derived function never crashes on a legacy/edge row.
 
 ### Layering the date (overdue)
 
@@ -158,6 +159,10 @@ Each task renders as a stacked card:
 - Drawer header keeps the progress bar (now "resolved" = `(successT+failedT)/total`) and the derived status pill (four states).
 - **"Mark all success"** button replaces "Mark complete"; **"Reopen visit" is removed**.
 
+### `src/components/ScheduleModal.tsx` — block empty visits
+
+A visit must have at least one task. The modal's **Schedule** submit is **disabled when no tasks are checked** (`planSchedule(...).taskLabels.length === 0`), with a short hint near the button ("Add at least one task"). The `useCreateVisit` mutation also guards defensively — it throws if called with an empty `taskLabels` — so the rule holds even if a caller bypasses the button. (Ad-hoc and template tasks both count; the check is purely on the resulting checked-task count.)
+
 ### `src/screens/Visits.tsx` — list
 
 - Progress bar uses the new counts.
@@ -175,6 +180,9 @@ Each task renders as a stacked card:
 - all success → `done`
 - overdue layering: base `pending` + past date → `overdue`; `attention`/`done` + past date unchanged
 - counts: `successT`/`failedT`/`pendingT`/`progressPct` for a mixed checklist
+- defensive: zero tasks → `pending` (never throws)
+
+`scheduleTasks.test.ts` gains a case asserting `planSchedule` yields an empty `taskLabels` when nothing is checked (the condition the modal uses to disable submit).
 
 `scheduleTasks.ts` / `scheduleTasks.test.ts` are unaffected (scheduling still emits task labels; tasks default to `status:'pending'` on insert).
 
@@ -184,7 +192,8 @@ Each task renders as a stacked card:
 - `src/data/model.ts` — `Task`, `TaskStatus`, remove `Visit.status`/`VisitStatus`
 - `src/data/queries/mappers.ts` — `TaskRow`, `rowToTask`, `rowToVisit`
 - `src/data/derived.ts` — `visitBaseStatus`, `isOverdue`, `DerivedStatus`, `STATUS_COLOR`, `STATUS_LABEL`, `visitVM` counts
-- `src/data/queries/useVisitMutations.ts` — rename/replace mutations
+- `src/data/queries/useVisitMutations.ts` — rename/replace mutations; `useCreateVisit` guards against empty `taskLabels`
+- `src/components/ScheduleModal.tsx` — disable submit when no tasks checked + hint
 - `src/components/VisitDrawer.tsx` — segmented control, remark input, buttons
 - `src/screens/Visits.tsx` — counts, "Mark all success", "Attention" filter, pill
 - `src/data/derived.test.ts` — state-machine tests
