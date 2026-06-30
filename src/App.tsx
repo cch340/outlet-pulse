@@ -50,7 +50,7 @@ function Shell() {
           {isMobile && <BottomNav />}
         </div>
 
-        <VisitDrawer />
+        <VisitDrawer key={state.openVisitId} />
         <TransferModal />
         <ScheduleModal />
         {state.brandModal && <BrandModal />}

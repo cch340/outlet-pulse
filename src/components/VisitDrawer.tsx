@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { visitVM } from '../data/derived'
-import { pill } from '../theme'
+import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
+import { pill, chip } from '../theme'
 import { Icon } from './Icon'
 import type { TaskStatus } from '../data/model'
-import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess } from '../data/queries/useVisitMutations'
+import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks } from '../data/queries/useVisitMutations'
+import { taskHasResult, importableTemplates } from '../data/queries/visitEdit'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
   { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
@@ -17,6 +19,14 @@ export function VisitDrawer() {
   const setStatus = useSetTaskStatus()
   const setRemark = useSetTaskRemark()
   const markAll = useMarkAllSuccess()
+  const updateVisit = useUpdateVisit()
+  const addTask = useAddVisitTask()
+  const removeTask = useRemoveVisitTask()
+  const importTasks = useImportVisitTasks()
+  const [newTaskLabel, setNewTaskLabel] = useState('')
+  const [storePickerOpen, setStorePickerOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [selectedImportIds, setSelectedImportIds] = useState<string[]>([])
   const { data } = useData()
   const S = state
   const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
@@ -24,6 +34,37 @@ export function VisitDrawer() {
 
   const vm = visitVM(data, openF)
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
+  const storeStaff = staffForStore(data, openF.brandId, openF.outletId)
+
+  const submitTask = () => {
+    const label = newTaskLabel.trim()
+    if (!label) return
+    addTask.mutate(
+      { visitId: openF.id, label },
+      { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
+    )
+  }
+
+  const importable = importableTemplates(data.taskTemplates, openF.tasks)
+  const allImportSelected = importable.length > 0 && importable.every((t) => selectedImportIds.includes(t.id))
+
+  const toggleImport = (id: string) =>
+    setSelectedImportIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
+
+  const runImport = () => {
+    const labels = importable.filter((t) => selectedImportIds.includes(t.id)).map((t) => t.label)
+    if (!labels.length) return
+    importTasks.mutate(
+      { visitId: openF.id, labels },
+      {
+        onSuccess: () => {
+          setSelectedImportIds([])
+          setImportOpen(false)
+        },
+        onError: (err) => alert(err.message),
+      },
+    )
+  }
 
   return (
     <div
@@ -45,15 +86,145 @@ export function VisitDrawer() {
       >
         {/* header */}
         <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--dim)', fontWeight: 600, marginBottom: 5 }}>
-              Visit · {vm.dateLabel}
-            </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 11, height: 11, borderRadius: 3, background: vm.brandColor }} />
               {vm.title}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--dim)', marginTop: 4 }}>Staff on duty · {vm.staffName}</div>
+
+            {/* Store (brand · outlet) — dropdown menu */}
+            <div style={{ position: 'relative', width: 'fit-content' }}>
+              <button
+                type="button"
+                onClick={() => setStorePickerOpen((o) => !o)}
+                aria-expanded={storePickerOpen}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: 'fit-content',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface2)',
+                  borderRadius: 8,
+                  padding: '7px 11px',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: brandById(data, openF.brandId).color }} />
+                {brandById(data, openF.brandId).name} · {outletById(data, openF.outletId).name}
+                <Icon name={storePickerOpen ? 'expand_less' : 'expand_more'} size={18} />
+              </button>
+              {storePickerOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: 0,
+                    zIndex: 5,
+                    minWidth: '100%',
+                    maxHeight: 240,
+                    overflow: 'auto',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+                    padding: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                  }}
+                >
+                  {data.stores.map((s) => {
+                    const b = brandById(data, s.brandId)
+                    const o = outletById(data, s.outletId)
+                    const active = s.brandId === openF.brandId && s.outletId === openF.outletId
+                    return (
+                      <button
+                        key={`${s.brandId}|${s.outletId}`}
+                        type="button"
+                        onClick={() => {
+                          setStorePickerOpen(false)
+                          if (active) return
+                          const list = staffForStore(data, s.brandId, s.outletId)
+                          updateVisit.mutate(
+                            { visitId: openF.id, brandId: s.brandId, outletId: s.outletId, staffId: list[0]?.id ?? null },
+                            { onError: (e) => alert(e.message) },
+                          )
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 'none',
+                          background: active ? 'var(--surface2)' : 'transparent',
+                          borderRadius: 6,
+                          padding: '8px 10px',
+                          fontFamily: "'IBM Plex Sans'",
+                          fontSize: 13,
+                          color: 'var(--text)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
+                        <span style={{ flex: 1 }}>{b.name} · {o.name}</span>
+                        {active && <Icon name="check" size={16} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Date */}
+            <input
+              type="date"
+              value={openF.date}
+              aria-label="Visit date"
+              onChange={(e) =>
+                updateVisit.mutate(
+                  { visitId: openF.id, date: e.target.value },
+                  { onError: (err) => alert(err.message) },
+                )
+              }
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                borderRadius: 8,
+                padding: '8px 10px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                color: 'var(--text)',
+                width: 'fit-content',
+              }}
+            />
+
+            {/* Staff reassign */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: 'var(--dim)' }}>Staff on duty</span>
+              {storeStaff.length === 0 ? (
+                <span style={{ fontSize: 13, color: 'var(--dim)' }}>Unassigned</span>
+              ) : (
+                storeStaff.map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() =>
+                      updateVisit.mutate(
+                        { visitId: openF.id, staffId: st.id },
+                        { onError: (e) => alert(e.message) },
+                      )
+                    }
+                    style={chip(openF.staffId === st.id)}
+                  >
+                    {st.name}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
           <span style={pill(vm.statusColor)}>{vm.statusLabel}</span>
           <button onClick={closeVisit} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2 }}>
@@ -83,7 +254,22 @@ export function VisitDrawer() {
                   gap: 9,
                 }}
               >
-                <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{t.label}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ fontSize: 13.5, color: 'var(--text)', flex: 1 }}>{t.label}</div>
+                  <button
+                    type="button"
+                    title="Remove task"
+                    aria-label={`Remove ${t.label}`}
+                    onClick={() => {
+                      if (openF.tasks.length <= 1) { alert('A visit needs at least one task.'); return }
+                      if (taskHasResult(t) && !confirm(`Remove "${t.label}"? It already has a recorded result.`)) return
+                      removeTask.mutate({ taskId: t.id! }, { onError: (e) => alert(e.message) })
+                    }}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2, flexShrink: 0 }}
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {SEGMENTS.map((seg) => {
                     const active = t.status === seg.value
@@ -142,6 +328,154 @@ export function VisitDrawer() {
               </div>
             ))}
           </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
+            <input
+              value={newTaskLabel}
+              onChange={(e) => setNewTaskLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                submitTask()
+              }}
+              placeholder="Add a task…"
+              style={{
+                flex: 1,
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                borderRadius: 8,
+                padding: '9px 12px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                color: 'var(--text)',
+              }}
+            />
+            <button
+              type="button"
+              onClick={submitTask}
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                borderRadius: 8,
+                padding: '9px 16px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportOpen((o) => !o)}
+              disabled={importable.length === 0}
+              aria-expanded={importOpen}
+              title={importable.length === 0 ? 'No templates left to import' : 'Import saved tasks'}
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                borderRadius: 8,
+                padding: '9px 16px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: importable.length === 0 ? 'not-allowed' : 'pointer',
+                opacity: importable.length === 0 ? 0.5 : 1,
+              }}
+            >
+              Import
+            </button>
+          </div>
+          {importOpen && importable.length > 0 && (
+            <div
+              style={{
+                marginTop: 9,
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                borderRadius: 9,
+                padding: '11px 13px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--dim)' }}>
+                Import from saved tasks
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedImportIds(allImportSelected ? [] : importable.map((t) => t.id))}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, border: 'none', background: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+              >
+                <span
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 5,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `1.5px solid ${allImportSelected ? 'var(--accent)' : 'var(--border)'}`,
+                    background: allImportSelected ? 'var(--accent)' : 'transparent',
+                  }}
+                >
+                  {allImportSelected && <Icon name="check" size={14} color="#fff" />}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Select all</span>
+              </button>
+              {importable.map((t) => {
+                const checked = selectedImportIds.includes(t.id)
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => toggleImport(t.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, border: 'none', background: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                  >
+                    <span
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: 5,
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `1.5px solid ${checked ? 'var(--accent)' : 'var(--border)'}`,
+                        background: checked ? 'var(--accent)' : 'transparent',
+                      }}
+                    >
+                      {checked && <Icon name="check" size={14} color="#fff" />}
+                    </span>
+                    <span style={{ fontSize: 13.5, color: 'var(--text)' }}>{t.label}</span>
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                onClick={runImport}
+                disabled={selectedImportIds.length === 0}
+                style={{
+                  alignSelf: 'flex-start',
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '8px 16px',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: selectedImportIds.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: selectedImportIds.length === 0 ? 0.5 : 1,
+                }}
+              >
+                Import {selectedImportIds.length || ''}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* footer */}
