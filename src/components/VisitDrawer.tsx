@@ -90,7 +90,10 @@ export function VisitDrawer() {
                     return (
                       <button
                         key={seg.value}
+                        type="button"
                         title={seg.title}
+                        aria-label={`${t.label}: ${seg.title}`}
+                        aria-pressed={active}
                         onClick={() =>
                           setStatus.mutate(
                             { taskId: t.id!, status: seg.value },
@@ -116,6 +119,7 @@ export function VisitDrawer() {
                 </div>
                 <input
                   defaultValue={t.remark}
+                  aria-label={`${t.label} remark`}
                   placeholder="Add a remark…"
                   onBlur={(e) => {
                     const next = e.target.value
@@ -143,6 +147,8 @@ export function VisitDrawer() {
         {/* footer */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
           <button
+            type="button"
+            disabled={vm.pendingT === 0}
             onClick={() =>
               markAll.mutate({ visitId: openF.id }, { onSuccess: () => closeVisit(), onError: (e) => alert(e.message) })
             }
@@ -156,7 +162,8 @@ export function VisitDrawer() {
               fontFamily: "'IBM Plex Sans'",
               fontSize: 13.5,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: vm.pendingT === 0 ? 'not-allowed' : 'pointer',
+              opacity: vm.pendingT === 0 ? 0.5 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
