@@ -96,33 +96,37 @@ export function Visits() {
                   </span>
                 </div>
               </div>
-              <span style={pill(f.statusColor)}>{f.statusLabel}</span>
-              {f.canComplete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    markAllMutation.mutate({ visitId: f.id })
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    border: '1px solid #16a34a',
-                    background: 'color-mix(in srgb, #16a34a 8%, transparent)',
-                    color: '#16a34a',
-                    borderRadius: 7,
-                    padding: '6px 10px',
-                    fontFamily: "'IBM Plex Sans'",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name="check" size={16} />
-                  All success
-                </button>
-              )}
+              <div style={{ width: 116, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+                {f.canComplete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      markAllMutation.mutate({ visitId: f.id })
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      border: '1px solid #16a34a',
+                      background: 'color-mix(in srgb, #16a34a 8%, transparent)',
+                      color: '#16a34a',
+                      borderRadius: 7,
+                      padding: '6px 10px',
+                      fontFamily: "'IBM Plex Sans'",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name="check" size={16} />
+                    All success
+                  </button>
+                )}
+              </div>
+              <div style={{ width: 132, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+                <span style={pill(f.statusColor)}>{f.statusLabel}</span>
+              </div>
             </div>
           ))}
 
