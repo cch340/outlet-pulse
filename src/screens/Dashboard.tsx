@@ -103,7 +103,7 @@ export function Dashboard() {
     })
     .sort((a, b) => a.brandName.localeCompare(b.brandName) || a.outletName.localeCompare(b.outletName))
 
-  const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14, alignItems: 'start' } as const
+  const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -209,6 +209,7 @@ export function Dashboard() {
           {overdueList.length > 0 && (
             <CollapsibleCard
               id="overdue"
+              gridItem
               title="Overdue visits"
               icon="warning"
               iconColor="#dc2626"
@@ -230,6 +231,7 @@ export function Dashboard() {
           {upcomingList.length > 0 && (
             <CollapsibleCard
               id="upcoming"
+              gridItem
               title="Upcoming visits"
               icon="event_upcoming"
               iconColor="#2563eb"
@@ -251,6 +253,7 @@ export function Dashboard() {
         {/* trend */}
         <CollapsibleCard
           id="trend"
+          gridItem
           title="Visits by month"
           open={collapse.isOpen('trend')}
           onToggle={collapse.toggle}
@@ -299,6 +302,7 @@ export function Dashboard() {
         {/* matrix */}
         <CollapsibleCard
           id="matrix"
+          gridItem
           title="Brand × Outlet coverage"
           open={collapse.isOpen('matrix')}
           onToggle={collapse.toggle}
@@ -362,6 +366,7 @@ export function Dashboard() {
       <div style={grid2}>
         <CollapsibleCard
           id="visitsByBrand"
+          gridItem
           title="Visits by brand"
           open={collapse.isOpen('visitsByBrand')}
           onToggle={collapse.toggle}
@@ -387,6 +392,7 @@ export function Dashboard() {
         </CollapsibleCard>
         <CollapsibleCard
           id="staffByOutlet"
+          gridItem
           title="Staff distribution by outlet"
           open={collapse.isOpen('staffByOutlet')}
           onToggle={collapse.toggle}

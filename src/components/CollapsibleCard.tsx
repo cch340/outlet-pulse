@@ -10,6 +10,7 @@ export function CollapsibleCard({
   icon,
   iconColor,
   accessory,
+  gridItem,
   children,
 }: {
   id: string
@@ -19,10 +20,14 @@ export function CollapsibleCard({
   icon?: string
   iconColor?: string
   accessory?: ReactNode
+  /** When true, a collapsed card aligns to the top of its grid row instead of
+   * stretching to a taller expanded sibling's height. Only set this for cards
+   * inside a multi-column grid; in a flex column it would shrink the width. */
+  gridItem?: boolean
   children: ReactNode
 }) {
   return (
-    <div style={{ ...card, padding: '16px 18px' }}>
+    <div style={{ ...card, padding: '16px 18px', ...(gridItem && !open ? { alignSelf: 'start' } : null) }}>
       <button
         onClick={() => onToggle(id)}
         aria-expanded={open}
