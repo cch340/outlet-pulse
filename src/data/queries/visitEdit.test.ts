@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { taskHasResult, importableTemplates } from './visitEdit'
+import { taskHasResult, importableTemplates, eligibleVisitsForLabel } from './visitEdit'
+import type { Visit } from '../model'
 
 describe('taskHasResult', () => {
   it('is false for a pending task with an empty remark', () => {
@@ -43,5 +44,35 @@ describe('importableTemplates', () => {
   it('preserves input order of the surviving templates', () => {
     const templates = [tpl('t1', 'A'), tpl('t2', 'B'), tpl('t3', 'C')]
     expect(importableTemplates(templates, [{ label: 'B' }])).toEqual([tpl('t1', 'A'), tpl('t3', 'C')])
+  })
+})
+
+describe('eligibleVisitsForLabel', () => {
+  const visit = (id: string, labels: string[]): Visit => ({
+    id,
+    date: '2026-06-30',
+    staffId: null,
+    brandId: 'b',
+    outletId: 'o',
+    tasks: labels.map((label) => ({ label, status: 'pending', remark: '' })),
+  })
+
+  it('includes visits that do not have a task with the label', () => {
+    const visits = [visit('v1', ['Restock shelves']), visit('v2', [])]
+    expect(eligibleVisitsForLabel(visits, 'Clean entrance').map((v) => v.id)).toEqual(['v1', 'v2'])
+  })
+
+  it('excludes visits that already have the label', () => {
+    const visits = [visit('v1', ['Clean entrance']), visit('v2', ['Restock shelves'])]
+    expect(eligibleVisitsForLabel(visits, 'Clean entrance').map((v) => v.id)).toEqual(['v2'])
+  })
+
+  it('matches case-insensitively and trims whitespace on both sides', () => {
+    const visits = [visit('v1', ['  clean ENTRANCE '])]
+    expect(eligibleVisitsForLabel(visits, '  Clean entrance  ')).toEqual([])
+  })
+
+  it('returns an empty array for an empty visit list', () => {
+    expect(eligibleVisitsForLabel([], 'Anything')).toEqual([])
   })
 })
