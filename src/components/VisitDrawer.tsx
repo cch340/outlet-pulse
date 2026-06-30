@@ -46,6 +46,7 @@ export function VisitDrawer() {
   }
 
   const importable = importableTemplates(data.taskTemplates, openF.tasks)
+  const allImportSelected = importable.length > 0 && importable.every((t) => selectedImportIds.includes(t.id))
 
   const toggleImport = (id: string) =>
     setSelectedImportIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
@@ -91,8 +92,8 @@ export function VisitDrawer() {
               {vm.title}
             </div>
 
-            {/* Store (brand · outlet) — collapsed, click to choose */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Store (brand · outlet) — dropdown menu */}
+            <div style={{ position: 'relative', width: 'fit-content' }}>
               <button
                 type="button"
                 onClick={() => setStorePickerOpen((o) => !o)}
@@ -117,7 +118,25 @@ export function VisitDrawer() {
                 <Icon name={storePickerOpen ? 'expand_less' : 'expand_more'} size={18} />
               </button>
               {storePickerOpen && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: 0,
+                    zIndex: 5,
+                    minWidth: '100%',
+                    maxHeight: 240,
+                    overflow: 'auto',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+                    padding: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                  }}
+                >
                   {data.stores.map((s) => {
                     const b = brandById(data, s.brandId)
                     const o = outletById(data, s.outletId)
@@ -125,6 +144,7 @@ export function VisitDrawer() {
                     return (
                       <button
                         key={`${s.brandId}|${s.outletId}`}
+                        type="button"
                         onClick={() => {
                           setStorePickerOpen(false)
                           if (active) return
@@ -134,10 +154,25 @@ export function VisitDrawer() {
                             { onError: (e) => alert(e.message) },
                           )
                         }}
-                        style={chip(active)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 'none',
+                          background: active ? 'var(--surface2)' : 'transparent',
+                          borderRadius: 6,
+                          padding: '8px 10px',
+                          fontFamily: "'IBM Plex Sans'",
+                          fontSize: 13,
+                          color: 'var(--text)',
+                          cursor: 'pointer',
+                        }}
                       >
                         <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
-                        {b.name} · {o.name}
+                        <span style={{ flex: 1 }}>{b.name} · {o.name}</span>
+                        {active && <Icon name="check" size={16} />}
                       </button>
                     )
                   })}
@@ -226,6 +261,7 @@ export function VisitDrawer() {
                     title="Remove task"
                     aria-label={`Remove ${t.label}`}
                     onClick={() => {
+                      if (openF.tasks.length <= 1) { alert('A visit needs at least one task.'); return }
                       if (taskHasResult(t) && !confirm(`Remove "${t.label}"? It already has a recorded result.`)) return
                       removeTask.mutate({ taskId: t.id! }, { onError: (e) => alert(e.message) })
                     }}
@@ -368,6 +404,28 @@ export function VisitDrawer() {
               <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--dim)' }}>
                 Import from saved tasks
               </div>
+              <button
+                type="button"
+                onClick={() => setSelectedImportIds(allImportSelected ? [] : importable.map((t) => t.id))}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, border: 'none', background: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+              >
+                <span
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 5,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `1.5px solid ${allImportSelected ? 'var(--accent)' : 'var(--border)'}`,
+                    background: allImportSelected ? 'var(--accent)' : 'transparent',
+                  }}
+                >
+                  {allImportSelected && <Icon name="check" size={14} color="#fff" />}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Select all</span>
+              </button>
               {importable.map((t) => {
                 const checked = selectedImportIds.includes(t.id)
                 return (
