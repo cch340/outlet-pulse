@@ -103,7 +103,7 @@ export function Dashboard() {
     })
     .sort((a, b) => a.brandName.localeCompare(b.brandName) || a.outletName.localeCompare(b.outletName))
 
-  const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
+  const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14, alignItems: 'start' } as const
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -135,12 +135,12 @@ export function Dashboard() {
 
       {/* period toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>
+          Visit performance — {periodLabel}
+          {sumLoading && <span style={{ marginLeft: 8, fontWeight: 500 }}>· loading…</span>}
+          {sumError && <span style={{ marginLeft: 8, fontWeight: 500, color: '#dc2626' }}>· couldn't load metrics</span>}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>
-            Visit performance — {periodLabel}
-            {sumLoading && <span style={{ marginLeft: 8, fontWeight: 500 }}>· loading…</span>}
-            {sumError && <span style={{ marginLeft: 8, fontWeight: 500, color: '#dc2626' }}>· couldn't load metrics</span>}
-          </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--dim)', cursor: 'pointer' }}>
             <input
               type="checkbox"
@@ -149,19 +149,19 @@ export function Dashboard() {
             />
             Expand all
           </label>
-        </div>
-        <div
-          style={{
-            display: 'inline-flex',
-            background: 'var(--surface2)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: 3,
-            gap: 2,
-          }}
-        >
-          <button onClick={() => setPeriod('month')} style={periodBtn(S.period === 'month')}>This month</button>
-          <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>{yearLabel}</button>
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'var(--surface2)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: 3,
+              gap: 2,
+            }}
+          >
+            <button onClick={() => setPeriod('month')} style={periodBtn(S.period === 'month')}>This month</button>
+            <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>{yearLabel}</button>
+          </div>
         </div>
       </div>
 
