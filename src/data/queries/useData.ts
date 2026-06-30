@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import type { Brand, Visit, Outlet, Staff, Store, TaskTemplate } from '../model'
-import { rowToVisit, rowToStaff, rowToStore, rowToTaskTemplate } from './mappers'
+import type { Brand, Outlet, Staff, Store, TaskTemplate } from '../model'
+import { rowToStaff, rowToStore, rowToTaskTemplate } from './mappers'
 import { queryKeys } from './keys'
 
 export interface DataSnapshot {
@@ -9,7 +9,6 @@ export interface DataSnapshot {
   outlets: Outlet[]
   stores: Store[]
   staff: Staff[]
-  visits: Visit[]
   taskTemplates: TaskTemplate[]
 }
 
@@ -40,15 +39,6 @@ async function fetchStaff(): Promise<Staff[]> {
   return data.map(rowToStaff)
 }
 
-async function fetchVisits(): Promise<Visit[]> {
-  const { data, error } = await supabase
-    .from('visits')
-    .select('*, visit_tasks(*)')
-    .order('date')
-  if (error) throw error
-  return data.map(rowToVisit)
-}
-
 async function fetchTaskTemplates(): Promise<TaskTemplate[]> {
   const { data, error } = await supabase.from('task_templates').select('*').order('sort')
   if (error) throw error
@@ -60,17 +50,15 @@ export function useData(): { data: DataSnapshot; isLoading: boolean; isError: bo
   const outlets = useQuery({ queryKey: queryKeys.outlets, queryFn: fetchOutlets })
   const stores = useQuery({ queryKey: queryKeys.stores, queryFn: fetchStores })
   const staff = useQuery({ queryKey: queryKeys.staff, queryFn: fetchStaff })
-  const visits = useQuery({ queryKey: queryKeys.visits, queryFn: fetchVisits })
   const taskTemplates = useQuery({ queryKey: queryKeys.taskTemplates, queryFn: fetchTaskTemplates })
 
-  const queries = [brands, outlets, stores, staff, visits, taskTemplates]
+  const queries = [brands, outlets, stores, staff, taskTemplates]
   return {
     data: {
       brands: brands.data ?? [],
       outlets: outlets.data ?? [],
       stores: stores.data ?? [],
       staff: staff.data ?? [],
-      visits: visits.data ?? [],
       taskTemplates: taskTemplates.data ?? [],
     },
     isLoading: queries.some((q) => q.isLoading),

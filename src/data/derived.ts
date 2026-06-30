@@ -7,6 +7,10 @@ export const today = () => {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
+/** A Date as a local-calendar 'YYYY-MM-DD' string (matches today()'s local-midnight basis). */
+export const localDateStr = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export const fmt = (iso: string) => {

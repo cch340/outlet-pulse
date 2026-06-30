@@ -3,7 +3,7 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useMarkAllSuccess } from '../data/queries/useVisitMutations'
 import { useVisitsPage, useVisitStatusCounts } from '../data/queries/useVisitsPage'
-import { visitVM, today, TASK_STATUS_COLOR } from '../data/derived'
+import { visitVM, today, localDateStr, TASK_STATUS_COLOR } from '../data/derived'
 import { resolveDateRange, pageCount, type DatePreset } from '../data/queries/visitsQuery'
 import type { VisitFilter } from '../data/store'
 import type { Task } from '../data/model'
@@ -61,7 +61,7 @@ export function Visits() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
   const t = today()
-  const todayStr = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
+  const todayStr = localDateStr(t)
   const { from, to } = resolveDateRange(datePreset, customFrom, customTo, todayStr)
   const search = S.q.trim()
 

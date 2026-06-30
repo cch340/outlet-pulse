@@ -1,22 +1,16 @@
 import { useState } from 'react'
 import { useStore } from '../data/store'
-import { useData } from '../data/queries/useData'
-import { visitVM } from '../data/derived'
-import { eligibleVisitsForLabel } from '../data/queries/visitEdit'
+import { fmt } from '../data/derived'
+import { useVisitsMissingLabel, MISSING_LABEL_LIMIT } from '../data/queries/useVisitsMissingLabel'
 import { useAddTaskToVisits } from '../data/queries/useVisitMutations'
 import { Icon } from './Icon'
 
 /** Adds a single task template into multiple existing visits that don't have it yet. */
 export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClose: () => void }) {
   const { state } = useStore()
-  const { data } = useData()
+  const { visits: eligible, isLoading } = useVisitsMissingLabel(label)
   const addToVisits = useAddTaskToVisits()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-
-  // Visits missing this task, newest date first.
-  const eligible = eligibleVisitsForLabel(data.visits, label)
-    .slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
 
   const allSelected = eligible.length > 0 && eligible.every((v) => selectedIds.includes(v.id))
   const toggle = (id: string) =>
@@ -75,7 +69,7 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 17, fontWeight: 700 }}>Add task to visits</div>
             <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>
-              Add “{label}” to existing visits that don’t have it yet
+              Add "{label}" to existing visits that don't have it yet
             </div>
           </div>
           <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)' }}>
@@ -85,7 +79,9 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
 
         {/* body */}
         <div style={{ padding: '16px 22px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {eligible.length === 0 ? (
+          {isLoading ? (
+            <div style={{ fontSize: 13.5, color: 'var(--dim)', padding: '6px 2px' }}>Loading…</div>
+          ) : eligible.length === 0 ? (
             <div style={{ fontSize: 13.5, color: 'var(--dim)', padding: '6px 2px', lineHeight: 1.5 }}>
               All visits already have this task — nothing to add.
             </div>
@@ -101,9 +97,13 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
                   Select all ({eligible.length})
                 </span>
               </button>
+              {eligible.length === MISSING_LABEL_LIMIT && (
+                <div style={{ fontSize: 11.5, color: 'var(--dim)', padding: '0 2px' }}>
+                  Showing the first {MISSING_LABEL_LIMIT} visits.
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {eligible.map((v) => {
-                  const vm = visitVM(data, v)
                   const checked = selectedIds.includes(v.id)
                   return (
                     <button
@@ -125,10 +125,10 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
                       {checkbox(checked)}
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>
-                          {vm.title}
+                          {v.brandName} · {v.outletName}
                         </span>
                         <span style={{ display: 'block', fontSize: 12.5, color: 'var(--dim)', marginTop: 2 }}>
-                          {vm.dateLabel} · {vm.staffName}
+                          {fmt(v.date)} · {v.staffName ?? 'Unassigned'}
                         </span>
                       </span>
                     </button>

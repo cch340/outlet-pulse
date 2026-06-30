@@ -1,13 +1,11 @@
 import { useStore } from '../data/store'
-import { useData } from '../data/queries/useData'
-import { isOverdue } from '../data/derived'
+import { useOverdueCount } from '../data/queries/useOverdueCount'
 import { NAV } from '../data/nav'
 import { Icon } from './Icon'
 
 export function BottomNav() {
   const { state, go } = useStore()
-  const { data } = useData()
-  const overdueCount = data.visits.filter(isOverdue).length
+  const overdueCount = useOverdueCount()
 
   return (
     <nav
