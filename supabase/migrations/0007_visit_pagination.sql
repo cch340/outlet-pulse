@@ -80,7 +80,7 @@ language sql stable as $$
     where x.rn = 1
   ),
   statused as (
-    select s.id, s.date,
+    select s.*,
       case
         when s.base_status = 'pending' and s.date < p_today then 'overdue'
         else s.base_status
