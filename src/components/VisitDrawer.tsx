@@ -1,10 +1,10 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { visitVM } from '../data/derived'
-import { pill } from '../theme'
+import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
+import { pill, chip } from '../theme'
 import { Icon } from './Icon'
 import type { TaskStatus } from '../data/model'
-import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess } from '../data/queries/useVisitMutations'
+import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit } from '../data/queries/useVisitMutations'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
   { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
@@ -17,6 +17,7 @@ export function VisitDrawer() {
   const setStatus = useSetTaskStatus()
   const setRemark = useSetTaskRemark()
   const markAll = useMarkAllSuccess()
+  const updateVisit = useUpdateVisit()
   const { data } = useData()
   const S = state
   const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
@@ -45,15 +46,83 @@ export function VisitDrawer() {
       >
         {/* header */}
         <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--dim)', fontWeight: 600, marginBottom: 5 }}>
-              Visit · {vm.dateLabel}
-            </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 11, height: 11, borderRadius: 3, background: vm.brandColor }} />
               {vm.title}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--dim)', marginTop: 4 }}>Staff on duty · {vm.staffName}</div>
+
+            {/* Store (brand · outlet) */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {data.stores.map((s) => {
+                const b = brandById(data, s.brandId)
+                const o = outletById(data, s.outletId)
+                const active = s.brandId === openF.brandId && s.outletId === openF.outletId
+                return (
+                  <button
+                    key={`${s.brandId}|${s.outletId}`}
+                    onClick={() => {
+                      if (active) return
+                      const list = staffForStore(data, s.brandId, s.outletId)
+                      updateVisit.mutate(
+                        { visitId: openF.id, brandId: s.brandId, outletId: s.outletId, staffId: list[0]?.id ?? null },
+                        { onError: (e) => alert(e.message) },
+                      )
+                    }}
+                    style={chip(active)}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
+                    {b.name} · {o.name}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Date */}
+            <input
+              type="date"
+              value={openF.date}
+              aria-label="Visit date"
+              onChange={(e) =>
+                updateVisit.mutate(
+                  { visitId: openF.id, date: e.target.value },
+                  { onError: (err) => alert(err.message) },
+                )
+              }
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                borderRadius: 8,
+                padding: '8px 10px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                color: 'var(--text)',
+                width: 'fit-content',
+              }}
+            />
+
+            {/* Staff reassign */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: 'var(--dim)' }}>Staff on duty</span>
+              {staffForStore(data, openF.brandId, openF.outletId).length === 0 ? (
+                <span style={{ fontSize: 13, color: 'var(--dim)' }}>Unassigned</span>
+              ) : (
+                staffForStore(data, openF.brandId, openF.outletId).map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() =>
+                      updateVisit.mutate(
+                        { visitId: openF.id, staffId: st.id },
+                        { onError: (e) => alert(e.message) },
+                      )
+                    }
+                    style={chip(openF.staffId === st.id)}
+                  >
+                    {st.name}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
           <span style={pill(vm.statusColor)}>{vm.statusLabel}</span>
           <button onClick={closeVisit} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2 }}>
