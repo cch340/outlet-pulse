@@ -1,15 +1,13 @@
 import { useStore } from '../data/store'
-import { useData } from '../data/queries/useData'
 import { useSession } from '../auth/AuthProvider'
-import { isOverdue } from '../data/derived'
+import { useOverdueCount } from '../data/queries/useOverdueCount'
 import { NAV } from '../data/nav'
 import { Icon } from './Icon'
 
 export function Sidebar() {
   const { state, go } = useStore()
-  const { data } = useData()
   const { session, signOut } = useSession()
-  const overdueCount = data.visits.filter(isOverdue).length
+  const overdueCount = useOverdueCount()
   const email = session?.user.email ?? ''
   const initials = email.slice(0, 2).toUpperCase()
 
