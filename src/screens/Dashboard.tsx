@@ -50,10 +50,10 @@ export function Dashboard() {
   const tmax = Math.max(1, ...mdata.map((m) => m.done + m.notDone))
   const H = 108
 
-  const bmax = Math.max(1, ...data.brands.map((b) => yearFus.filter((f) => f.brandId === b.id).length))
   const brandBreakdown = data.brands.map((b) => {
     const fs = yearFus.filter((f) => f.brandId === b.id)
-    return { name: b.name, color: b.color, done: fs.filter(visitComplete).length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
+    const done = fs.filter(visitComplete).length
+    return { name: b.name, color: b.color, done, total: fs.length, pct: fs.length ? Math.round((done / fs.length) * 100) : 0 }
   })
 
   const omax = Math.max(1, ...data.outlets.map((o) => staffCount(data, null, o.id)))
