@@ -100,3 +100,36 @@ export function mapMissingLabelVisit(raw: Raw): MissingLabelVisit {
     staffName: raw.staff_name ?? null,
   }
 }
+
+export interface FailedTask {
+  label: string
+  remark: string
+}
+export interface LatestFailedVisit {
+  brandId: string
+  outletId: string
+  visitId: string
+  date: string
+  brandName: string
+  outletName: string
+  staffName: string | null
+  status: 'attention' | 'done'
+  failed: FailedTask[]
+}
+
+export function mapLatestFailedTasks(raw: Raw): LatestFailedVisit[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((x: Raw) => ({
+    brandId: x.brand_id,
+    outletId: x.outlet_id,
+    visitId: x.id,
+    date: x.date,
+    brandName: x.brand_name,
+    outletName: x.outlet_name,
+    staffName: x.staff_name ?? null,
+    status: x.base_status,
+    failed: Array.isArray(x.failed)
+      ? x.failed.map((t: Raw) => ({ label: t.label, remark: t.remark ?? '' }))
+      : [],
+  }))
+}
