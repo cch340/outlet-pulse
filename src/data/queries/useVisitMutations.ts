@@ -154,7 +154,7 @@ export function useImportVisitTasks() {
       const base = rows && rows.length ? rows[0].sort + 1 : 0
       const inserts = input.labels.map((label, i) => ({
         visit_id: input.visitId,
-        label,
+        label: label.trim(),
         status: 'pending',
         remark: '',
         sort: base + i,
