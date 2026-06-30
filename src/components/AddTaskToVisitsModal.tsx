@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../data/store'
 import { fmt } from '../data/derived'
-import { useVisitsMissingLabel } from '../data/queries/useVisitsMissingLabel'
+import { useVisitsMissingLabel, MISSING_LABEL_LIMIT } from '../data/queries/useVisitsMissingLabel'
 import { useAddTaskToVisits } from '../data/queries/useVisitMutations'
 import { Icon } from './Icon'
 
@@ -97,6 +97,11 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
                   Select all ({eligible.length})
                 </span>
               </button>
+              {eligible.length === MISSING_LABEL_LIMIT && (
+                <div style={{ fontSize: 11.5, color: 'var(--dim)', padding: '0 2px' }}>
+                  Showing the first {MISSING_LABEL_LIMIT} visits.
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {eligible.map((v) => {
                   const checked = selectedIds.includes(v.id)

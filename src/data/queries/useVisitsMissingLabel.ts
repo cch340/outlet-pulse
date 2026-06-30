@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { queryKeys } from './keys'
 import { mapMissingLabelVisit, type MissingLabelVisit } from './dashboardSummary'
 
-const MISSING_LABEL_LIMIT = 200
+export const MISSING_LABEL_LIMIT = 200
 
 export function useVisitsMissingLabel(label: string): {
   visits: MissingLabelVisit[]
