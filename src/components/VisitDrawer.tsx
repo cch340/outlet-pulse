@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
 import { pill, chip } from '../theme'
 import { Icon } from './Icon'
 import type { TaskStatus } from '../data/model'
-import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit } from '../data/queries/useVisitMutations'
+import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask } from '../data/queries/useVisitMutations'
+import { nextTaskSort, taskHasResult } from '../data/queries/visitEdit'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
   { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
@@ -18,6 +20,9 @@ export function VisitDrawer() {
   const setRemark = useSetTaskRemark()
   const markAll = useMarkAllSuccess()
   const updateVisit = useUpdateVisit()
+  const addTask = useAddVisitTask()
+  const removeTask = useRemoveVisitTask()
+  const [newTaskLabel, setNewTaskLabel] = useState('')
   const { data } = useData()
   const S = state
   const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
@@ -152,7 +157,21 @@ export function VisitDrawer() {
                   gap: 9,
                 }}
               >
-                <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{t.label}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ fontSize: 13.5, color: 'var(--text)', flex: 1 }}>{t.label}</div>
+                  <button
+                    type="button"
+                    title="Remove task"
+                    aria-label={`Remove ${t.label}`}
+                    onClick={() => {
+                      if (taskHasResult(t) && !confirm(`Remove "${t.label}"? It already has a recorded result.`)) return
+                      removeTask.mutate({ taskId: t.id! }, { onError: (e) => alert(e.message) })
+                    }}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2, flexShrink: 0 }}
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {SEGMENTS.map((seg) => {
                     const active = t.status === seg.value
@@ -210,6 +229,57 @@ export function VisitDrawer() {
                 />
               </div>
             ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <input
+              value={newTaskLabel}
+              onChange={(e) => setNewTaskLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                const label = newTaskLabel.trim()
+                if (!label) return
+                addTask.mutate(
+                  { visitId: openF.id, label, sort: nextTaskSort(openF.tasks) },
+                  { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
+                )
+              }}
+              placeholder="Add a task…"
+              style={{
+                flex: 1,
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                borderRadius: 8,
+                padding: '9px 12px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                color: 'var(--text)',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const label = newTaskLabel.trim()
+                if (!label) return
+                addTask.mutate(
+                  { visitId: openF.id, label, sort: nextTaskSort(openF.tasks) },
+                  { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
+                )
+              }}
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                borderRadius: 8,
+                padding: '9px 16px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Add
+            </button>
           </div>
         </div>
 
