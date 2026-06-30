@@ -138,3 +138,30 @@ export function useRemoveVisitTask() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
   })
 }
+
+export function useImportVisitTasks() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { visitId: string; labels: string[] }) => {
+      if (!input.labels.length) return
+      const { data: rows, error: qErr } = await supabase
+        .from('visit_tasks')
+        .select('sort')
+        .eq('visit_id', input.visitId)
+        .order('sort', { ascending: false })
+        .limit(1)
+      if (qErr) throw qErr
+      const base = rows && rows.length ? rows[0].sort + 1 : 0
+      const inserts = input.labels.map((label, i) => ({
+        visit_id: input.visitId,
+        label,
+        status: 'pending',
+        remark: '',
+        sort: base + i,
+      }))
+      const { error } = await supabase.from('visit_tasks').insert(inserts)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
+  })
+}
