@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { brandById, outletById } from '../data/derived'
+import { brandById, outletById, staffForStore } from '../data/derived'
 import { chip } from '../theme'
 import { Icon } from './Icon'
 import { useCreateVisit } from '../data/queries/useVisitMutations'
@@ -34,11 +34,22 @@ export function ScheduleModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [S.addOpen])
 
+  // Default to the first staff of the selected store whenever the current pick
+  // isn't valid for that store (modal opened, store switched, or staff loaded).
+  useEffect(() => {
+    if (!S.addOpen || !S.addForm) return
+    const [b, o] = S.addForm.storeKey.split('|')
+    const list = staffForStore(data, b, o)
+    if (list.length && !list.some((st) => st.id === S.addForm!.staffId)) setAf('staffId', list[0].id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [S.addOpen, S.addForm?.storeKey, data.staff])
+
   if (!S.addOpen || !S.addForm) return null
 
   const af = S.addForm
   const items = af.tasks
   const selN = items.filter((t) => t.checked).length
+  const canSubmit = items.some((t) => t.checked && t.label.trim())
   const [sb, so] = af.storeKey.split('|')
   const bName = brandById(data, sb)?.name ?? '—'
   const oName = outletById(data, so)?.name ?? '—'
@@ -133,13 +144,36 @@ export function ScheduleModal() {
                 const o = outletById(data, s.outletId)
                 const key = `${s.brandId}|${s.outletId}`
                 return (
-                  <button key={key} onClick={() => setAf('storeKey', key)} style={chip(af.storeKey === key)}>
+                  <button
+                    key={key}
+                    onClick={() => setAf('storeKey', key)}
+                    style={chip(af.storeKey === key)}
+                  >
                     <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
                     {b.name} · {o.name}
                   </button>
                 )
               })}
             </div>
+          </div>
+          <div>
+            <div style={fieldLabel}>Assign staff</div>
+            {!af.storeKey ? (
+              <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>Select a store first to see its staff.</div>
+            ) : staffForStore(data, sb, so).length === 0 ? (
+              <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>
+                No staff posted to this store yet — add staff under{' '}
+                <strong style={{ color: 'var(--text)' }}>Manage → Staff</strong>.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {staffForStore(data, sb, so).map((st) => (
+                  <button key={st.id} onClick={() => setAf('staffId', st.id)} style={chip(af.staffId === st.id)}>
+                    {st.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 150 }}>
@@ -275,7 +309,9 @@ export function ScheduleModal() {
 
         {/* footer */}
         <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <div style={{ fontSize: 12, color: 'var(--dim)' }}>{summary}</div>
+          <div style={{ fontSize: 12, color: canSubmit ? 'var(--dim)' : '#dc2626' }}>
+            {canSubmit ? summary : 'Add at least one task'}
+          </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={closeAdd}
@@ -295,6 +331,7 @@ export function ScheduleModal() {
             </button>
             <button
               onClick={submit}
+              disabled={!canSubmit}
               style={{
                 border: 'none',
                 background: 'var(--accent)',
@@ -304,7 +341,8 @@ export function ScheduleModal() {
                 fontFamily: "'IBM Plex Sans'",
                 fontSize: 13.5,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                opacity: canSubmit ? 1 : 0.5,
               }}
             >
               Schedule

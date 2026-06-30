@@ -13,7 +13,7 @@ export type Screen = 'dashboard' | 'visits' | 'manage'
 export type ManageTab = 'brands' | 'outlets' | 'staff' | 'tasks'
 export type Period = 'month' | 'year'
 export type StaffBrandFilter = 'all' | string
-export type VisitFilter = 'all' | 'pending' | 'overdue' | 'done'
+export type VisitFilter = 'all' | 'pending' | 'attention' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
 export type Density = 'comfortable' | 'compact'
 

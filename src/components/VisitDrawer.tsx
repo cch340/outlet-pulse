@@ -3,13 +3,20 @@ import { useData } from '../data/queries/useData'
 import { visitVM } from '../data/derived'
 import { pill } from '../theme'
 import { Icon } from './Icon'
-import { useToggleTask, useMarkVisitDone, useToggleVisitStatus } from '../data/queries/useVisitMutations'
+import type { TaskStatus } from '../data/model'
+import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess } from '../data/queries/useVisitMutations'
+
+const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
+  { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
+  { value: 'failed', color: '#dc2626', glyph: '✕', title: 'Failed' },
+  { value: 'success', color: '#16a34a', glyph: '✓', title: 'Success' },
+]
 
 export function VisitDrawer() {
   const { state, closeVisit } = useStore()
-  const toggleTask = useToggleTask()
-  const markDone = useMarkVisitDone()
-  const toggleStatus = useToggleVisitStatus()
+  const setStatus = useSetTaskStatus()
+  const setRemark = useSetTaskRemark()
+  const markAll = useMarkAllSuccess()
   const { data } = useData()
   const S = state
   const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
@@ -59,100 +66,113 @@ export function VisitDrawer() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--dim)' }}>Checklist</div>
             <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 12, color: 'var(--dim)' }}>
-              {vm.doneT}/{vm.total} complete
+              {vm.resolvedT}/{vm.total} resolved
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {openF.tasks.map((t, i) => (
-              <button
-                key={i}
-                onClick={() => toggleTask.mutate({ taskId: t.id!, done: !t.done }, { onError: (e) => alert(e.message) })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {openF.tasks.map((t) => (
+              <div
+                key={t.id}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  width: '100%',
-                  textAlign: 'left',
                   border: '1px solid var(--border)',
                   background: 'var(--surface2)',
                   borderRadius: 9,
                   padding: '11px 13px',
-                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 9,
                 }}
               >
-                <span
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: `1.5px solid ${t.done ? '#16a34a' : 'var(--border)'}`,
-                    background: t.done ? '#16a34a' : 'transparent',
+                <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{t.label}</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {SEGMENTS.map((seg) => {
+                    const active = t.status === seg.value
+                    return (
+                      <button
+                        key={seg.value}
+                        type="button"
+                        title={seg.title}
+                        aria-label={`${t.label}: ${seg.title}`}
+                        aria-pressed={active}
+                        onClick={() =>
+                          setStatus.mutate(
+                            { taskId: t.id!, status: seg.value },
+                            { onError: (e) => alert(e.message) },
+                          )
+                        }
+                        style={{
+                          flex: 1,
+                          padding: '7px 0',
+                          borderRadius: 7,
+                          border: `1px solid ${active ? seg.color : 'var(--border)'}`,
+                          background: active ? seg.color : 'transparent',
+                          color: active ? '#fff' : 'var(--dim)',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {seg.glyph}
+                      </button>
+                    )
+                  })}
+                </div>
+                <input
+                  defaultValue={t.remark}
+                  aria-label={`${t.label} remark`}
+                  placeholder="Add a remark…"
+                  onBlur={(e) => {
+                    const next = e.target.value
+                    if (next !== t.remark)
+                      setRemark.mutate(
+                        { taskId: t.id!, remark: next },
+                        { onError: (err) => alert(err.message) },
+                      )
                   }}
-                >
-                  {t.done && <Icon name="check" size={15} color="#fff" />}
-                </span>
-                <span
                   style={{
-                    fontSize: 13.5,
-                    color: t.done ? 'var(--dim)' : 'var(--text)',
-                    textDecoration: t.done ? 'line-through' : 'none',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    borderRadius: 7,
+                    padding: '8px 10px',
+                    fontFamily: "'IBM Plex Sans'",
+                    fontSize: 12.5,
+                    color: 'var(--text)',
                   }}
-                >
-                  {t.label}
-                </span>
-              </button>
+                />
+              </div>
             ))}
           </div>
         </div>
 
         {/* footer */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
-          {openF.status === 'done' ? (
-            <button
-              onClick={() => toggleStatus.mutate({ visitId: openF.id, status: openF.status }, { onError: (e) => alert(e.message) })}
-              style={{
-                flex: 1,
-                border: '1px solid var(--border)',
-                background: 'var(--surface2)',
-                color: 'var(--text)',
-                borderRadius: 9,
-                padding: 12,
-                fontFamily: "'IBM Plex Sans'",
-                fontSize: 13.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Reopen visit
-            </button>
-          ) : (
-            <button
-              onClick={() => markDone.mutate({ visitId: openF.id }, { onSuccess: () => closeVisit(), onError: (e) => alert(e.message) })}
-              style={{
-                flex: 1,
-                border: 'none',
-                background: '#16a34a',
-                color: '#fff',
-                borderRadius: 9,
-                padding: 12,
-                fontFamily: "'IBM Plex Sans'",
-                fontSize: 13.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 7,
-              }}
-            >
-              <Icon name="task_alt" size={18} />
-              Mark complete
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={vm.pendingT === 0}
+            onClick={() =>
+              markAll.mutate({ visitId: openF.id }, { onSuccess: () => closeVisit(), onError: (e) => alert(e.message) })
+            }
+            style={{
+              flex: 1,
+              border: 'none',
+              background: '#16a34a',
+              color: '#fff',
+              borderRadius: 9,
+              padding: 12,
+              fontFamily: "'IBM Plex Sans'",
+              fontSize: 13.5,
+              fontWeight: 600,
+              cursor: vm.pendingT === 0 ? 'not-allowed' : 'pointer',
+              opacity: vm.pendingT === 0 ? 0.5 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 7,
+            }}
+          >
+            <Icon name="task_alt" size={18} />
+            Mark all success
+          </button>
         </div>
       </div>
     </div>

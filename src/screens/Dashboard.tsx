@@ -1,6 +1,6 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { visitVM, isOverdue, linked, staffCount, today } from '../data/derived'
+import { visitVM, isOverdue, visitStatus, linked, staffCount, today } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
@@ -23,8 +23,9 @@ export function Dashboard() {
   const monthFus = data.visits.filter((f) => f.date.startsWith(mo))
   const periodFus = S.period === 'month' ? monthFus : yearFus
   const periodLabel = S.period === 'month' ? monthLabel : yearLabel
-  const pDone = periodFus.filter((f) => f.status === 'done').length
-  const pPend = periodFus.filter((f) => f.status === 'pending').length
+  const pDone = periodFus.filter((f) => visitStatus(f) === 'done').length
+  const pPend = periodFus.filter((f) => visitStatus(f) === 'pending').length
+  const pAttn = periodFus.filter((f) => visitStatus(f) === 'attention').length
   const pOver = periodFus.filter(isOverdue).length
   const compRate = periodFus.length ? Math.round((pDone / periodFus.length) * 100) : 0
 
@@ -39,20 +40,22 @@ export function Dashboard() {
     { label: 'Visits', value: periodFus.length, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
     { label: 'Completion', value: `${compRate}%`, sub: `${pDone} completed`, icon: 'task_alt', tone: '#16a34a' },
     { label: 'Pending', value: pPend, sub: 'awaiting completion', icon: 'pending', tone: '#d97706' },
-    { label: 'Overdue', value: pOver, sub: 'past scheduled date', icon: 'warning', tone: '#dc2626' },
+    { label: 'Attention', value: pAttn, sub: 'needs attention', icon: 'warning', tone: '#dc2626' },
+    { label: 'Overdue', value: pOver, sub: 'past scheduled date', icon: 'event_busy', tone: '#ea580c' },
   ]
 
   const mdata = MK.map(([label, mm]) => {
     const fs = yearFus.filter((f) => f.date.slice(5, 7) === mm)
-    return { label, done: fs.filter((x) => x.status === 'done').length, pending: fs.filter((x) => x.status === 'pending').length }
+    const done = fs.filter((x) => visitStatus(x) === 'done').length
+    return { label, done, notDone: fs.length - done }
   })
-  const tmax = Math.max(1, ...mdata.map((m) => m.done + m.pending))
+  const tmax = Math.max(1, ...mdata.map((m) => m.done + m.notDone))
   const H = 108
 
   const bmax = Math.max(1, ...data.brands.map((b) => yearFus.filter((f) => f.brandId === b.id).length))
   const brandBreakdown = data.brands.map((b) => {
     const fs = yearFus.filter((f) => f.brandId === b.id)
-    return { name: b.name, color: b.color, done: fs.filter((x) => x.status === 'done').length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
+    return { name: b.name, color: b.color, done: fs.filter((x) => visitStatus(x) === 'done').length, total: fs.length, pct: Math.round((fs.length / bmax) * 100) }
   })
 
   const omax = Math.max(1, ...data.outlets.map((o) => staffCount(data, null, o.id)))
@@ -64,7 +67,7 @@ export function Dashboard() {
 
   const overdueList = data.visits.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => visitVM(data, f))
   const upcomingList = data.visits
-    .filter((f) => f.status === 'pending' && !isOverdue(f))
+    .filter((f) => visitStatus(f) === 'pending' && !isOverdue(f))
     .sort((a, b) => (a.date < b.date ? -1 : 1))
     .map((f) => visitVM(data, f))
 
@@ -144,13 +147,13 @@ export function Dashboard() {
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--accent)' }} />Done
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 9, height: 9, borderRadius: 2, background: tint('var(--accent)', 22) }} />Pending
+                <span style={{ width: 9, height: 9, borderRadius: 2, background: tint('var(--accent)', 22) }} />Open
               </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 158, paddingTop: 18 }}>
             {mdata.map((m) => {
-              const total = m.done + m.pending
+              const total = m.done + m.notDone
               return (
                 <div
                   key={m.label}
@@ -169,7 +172,7 @@ export function Dashboard() {
                       background: 'var(--surface2)',
                     }}
                   >
-                    <div style={{ height: Math.round((m.pending / tmax) * H), background: tint('var(--accent)', 22) }} />
+                    <div style={{ height: Math.round((m.notDone / tmax) * H), background: tint('var(--accent)', 22) }} />
                     <div style={{ height: Math.round((m.done / tmax) * H), background: 'var(--accent)' }} />
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 500 }}>{m.label}</div>

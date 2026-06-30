@@ -1,7 +1,7 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { useMarkVisitDone } from '../data/queries/useVisitMutations'
-import { brandById, visitVM, isOverdue, outletById, staffById } from '../data/derived'
+import { useMarkAllSuccess } from '../data/queries/useVisitMutations'
+import { brandById, visitVM, isOverdue, visitStatus, outletById, staffById } from '../data/derived'
 import type { VisitFilter } from '../data/store'
 import { card, chip, pill } from '../theme'
 import { Icon } from '../components/Icon'
@@ -11,7 +11,7 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 export function Visits() {
   const { state, setVisitFilter, openVisit } = useStore()
   const { data } = useData()
-  const markDoneMutation = useMarkVisitDone()
+  const markAllMutation = useMarkAllSuccess()
   const S = state
   const q = S.q.trim().toLowerCase()
   const isMobile = S.isMobile
@@ -19,21 +19,24 @@ export function Visits() {
   const allF = data.visits.slice().sort((a, b) => (a.date < b.date ? -1 : 1))
   const counts = {
     all: allF.length,
-    pending: allF.filter((f) => f.status === 'pending' && !isOverdue(f)).length,
+    pending: allF.filter((f) => visitStatus(f) === 'pending' && !isOverdue(f)).length,
+    attention: allF.filter((f) => visitStatus(f) === 'attention').length,
     overdue: allF.filter(isOverdue).length,
-    done: allF.filter((f) => f.status === 'done').length,
+    done: allF.filter((f) => visitStatus(f) === 'done').length,
   }
   const filterDefs: [VisitFilter, string][] = [
     ['all', 'All'],
     ['pending', 'Pending'],
+    ['attention', 'Attention'],
     ['overdue', 'Overdue'],
     ['done', 'Completed'],
   ]
 
   let filtered = allF
-  if (S.visitFilter === 'pending') filtered = allF.filter((f) => f.status === 'pending' && !isOverdue(f))
+  if (S.visitFilter === 'pending') filtered = allF.filter((f) => visitStatus(f) === 'pending' && !isOverdue(f))
+  else if (S.visitFilter === 'attention') filtered = allF.filter((f) => visitStatus(f) === 'attention')
   else if (S.visitFilter === 'overdue') filtered = allF.filter(isOverdue)
-  else if (S.visitFilter === 'done') filtered = allF.filter((f) => f.status === 'done')
+  else if (S.visitFilter === 'done') filtered = allF.filter((f) => visitStatus(f) === 'done')
   if (q) {
     filtered = filtered.filter((f) => {
       const b = brandById(data, f.brandId)
@@ -46,7 +49,7 @@ export function Visits() {
   const rows = filtered.map((f) => {
     const vm = visitVM(data, f)
     const d = new Date(f.date + 'T00:00:00')
-    return { ...vm, day: String(d.getDate()).padStart(2, '0'), mon: MON[d.getMonth()], canComplete: vm.status !== 'done' }
+    return { ...vm, day: String(d.getDate()).padStart(2, '0'), mon: MON[d.getMonth()], canComplete: vm.pendingT > 0 }
   })
 
   return (
@@ -89,37 +92,41 @@ export function Visits() {
                     <div style={{ height: '100%', width: `${f.progressPct}%`, background: f.statusColor }} />
                   </div>
                   <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)' }}>
-                    {f.doneT}/{f.total}
+                    {f.resolvedT}/{f.total}
                   </span>
                 </div>
               </div>
-              <span style={pill(f.statusColor)}>{f.statusLabel}</span>
-              {f.canComplete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    markDoneMutation.mutate({ visitId: f.id })
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    border: '1px solid #16a34a',
-                    background: 'color-mix(in srgb, #16a34a 8%, transparent)',
-                    color: '#16a34a',
-                    borderRadius: 7,
-                    padding: '6px 10px',
-                    fontFamily: "'IBM Plex Sans'",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name="check" size={16} />
-                  Done
-                </button>
-              )}
+              <div style={{ width: 116, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+                {f.canComplete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      markAllMutation.mutate({ visitId: f.id })
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      border: '1px solid #16a34a',
+                      background: 'color-mix(in srgb, #16a34a 8%, transparent)',
+                      color: '#16a34a',
+                      borderRadius: 7,
+                      padding: '6px 10px',
+                      fontFamily: "'IBM Plex Sans'",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name="check" size={16} />
+                    All success
+                  </button>
+                )}
+              </div>
+              <div style={{ width: 132, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+                <span style={pill(f.statusColor)}>{f.statusLabel}</span>
+              </div>
             </div>
           ))}
 
