@@ -1,11 +1,32 @@
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../data/store'
+import { useSession } from '../auth/AuthProvider'
 import { TITLES } from '../data/nav'
 import { Icon } from './Icon'
 
 export function TopBar() {
   const { state, setSearch, openAdd } = useStore()
+  const { session, signOut } = useSession()
   const isMobile = state.isMobile
   const [title, subtitle] = TITLES[state.activeScreen]
+  const email = session?.user.email ?? ''
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const accountRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
 
   return (
     <header
@@ -21,21 +42,87 @@ export function TopBar() {
       }}
     >
       {isMobile && (
-        <div
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: 7,
-            background: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontWeight: 700,
-            fontSize: 13,
-          }}
-        >
-          P
+        <div ref={accountRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            title="Account"
+            aria-label="Account"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            P
+          </button>
+          {menuOpen && (
+            <div
+              role="menu"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                left: 0,
+                zIndex: 20,
+                minWidth: 220,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {email}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--dim)' }}>Signed in</div>
+              </div>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false)
+                  signOut()
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text)',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                <Icon name="logout" size={18} color="var(--dim)" />
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
       )}
       <div style={{ minWidth: 0 }}>
