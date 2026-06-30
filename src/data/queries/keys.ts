@@ -6,5 +6,8 @@ export const queryKeys = {
   visits: ['visits'] as const,
   visitsPage: (params: unknown) => ['visits', 'page', params] as const,
   visitStatusCounts: (params: unknown) => ['visits', 'counts', params] as const,
+  visit: (id: string | null) => ['visits', 'one', id] as const,
+  dashboardSummary: (params: unknown) => ['visits', 'dashboard', params] as const,
+  visitsMissingLabel: (params: unknown) => ['visits', 'missing', params] as const,
   taskTemplates: ['taskTemplates'] as const,
 }
