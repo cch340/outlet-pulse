@@ -108,6 +108,8 @@ export function Visits() {
       const next = new Set(s)
       if (next.has(id)) next.delete(id)
       else next.add(id)
+      // Keep the "Expand all" checkbox in sync with the actual set.
+      setAllExpanded(visits.length > 0 && next.size === visits.length)
       return next
     })
 
