@@ -1,12 +1,12 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { visitVM, isOverdue, visitStatus, visitComplete, linked, staffCount, today } from '../data/derived'
+import { useDashboardSummary } from '../data/queries/useDashboardSummary'
+import { linked, staffCount, today, fmt } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
-const MK: [string, string][] = [
-  ['Jan', '01'], ['Feb', '02'], ['Mar', '03'], ['Apr', '04'], ['May', '05'], ['Jun', '06'], ['Jul', '07'],
-]
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const pad = (n: number) => String(n).padStart(2, '0')
 
 export function Dashboard() {
   const { state, setPeriod, openVisit } = useStore()
@@ -15,18 +15,21 @@ export function Dashboard() {
 
   const t = today()
   const yr = String(t.getFullYear())
-  const mo = `${yr}-${String(t.getMonth() + 1).padStart(2, '0')}`
+  const mo = `${yr}-${pad(t.getMonth() + 1)}`
+  const todayStr = `${yr}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
   const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const yearLabel = `Year ${yr}`
 
-  const yearFus = data.visits.filter((f) => f.date.startsWith(yr))
-  const monthFus = data.visits.filter((f) => f.date.startsWith(mo))
-  const periodFus = S.period === 'month' ? monthFus : yearFus
+  const { summary, isLoading: sumLoading, isError: sumError } = useDashboardSummary({
+    today: todayStr,
+    year: yr,
+    month: mo,
+    listLimit: 20,
+  })
+
+  const kpiSrc = S.period === 'month' ? summary.kpisMonth : summary.kpisYear
   const periodLabel = S.period === 'month' ? monthLabel : yearLabel
-  const pDone = periodFus.filter(visitComplete).length
-  const pPend = periodFus.filter((f) => visitStatus(f) === 'pending').length
-  const pOver = periodFus.filter(isOverdue).length
-  const compRate = periodFus.length ? Math.round((pDone / periodFus.length) * 100) : 0
+  const compRate = kpiSrc.total ? Math.round((kpiSrc.done / kpiSrc.total) * 100) : 0
 
   const stats = [
     { icon: 'sell', label: 'Brands', value: data.brands.length },
@@ -36,24 +39,24 @@ export function Dashboard() {
   ]
 
   const kpis = [
-    { label: 'Visits', value: periodFus.length, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
-    { label: 'Completion', value: `${compRate}%`, sub: `${pDone} completed`, icon: 'task_alt', tone: '#16a34a' },
-    { label: 'Pending', value: pPend, sub: 'awaiting completion', icon: 'pending', tone: '#d97706' },
-    { label: 'Overdue', value: pOver, sub: 'past scheduled date', icon: 'event_busy', tone: '#ea580c' },
+    { label: 'Visits', value: kpiSrc.total, sub: periodLabel, icon: 'fact_check', tone: 'var(--text)' },
+    { label: 'Completion', value: `${compRate}%`, sub: `${kpiSrc.done} completed`, icon: 'task_alt', tone: '#16a34a' },
+    { label: 'Pending', value: kpiSrc.pending, sub: 'awaiting completion', icon: 'pending', tone: '#d97706' },
+    { label: 'Overdue', value: kpiSrc.overdue, sub: 'past scheduled date', icon: 'event_busy', tone: '#ea580c' },
   ]
 
-  const mdata = MK.map(([label, mm]) => {
-    const fs = yearFus.filter((f) => f.date.slice(5, 7) === mm)
-    const done = fs.filter(visitComplete).length
-    return { label, done, notDone: fs.length - done }
+  const mdata = summary.trend.map((pt) => {
+    const idx = Number(pt.month.slice(5, 7)) - 1
+    return { label: MONTHS[idx] ?? pt.month, done: pt.done, notDone: pt.total - pt.done }
   })
   const tmax = Math.max(1, ...mdata.map((m) => m.done + m.notDone))
   const H = 108
 
   const brandBreakdown = data.brands.map((b) => {
-    const fs = yearFus.filter((f) => f.brandId === b.id)
-    const done = fs.filter(visitComplete).length
-    return { name: b.name, color: b.color, done, total: fs.length, pct: fs.length ? Math.round((done / fs.length) * 100) : 0 }
+    const st = summary.brandBreakdown.find((x) => x.brandId === b.id)
+    const done = st?.done ?? 0
+    const total = st?.total ?? 0
+    return { name: b.name, color: b.color, done, total, pct: total ? Math.round((done / total) * 100) : 0 }
   })
 
   const omax = Math.max(1, ...data.outlets.map((o) => staffCount(data, null, o.id)))
@@ -63,11 +66,8 @@ export function Dashboard() {
     return { name: o.name, location: o.location, staff, brands, pct: Math.round((staff / omax) * 100) }
   })
 
-  const overdueList = data.visits.filter(isOverdue).sort((a, b) => (a.date < b.date ? -1 : 1)).map((f) => visitVM(data, f))
-  const upcomingList = data.visits
-    .filter((f) => visitStatus(f) === 'pending' && !isOverdue(f))
-    .sort((a, b) => (a.date < b.date ? -1 : 1))
-    .map((f) => visitVM(data, f))
+  const overdueList = summary.overdue
+  const upcomingList = summary.upcoming
 
   const sectionTitle = { fontSize: 14, fontWeight: 700 } as const
   const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
@@ -102,7 +102,11 @@ export function Dashboard() {
 
       {/* period toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>Visit performance — {periodLabel}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>
+          Visit performance — {periodLabel}
+          {sumLoading && <span style={{ marginLeft: 8, fontWeight: 500 }}>· loading…</span>}
+          {sumError && <span style={{ marginLeft: 8, fontWeight: 500, color: '#dc2626' }}>· couldn't load metrics</span>}
+        </div>
         <div
           style={{
             display: 'inline-flex',
@@ -143,12 +147,12 @@ export function Dashboard() {
                 <Icon name="warning" size={19} color="#dc2626" />
                 <div style={sectionTitle}>Overdue visits</div>
                 <span style={{ ...mono, fontSize: 12, fontWeight: 600, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '1px 8px' }}>
-                  {overdueList.length}
+                  {summary.overdueTotal}
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {overdueList.map((f) => (
-                  <AttentionRow key={f.id} dot="#dc2626" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="#dc2626" onClick={() => openVisit(f.id)} />
+                  <AttentionRow key={f.id} dot="#dc2626" title={`${f.brandName} · ${f.outletName}`} sub={f.staffName ?? 'Unassigned'} date={fmt(f.date)} dateColor="#dc2626" onClick={() => openVisit(f.id)} />
                 ))}
               </div>
             </div>
@@ -161,7 +165,7 @@ export function Dashboard() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {upcomingList.map((f) => (
-                  <AttentionRow key={f.id} dot="#2563eb" title={f.title} sub={f.staffName} date={f.dateLabel} dateColor="var(--dim)" onClick={() => openVisit(f.id)} />
+                  <AttentionRow key={f.id} dot="#2563eb" title={`${f.brandName} · ${f.outletName}`} sub={f.staffName ?? 'Unassigned'} date={fmt(f.date)} dateColor="var(--dim)" onClick={() => openVisit(f.id)} />
                 ))}
               </div>
             </div>
