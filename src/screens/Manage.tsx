@@ -1,5 +1,5 @@
 import { useStore, type ManageTab } from '../data/store'
-import { chip } from '../theme'
+import { tabBtn } from '../theme'
 import { Brands } from './Brands'
 import { Outlets } from './Outlets'
 import { Staff } from './Staff'
@@ -18,9 +18,9 @@ export function Manage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 22, borderBottom: '1px solid var(--border)' }}>
         {TABS.map(([k, label]) => (
-          <button key={k} onClick={() => setManageTab(k)} style={chip(tab === k)}>
+          <button key={k} onClick={() => setManageTab(k)} style={tabBtn(tab === k)}>
             {label}
           </button>
         ))}

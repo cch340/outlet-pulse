@@ -109,6 +109,21 @@ export const chip = (active: boolean): CSSProperties => ({
   gap: 7,
 })
 
+/** Underline tab for section navigation — kept visually distinct from `chip` (a filter). */
+export const tabBtn = (active: boolean): CSSProperties => ({
+  border: 'none',
+  background: 'transparent',
+  color: active ? 'var(--text)' : 'var(--dim)',
+  borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+  borderRadius: 0,
+  padding: '9px 4px',
+  marginBottom: -1,
+  fontFamily: "'IBM Plex Sans'",
+  fontSize: 13.5,
+  fontWeight: 600,
+  cursor: 'pointer',
+})
+
 export const pill = (c: string): CSSProperties => ({
   fontSize: 11,
   fontWeight: 600,
