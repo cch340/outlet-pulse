@@ -76,15 +76,15 @@ export interface Task {
 
 ## Derived layer (`src/data/derived.ts`)
 
-- New pure function `visitBaseStatus(tasks): 'pending' | 'attention' | 'done'` implementing the state machine above.
-- `isOverdue` reworked to use the base status (`visitBaseStatus(f.tasks) === 'pending' && date < today`) instead of `f.status`.
+- New pure function `visitBaseStatus(tasks): VisitBaseStatus` (`'pending' | 'attention' | 'done'`) implementing the state machine above, plus a `visitStatus(f: Visit)` convenience wrapper (`visitBaseStatus(f.tasks)`). These are the canonical base-status source for every consumer (Visits list, Dashboard).
+- `isOverdue` reworked to use the base status (`visitStatus(f) === 'pending' && date < today`) instead of `f.status`.
 - `DerivedStatus` gains `'attention'`.
 - `STATUS_COLOR` gains `attention` and updates `overdue` per the table.
 - New explicit `STATUS_LABEL` map.
 - `visitVM` exposes counts for the progress bar:
-  - `successT`, `failedT`, `pendingT`, `total`
-  - `progressPct = total ? round((successT + failedT) / total * 100) : 0` ("resolved" fraction)
-  - (the old `doneT` is replaced by these; update consumers)
+  - `successT`, `failedT`, `pendingT`, `resolvedT` (= `successT + failedT`), `total`
+  - `progressPct = total ? round(resolvedT / total * 100) : 0` ("resolved" fraction)
+  - (the old `doneT` is replaced by these; update consumers — the list and drawer show `resolvedT/total`)
 
 ## Database
 
@@ -167,8 +167,20 @@ A visit must have at least one task. The modal's **Schedule** submit is **disabl
 
 - Progress bar uses the new counts.
 - Desktop quick **"Done"** button becomes **"Mark all success"** (calls `useMarkAllSuccess`).
-- Filter chips gain an **"Attention"** option (alongside all / pending / overdue / done). "Attention" = derived status `attention`.
+- Filter chips gain an **"Attention"** option (alongside all / pending / overdue / done). "Attention" = derived status `attention`. The `VisitFilter` union in `src/data/store.tsx` gains `'attention'`.
 - Status pill renders the four derived states with the colors above.
+
+### `src/screens/Dashboard.tsx` — derive status + surface "Attention" KPI
+
+Dashboard currently reads the now-removed `f.status`. All such reads switch to `visitStatus(f)`:
+- `pDone` = `visitStatus(f) === 'done'`; `pPend` = `visitStatus(f) === 'pending'`; `pOver` = `isOverdue(f)` (unchanged); new `pAttn` = `visitStatus(f) === 'attention'`.
+- `compRate` = `pDone / periodFus.length` (unchanged formula).
+- A new **"Attention"** KPI card is added to the KPI row: value `pAttn`, sub "needs attention", icon `warning`, tone `#dc2626`. (Overdue KPI keeps its own `#ea580c`/`#dc2626` styling — see colors note.)
+- Monthly trend chart: the two-segment bar keeps `done` vs the remainder; the "pending" segment becomes "not done" = `total - done` so attention visits are still represented in the bar height. `done` per month = `visitStatus(f) === 'done'`.
+- Brand breakdown: `done` per brand = `visitStatus(f) === 'done'` (the `total` denominator is unchanged, so attention visits fall into the not-done remainder).
+- `upcomingList` filter switches to `visitStatus(f) === 'pending' && !isOverdue(f)`.
+
+The Overdue KPI icon tone stays red; only the *visit status pill/bar* `overdue` color moves to `#ea580c`. Dashboard KPI accent colors are independent of `STATUS_COLOR` and are left as-is except for the new Attention card.
 
 ## Testing
 
@@ -196,6 +208,10 @@ A visit must have at least one task. The modal's **Schedule** submit is **disabl
 - `src/components/ScheduleModal.tsx` — disable submit when no tasks checked + hint
 - `src/components/VisitDrawer.tsx` — segmented control, remark input, buttons
 - `src/screens/Visits.tsx` — counts, "Mark all success", "Attention" filter, pill
+- `src/screens/Dashboard.tsx` — derive status via `visitStatus`, add "Attention" KPI
+- `src/data/store.tsx` — `VisitFilter` union gains `'attention'`
 - `src/data/derived.test.ts` — state-machine tests
+- `src/data/queries/mappers.test.ts` — update `rowToVisit` fixture (`status`/`remark` on tasks, drop `done`)
+- `src/data/queries/scheduleTasks.test.ts` — add empty-`taskLabels` assertion
 - Verify no other consumers of `Task.done`, `Visit.status`, `useToggleTask`, `useMarkVisitDone`, `useToggleVisitStatus`, or `doneT` remain (grep before finishing).
 ```
