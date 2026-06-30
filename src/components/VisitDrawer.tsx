@@ -5,8 +5,8 @@ import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
 import { pill, chip } from '../theme'
 import { Icon } from './Icon'
 import type { TaskStatus } from '../data/model'
-import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask } from '../data/queries/useVisitMutations'
-import { taskHasResult } from '../data/queries/visitEdit'
+import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks } from '../data/queries/useVisitMutations'
+import { taskHasResult, importableTemplates } from '../data/queries/visitEdit'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
   { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
@@ -22,8 +22,11 @@ export function VisitDrawer() {
   const updateVisit = useUpdateVisit()
   const addTask = useAddVisitTask()
   const removeTask = useRemoveVisitTask()
+  const importTasks = useImportVisitTasks()
   const [newTaskLabel, setNewTaskLabel] = useState('')
   const [storePickerOpen, setStorePickerOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [selectedImportIds, setSelectedImportIds] = useState<string[]>([])
   const { data } = useData()
   const S = state
   const openF = S.openVisitId ? data.visits.find((f) => f.id === S.openVisitId) : null
@@ -39,6 +42,26 @@ export function VisitDrawer() {
     addTask.mutate(
       { visitId: openF.id, label },
       { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
+    )
+  }
+
+  const importable = importableTemplates(data.taskTemplates, openF.tasks)
+
+  const toggleImport = (id: string) =>
+    setSelectedImportIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
+
+  const runImport = () => {
+    const labels = importable.filter((t) => selectedImportIds.includes(t.id)).map((t) => t.label)
+    if (!labels.length) return
+    importTasks.mutate(
+      { visitId: openF.id, labels },
+      {
+        onSuccess: () => {
+          setSelectedImportIds([])
+          setImportOpen(false)
+        },
+        onError: (err) => alert(err.message),
+      },
     )
   }
 
@@ -307,7 +330,94 @@ export function VisitDrawer() {
             >
               Add
             </button>
+            <button
+              type="button"
+              onClick={() => setImportOpen((o) => !o)}
+              disabled={importable.length === 0}
+              aria-expanded={importOpen}
+              title={importable.length === 0 ? 'No templates left to import' : 'Import saved tasks'}
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                borderRadius: 8,
+                padding: '9px 16px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: importable.length === 0 ? 'not-allowed' : 'pointer',
+                opacity: importable.length === 0 ? 0.5 : 1,
+              }}
+            >
+              Import
+            </button>
           </div>
+          {importOpen && importable.length > 0 && (
+            <div
+              style={{
+                marginTop: 9,
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                borderRadius: 9,
+                padding: '11px 13px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--dim)' }}>
+                Import from saved tasks
+              </div>
+              {importable.map((t) => {
+                const checked = selectedImportIds.includes(t.id)
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => toggleImport(t.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, border: 'none', background: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                  >
+                    <span
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: 5,
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `1.5px solid ${checked ? 'var(--accent)' : 'var(--border)'}`,
+                        background: checked ? 'var(--accent)' : 'transparent',
+                      }}
+                    >
+                      {checked && <Icon name="check" size={14} color="#fff" />}
+                    </span>
+                    <span style={{ fontSize: 13.5, color: 'var(--text)' }}>{t.label}</span>
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                onClick={runImport}
+                disabled={selectedImportIds.length === 0}
+                style={{
+                  alignSelf: 'flex-start',
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '8px 16px',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: selectedImportIds.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: selectedImportIds.length === 0 ? 0.5 : 1,
+                }}
+              >
+                Import {selectedImportIds.length || ''}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* footer */}
