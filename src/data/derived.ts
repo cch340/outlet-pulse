@@ -34,6 +34,10 @@ export const linked = (s: DataSnapshot, bId: string, oId: string) =>
 export const staffCount = (s: DataSnapshot, bId: string | null, oId: string | null) =>
   s.staff.filter((x) => (!bId || x.brandId === bId) && (!oId || x.outletId === oId)).length
 
+/** Staff posted to a store (the brand+outlet pair). */
+export const staffForStore = (s: DataSnapshot, bId: string, oId: string): Staff[] =>
+  s.staff.filter((x) => x.brandId === bId && x.outletId === oId)
+
 export const tenure = (joined: string) => {
   const d = new Date(joined + 'T00:00:00')
   const t = today()
