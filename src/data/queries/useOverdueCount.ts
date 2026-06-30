@@ -1,12 +1,8 @@
 import { useVisitStatusCounts } from './useVisitsPage'
-import { today } from '../derived'
-
-const pad = (n: number) => String(n).padStart(2, '0')
+import { today, localDateStr } from '../derived'
 
 /** Total overdue visits across all time — backs the nav badge. */
 export function useOverdueCount(): number {
-  const t = today()
-  const todayStr = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
-  const counts = useVisitStatusCounts({ today: todayStr, from: null, to: null, latest: false, search: '' })
+  const counts = useVisitStatusCounts({ today: localDateStr(today()), from: null, to: null, latest: false, search: '' })
   return counts.overdue
 }

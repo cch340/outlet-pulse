@@ -1,12 +1,11 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useDashboardSummary } from '../data/queries/useDashboardSummary'
-import { linked, staffCount, today, fmt } from '../data/derived'
+import { linked, staffCount, today, fmt, localDateStr } from '../data/derived'
 import { card, mono, periodBtn, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const pad = (n: number) => String(n).padStart(2, '0')
 
 export function Dashboard() {
   const { state, setPeriod, openVisit } = useStore()
@@ -14,9 +13,9 @@ export function Dashboard() {
   const S = state
 
   const t = today()
-  const yr = String(t.getFullYear())
-  const mo = `${yr}-${pad(t.getMonth() + 1)}`
-  const todayStr = `${yr}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
+  const todayStr = localDateStr(t)
+  const yr = todayStr.slice(0, 4)
+  const mo = todayStr.slice(0, 7)
   const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const yearLabel = `Year ${yr}`
 
