@@ -135,19 +135,6 @@ export const pill = (c: string): CSSProperties => ({
   flexShrink: 0,
 })
 
-export const periodBtn = (active: boolean): CSSProperties => ({
-  padding: '6px 14px',
-  border: 'none',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontFamily: "'IBM Plex Sans'",
-  fontSize: 12.5,
-  fontWeight: 600,
-  background: active ? 'var(--surface)' : 'transparent',
-  color: active ? 'var(--text)' : 'var(--dim)',
-  boxShadow: active ? '0 1px 2px rgba(0,0,0,.1)' : 'none',
-})
-
 export const card: CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--border)',
