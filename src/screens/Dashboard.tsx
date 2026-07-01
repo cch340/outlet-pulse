@@ -1,13 +1,15 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useDashboardSummary } from '../data/queries/useDashboardSummary'
 import { useLatestFailedTasks } from '../data/queries/useLatestFailedTasks'
 import type { LatestFailedVisit } from '../data/queries/dashboardSummary'
 import { linked, staffCount, today, fmt, localDateStr, brandById, outletById } from '../data/derived'
-import { card, mono, periodBtn, pill, tint } from '../theme'
+import { card, mono, pill, tint } from '../theme'
 import { useCardCollapse } from '../data/useCardCollapse'
 import { CollapsibleCard } from '../components/CollapsibleCard'
 import { Icon } from '../components/Icon'
+import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -21,17 +23,28 @@ const CARD_IDS = [
   'staffByOutlet',
 ]
 
+const selectStyle = {
+  border: '1px solid var(--border)',
+  background: 'var(--surface2)',
+  borderRadius: 8,
+  padding: '6px 9px',
+  fontFamily: "'IBM Plex Sans'",
+  fontSize: 12.5,
+  fontWeight: 600,
+  color: 'var(--text)',
+  cursor: 'pointer',
+} as const
+
 export function Dashboard() {
-  const { state, setPeriod, openVisit } = useStore()
+  const { state, openVisit } = useStore()
   const { data } = useData()
-  const S = state
 
   const t = today()
   const todayStr = localDateStr(t)
-  const yr = todayStr.slice(0, 4)
-  const mo = todayStr.slice(0, 7)
-  const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const yearLabel = `Year ${yr}`
+  const [filterYear, setFilterYear] = useState(t.getFullYear())
+  const [filterMonth, setFilterMonth] = useState(t.getMonth() + 1)
+  const { month: mo, year: yr, label: periodLabel } = periodParams(filterYear, filterMonth)
+  const years = yearOptions(t.getFullYear())
 
   const { summary, isLoading: sumLoading, isError: sumError } = useDashboardSummary({
     today: todayStr,
@@ -40,12 +53,11 @@ export function Dashboard() {
     listLimit: 20,
   })
 
-  const { rows: latestFailed, isError: failedError } = useLatestFailedTasks()
+  const { rows: latestFailed, isError: failedError } = useLatestFailedTasks(mo)
 
   const collapse = useCardCollapse(CARD_IDS)
 
-  const kpiSrc = S.period === 'month' ? summary.kpisMonth : summary.kpisYear
-  const periodLabel = S.period === 'month' ? monthLabel : yearLabel
+  const kpiSrc = summary.kpisMonth
   const compRate = kpiSrc.total ? Math.round((kpiSrc.done / kpiSrc.total) * 100) : 0
 
   const stats = [
@@ -149,18 +161,27 @@ export function Dashboard() {
             />
             Expand all
           </label>
-          <div
-            style={{
-              display: 'inline-flex',
-              background: 'var(--surface2)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: 3,
-              gap: 2,
-            }}
-          >
-            <button onClick={() => setPeriod('month')} style={periodBtn(S.period === 'month')}>This month</button>
-            <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>{yearLabel}</button>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <select
+              aria-label="Month"
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(Number(e.target.value))}
+              style={selectStyle}
+            >
+              {MONTH_NAMES.map((name, i) => (
+                <option key={name} value={i + 1}>{name}</option>
+              ))}
+            </select>
+            <select
+              aria-label="Year"
+              value={filterYear}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+              style={selectStyle}
+            >
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
