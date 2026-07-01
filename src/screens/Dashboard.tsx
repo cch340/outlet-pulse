@@ -197,7 +197,7 @@ export function Dashboard() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {failedRows.map((row) => (
-              <FailedRow key={row.key} row={row} onOpen={openVisit} />
+              <FailedRow key={row.key} row={row} onOpen={openVisit} isMobile={state.isMobile} />
             ))}
           </div>
         )}
@@ -465,6 +465,7 @@ function AttentionRow({
 function FailedRow({
   row,
   onOpen,
+  isMobile,
 }: {
   row: {
     key: string
@@ -474,6 +475,7 @@ function FailedRow({
     visit: LatestFailedVisit | null
   }
   onOpen: (id: string) => void
+  isMobile: boolean
 }) {
   const v = row.visit
   const header = (
@@ -500,16 +502,25 @@ function FailedRow({
       {(v.staffName ?? 'Unassigned')} · {fmt(v.date)}
     </span>
   )
+  // On mobile the staff · date drops to its own line below so the store name and
+  // status pill can share one line without truncating.
+  const metaBottom = isMobile ? <div style={{ paddingLeft: 18 }}>{meta}</div> : null
 
   // All success
   if (v.status === 'done') {
     return (
-      <button onClick={() => onOpen(v.visitId)} style={rowShell(true)}>
-        {header}
-        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          {meta}
-          <span style={pill('#16a34a')}>Success</span>
-        </span>
+      <button
+        onClick={() => onOpen(v.visitId)}
+        style={isMobile ? { ...rowShell(true), flexDirection: 'column', alignItems: 'stretch', gap: 6 } : rowShell(true)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {header}
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            {!isMobile && meta}
+            <span style={pill('#16a34a')}>Success</span>
+          </span>
+        </div>
+        {metaBottom}
       </button>
     )
   }
@@ -520,10 +531,12 @@ function FailedRow({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {header}
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          {meta}
+          {!isMobile && meta}
           <span style={pill('#dc2626')}>{v.failed.length} failed</span>
         </span>
       </div>
+      {metaBottom}
+      <div style={{ height: 1, background: 'var(--border)' }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 18 }}>
         {v.failed.map((t, i) => (
           <div key={i} style={{ fontSize: 12 }}>
