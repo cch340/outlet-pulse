@@ -11,7 +11,6 @@ function detectMobile(): boolean {
 
 export type Screen = 'dashboard' | 'visits' | 'manage'
 export type ManageTab = 'brands' | 'outlets' | 'staff' | 'tasks'
-export type Period = 'month' | 'year'
 export type StaffBrandFilter = 'all' | string
 export type VisitFilter = 'all' | 'pending' | 'attention' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
@@ -36,7 +35,6 @@ export interface AppState {
   activeScreen: Screen
   manageTab: ManageTab
   isMobile: boolean
-  period: Period
   q: string
   selectedBrandId: string
   selectedOutletId: string
@@ -62,7 +60,6 @@ function seed(): AppState {
     activeScreen: 'dashboard',
     manageTab: 'brands',
     isMobile: detectMobile(),
-    period: 'month',
     q: '',
     selectedBrandId: '',
     selectedOutletId: '',
@@ -84,7 +81,6 @@ function seed(): AppState {
 
 export interface StoreActions {
   go(s: Screen): void
-  setPeriod(p: Period): void
   setSearch(q: string): void
   selBrand(id: string): void
   selOutlet(id: string): void
@@ -121,7 +117,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }))
     return {
       go: (activeScreen) => patch({ activeScreen, openVisitId: null }),
-      setPeriod: (period) => patch({ period }),
       setSearch: (q) => patch({ q }),
       selBrand: (selectedBrandId) => patch({ selectedBrandId }),
       selOutlet: (selectedOutletId) => patch({ selectedOutletId }),
