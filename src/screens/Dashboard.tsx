@@ -1,13 +1,15 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useDashboardSummary } from '../data/queries/useDashboardSummary'
 import { useLatestFailedTasks } from '../data/queries/useLatestFailedTasks'
 import type { LatestFailedVisit } from '../data/queries/dashboardSummary'
 import { linked, staffCount, today, fmt, localDateStr, brandById, outletById } from '../data/derived'
-import { card, mono, periodBtn, pill, tint } from '../theme'
+import { card, mono, pill, tint } from '../theme'
 import { useCardCollapse } from '../data/useCardCollapse'
 import { CollapsibleCard } from '../components/CollapsibleCard'
 import { Icon } from '../components/Icon'
+import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -21,17 +23,57 @@ const CARD_IDS = [
   'staffByOutlet',
 ]
 
+const selectStyle = {
+  border: '1px solid var(--border)',
+  background: 'var(--surface2)',
+  borderRadius: 8,
+  padding: '6px 9px',
+  fontFamily: "'IBM Plex Sans'",
+  fontSize: 12.5,
+  fontWeight: 600,
+  color: 'var(--text)',
+  cursor: 'pointer',
+} as const
+
+type Scope = 'filtered' | 'live' | 'all'
+
+const SCOPE_COLOR: Record<Scope, string> = {
+  filtered: 'var(--accent)', // follows the filter
+  live: '#2563eb',           // live / today (never red — red reads as an error)
+  all: 'var(--border)',      // all-time
+}
+
+function SectionHeader({ scope, label, title }: { scope: Scope; label: string; title: string }) {
+  const color = SCOPE_COLOR[scope]
+  return (
+    <div style={{ borderLeft: `3px solid ${color}`, paddingLeft: 11, margin: '10px 0 2px' }}>
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '.05em',
+          textTransform: 'uppercase',
+          color: scope === 'all' ? 'var(--dim)' : color,
+          marginBottom: 2,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{title}</div>
+    </div>
+  )
+}
+
 export function Dashboard() {
-  const { state, setPeriod, openVisit } = useStore()
+  const { state, openVisit } = useStore()
   const { data } = useData()
-  const S = state
 
   const t = today()
   const todayStr = localDateStr(t)
-  const yr = todayStr.slice(0, 4)
-  const mo = todayStr.slice(0, 7)
-  const monthLabel = t.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const yearLabel = `Year ${yr}`
+  const [filterYear, setFilterYear] = useState(t.getFullYear())
+  const [filterMonth, setFilterMonth] = useState(t.getMonth() + 1)
+  const { month: mo, year: yr, label: periodLabel } = periodParams(filterYear, filterMonth)
+  const years = yearOptions(t.getFullYear())
 
   const { summary, isLoading: sumLoading, isError: sumError } = useDashboardSummary({
     today: todayStr,
@@ -40,12 +82,11 @@ export function Dashboard() {
     listLimit: 20,
   })
 
-  const { rows: latestFailed, isError: failedError } = useLatestFailedTasks()
+  const { rows: latestFailed, isError: failedError } = useLatestFailedTasks(mo)
 
   const collapse = useCardCollapse(CARD_IDS)
 
-  const kpiSrc = S.period === 'month' ? summary.kpisMonth : summary.kpisYear
-  const periodLabel = S.period === 'month' ? monthLabel : yearLabel
+  const kpiSrc = summary.kpisMonth
   const compRate = kpiSrc.total ? Math.round((kpiSrc.done / kpiSrc.total) * 100) : 0
 
   const stats = [
@@ -133,37 +174,50 @@ export function Dashboard() {
         ))}
       </div>
 
-      {/* period toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dim)' }}>
-          Visit performance — {periodLabel}
-          {sumLoading && <span style={{ marginLeft: 8, fontWeight: 500 }}>· loading…</span>}
-          {sumError && <span style={{ marginLeft: 8, fontWeight: 500, color: '#dc2626' }}>· couldn't load metrics</span>}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--dim)', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={collapse.allOpen}
-              onChange={(e) => collapse.setAll(e.target.checked)}
-            />
-            Expand all
-          </label>
-          <div
-            style={{
-              display: 'inline-flex',
-              background: 'var(--surface2)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: 3,
-              gap: 2,
-            }}
-          >
-            <button onClick={() => setPeriod('month')} style={periodBtn(S.period === 'month')}>This month</button>
-            <button onClick={() => setPeriod('year')} style={periodBtn(S.period === 'year')}>{yearLabel}</button>
-          </div>
-        </div>
+      {/* filter bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Filter</span>
+        <select
+          aria-label="Month"
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(Number(e.target.value))}
+          style={selectStyle}
+        >
+          {MONTH_NAMES.map((name, i) => (
+            <option key={name} value={i + 1}>{name}</option>
+          ))}
+        </select>
+        <select
+          aria-label="Year"
+          value={filterYear}
+          onChange={(e) => setFilterYear(Number(e.target.value))}
+          style={selectStyle}
+        >
+          {years.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        {sumLoading && <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--dim)' }}>· loading…</span>}
+        {sumError && <span style={{ fontSize: 12, fontWeight: 500, color: '#dc2626' }}>· couldn't load metrics</span>}
+        <label
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: 'var(--dim)',
+            cursor: 'pointer',
+          }}
+        >
+          <input type="checkbox" checked={collapse.allOpen} onChange={(e) => collapse.setAll(e.target.checked)} />
+          Expand all
+        </label>
       </div>
+
+      {/* ── Monthly performance (month + year) ── */}
+      <SectionHeader scope="filtered" label={`Filtered · ${periodLabel}`} title="Monthly performance" />
 
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
@@ -202,6 +256,9 @@ export function Dashboard() {
           </div>
         )}
       </CollapsibleCard>
+
+      {/* ── Current status (live, today) ── */}
+      <SectionHeader scope="live" label="Live · today" title="Current status" />
 
       {/* attention lists */}
       {(overdueList.length > 0 || upcomingList.length > 0) && (
@@ -248,7 +305,8 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* trend + matrix */}
+      {/* ── Yearly overview (year only) ── */}
+      <SectionHeader scope="filtered" label={`Filtered · year ${yr}`} title="Yearly overview" />
       <div style={grid2}>
         {/* trend */}
         <CollapsibleCard
@@ -299,6 +357,38 @@ export function Dashboard() {
           </div>
         </CollapsibleCard>
 
+        {/* visits by brand */}
+        <CollapsibleCard
+          id="visitsByBrand"
+          gridItem
+          title="Visits by brand"
+          open={collapse.isOpen('visitsByBrand')}
+          onToggle={collapse.toggle}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+            {brandBreakdown.map((b) => (
+              <div key={b.name}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color }} />
+                    {b.name}
+                  </span>
+                  <span style={{ ...mono, color: 'var(--dim)', fontSize: 12 }}>
+                    {b.done}/{b.total} done
+                  </span>
+                </div>
+                <div style={{ height: 8, borderRadius: 5, background: 'var(--surface2)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: 5 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleCard>
+      </div>
+
+      {/* ── Structure (all-time) ── */}
+      <SectionHeader scope="all" label="All-time" title="Structure" />
+      <div style={grid2}>
         {/* matrix */}
         <CollapsibleCard
           id="matrix"
@@ -360,36 +450,8 @@ export function Dashboard() {
             </table>
           </div>
         </CollapsibleCard>
-      </div>
 
-      {/* breakdowns */}
-      <div style={grid2}>
-        <CollapsibleCard
-          id="visitsByBrand"
-          gridItem
-          title="Visits by brand"
-          open={collapse.isOpen('visitsByBrand')}
-          onToggle={collapse.toggle}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-            {brandBreakdown.map((b) => (
-              <div key={b.name}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color }} />
-                    {b.name}
-                  </span>
-                  <span style={{ ...mono, color: 'var(--dim)', fontSize: 12 }}>
-                    {b.done}/{b.total} done
-                  </span>
-                </div>
-                <div style={{ height: 8, borderRadius: 5, background: 'var(--surface2)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: 5 }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CollapsibleCard>
+        {/* staff by outlet */}
         <CollapsibleCard
           id="staffByOutlet"
           gridItem
