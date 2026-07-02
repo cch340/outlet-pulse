@@ -72,6 +72,47 @@ describe('buildStoreGroups', () => {
     expect(groups.map((g) => g.brand.id)).toEqual(['b1'])
   })
 
+  it('scopes staffCount and latest join per brand when two brands share an outlet', () => {
+    const data = snap({
+      brands: [brand('b1', 'Alpha', 0), brand('b2', 'Beta', 1)],
+      outlets: [outlet('o1', 'Shared')],
+      stores: [
+        { brandId: 'b1', outletId: 'o1' },
+        { brandId: 'b2', outletId: 'o1' },
+      ],
+      staff: [staff('s1', 'b1', 'o1'), staff('s2', 'b2', 'o1'), staff('s3', 'b2', 'o1')],
+    })
+    const latest: LatestFailedVisit[] = [
+      {
+        brandId: 'b1', outletId: 'o1', visitId: 'v-b1', date: '2026-07-01',
+        brandName: 'Alpha', outletName: 'Shared', staffName: null, status: 'attention',
+        failed: [],
+      },
+      {
+        brandId: 'b2', outletId: 'o1', visitId: 'v-b2', date: '2026-07-02',
+        brandName: 'Beta', outletName: 'Shared', staffName: null, status: 'attention',
+        failed: [],
+      },
+    ]
+    const groups = buildStoreGroups(data, latest)
+    const b1 = groups.find((g) => g.brand.id === 'b1')!.rows[0]
+    const b2 = groups.find((g) => g.brand.id === 'b2')!.rows[0]
+    expect(b1.staffCount).toBe(1)
+    expect(b1.latest?.visitId).toBe('v-b1')
+    expect(b2.staffCount).toBe(2)
+    expect(b2.latest?.visitId).toBe('v-b2')
+  })
+
+  it('passes through the outlet location', () => {
+    const data = snap({
+      brands: [brand('b1', 'Alpha', 0)],
+      outlets: [outlet('o1', 'One', 'Downtown')],
+      stores: [{ brandId: 'b1', outletId: 'o1' }],
+    })
+    const groups = buildStoreGroups(data, [])
+    expect(groups[0].rows[0].location).toBe('Downtown')
+  })
+
   it('returns [] for empty data', () => {
     expect(buildStoreGroups(snap({}), [])).toEqual([])
   })
