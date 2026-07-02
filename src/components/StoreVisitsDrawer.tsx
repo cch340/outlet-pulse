@@ -1,7 +1,7 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useVisitsPage } from '../data/queries/useVisitsPage'
-import { brandById, outletById, visitVM, today, localDateStr } from '../data/derived'
+import { brandById, outletById, visitVM, today, localDateStr, TASK_STATUS_COLOR } from '../data/derived'
 import { pill } from '../theme'
 import { Icon } from './Icon'
 
@@ -66,7 +66,6 @@ export function StoreVisitsDrawer() {
           ) : (
             visits.map((visit) => {
               const vm = visitVM(data, visit)
-              const failed = visit.tasks.filter((tk) => tk.status === 'failed')
               return (
                 <button
                   key={visit.id}
@@ -88,17 +87,16 @@ export function StoreVisitsDrawer() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{vm.dateLabel}</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>
-                        {vm.staffName} · {vm.total} checks
-                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>{vm.staffName}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>{vm.total} tasks</div>
                     </div>
                     <span style={pill(vm.statusColor)}>{vm.statusLabel}</span>
                   </div>
-                  {failed.length > 0 && (
+                  {visit.tasks.length > 0 && (
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                      {failed.map((tk) => (
+                      {visit.tasks.map((tk) => (
                         <div key={tk.id ?? tk.label} style={{ fontSize: 12 }}>
-                          <span style={{ fontWeight: 600 }}>{tk.label}</span>
+                          <span style={{ fontWeight: 600, color: TASK_STATUS_COLOR[tk.status] }}>{tk.label}</span>
                           {tk.remark && <span style={{ color: 'var(--dim)' }}> — {tk.remark}</span>}
                         </div>
                       ))}
