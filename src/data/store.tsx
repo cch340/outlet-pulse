@@ -9,8 +9,8 @@ function detectMobile(): boolean {
   return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
 }
 
-export type Screen = 'dashboard' | 'visits' | 'manage'
-export type ManageTab = 'brands' | 'outlets' | 'staff' | 'tasks'
+export type Screen = 'dashboard' | 'stores' | 'visits' | 'manage'
+export type ManageTab = 'brands' | 'outlets' | 'stores' | 'staff' | 'tasks'
 export type StaffBrandFilter = 'all' | string
 export type VisitFilter = 'all' | 'pending' | 'attention' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
@@ -42,6 +42,7 @@ export interface AppState {
   visitFilter: VisitFilter
   // overlays
   openVisitId: string | null
+  storeVisits: { brandId: string; outletId: string } | null
   transferStaffId: string | null
   transferForm: TransferForm | null
   addOpen: boolean
@@ -66,6 +67,7 @@ function seed(): AppState {
     staffBrandFilter: 'all',
     visitFilter: 'all',
     openVisitId: null,
+    storeVisits: null,
     transferStaffId: null,
     transferForm: null,
     addOpen: false,
@@ -88,6 +90,8 @@ export interface StoreActions {
   setVisitFilter(f: VisitFilter): void
   openVisit(id: string): void
   closeVisit(): void
+  openStoreVisits(brandId: string, outletId: string): void
+  closeStoreVisits(): void
   openTransfer(id: string, brandId: string, outletId: string): void
   closeTransfer(): void
   setTf(k: keyof TransferForm, v: string): void
@@ -116,7 +120,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const actions = useMemo<StoreActions>(() => {
     const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }))
     return {
-      go: (activeScreen) => patch({ activeScreen, openVisitId: null }),
+      go: (activeScreen) => patch({ activeScreen, openVisitId: null, storeVisits: null }),
       setSearch: (q) => patch({ q }),
       selBrand: (selectedBrandId) => patch({ selectedBrandId }),
       selOutlet: (selectedOutletId) => patch({ selectedOutletId }),
@@ -124,6 +128,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setVisitFilter: (visitFilter) => patch({ visitFilter }),
       openVisit: (openVisitId) => patch({ openVisitId }),
       closeVisit: () => patch({ openVisitId: null }),
+      openStoreVisits: (brandId, outletId) => patch({ storeVisits: { brandId, outletId } }),
+      closeStoreVisits: () => patch({ storeVisits: null }),
       openTransfer: (id, brandId, outletId) =>
         patch({
           transferStaffId: id,

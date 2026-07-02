@@ -6,6 +6,7 @@ export interface Brand {
   name: string
   color: string // hex chip
   category: string
+  sort: number
 }
 
 export interface Outlet {

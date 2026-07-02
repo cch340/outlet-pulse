@@ -4,10 +4,12 @@ import { Brands } from './Brands'
 import { Outlets } from './Outlets'
 import { Staff } from './Staff'
 import { TaskTemplatesPanel } from '../components/TaskTemplatesPanel'
+import { StoresPanel } from '../components/StoresPanel'
 
 const TABS: [ManageTab, string][] = [
   ['brands', 'Brands'],
   ['outlets', 'Outlets'],
+  ['stores', 'Stores'],
   ['staff', 'Staff'],
   ['tasks', 'Tasks'],
 ]
@@ -27,6 +29,7 @@ export function Manage() {
       </div>
       {tab === 'brands' && <Brands />}
       {tab === 'outlets' && <Outlets />}
+      {tab === 'stores' && <StoresPanel />}
       {tab === 'staff' && <Staff />}
       {tab === 'tasks' && <TaskTemplatesPanel />}
     </div>

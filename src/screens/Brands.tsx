@@ -3,7 +3,7 @@ import { useData } from '../data/queries/useData'
 import { initials, outletById } from '../data/derived'
 import { card, cardSel, tint } from '../theme'
 import { Icon } from '../components/Icon'
-import { useDeleteBrand } from '../data/queries/useBrandMutations'
+import { useDeleteBrand, useReorderBrands } from '../data/queries/useBrandMutations'
 
 const sectionLabel = {
   fontSize: 11,
@@ -17,6 +17,15 @@ export function Brands() {
   const { state, selBrand, openBrandModal } = useStore()
   const { data } = useData()
   const del = useDeleteBrand()
+  const reorderB = useReorderBrands()
+  const ids = data.brands.map((b) => b.id)
+  const move = (index: number, dir: -1 | 1) => {
+    const j = index + dir
+    if (j < 0 || j >= ids.length) return
+    const next = ids.slice()
+    ;[next[index], next[j]] = [next[j], next[index]]
+    reorderB.mutate({ ids: next }, { onError: (e) => alert(e.message) })
+  }
   const S = state
 
   const selB = data.brands.find((b) => b.id === S.selectedBrandId) ?? data.brands[0]
@@ -49,7 +58,7 @@ export function Brands() {
             Add brand
           </button>
         </div>
-        {data.brands.map((b) => {
+        {data.brands.map((b, i) => {
           const storeCount = data.stores.filter((s) => s.brandId === b.id).length
           const staffCount = data.staff.filter((s) => s.brandId === b.id).length
           return (
@@ -76,12 +85,28 @@ export function Brands() {
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{b.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--dim)' }}>{b.category}</div>
                 </div>
-                <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0, paddingRight: 60 }}>
+                <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0, paddingRight: 112 }}>
                   <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{storeCount} outlets</div>
                   <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{staffCount} staff</div>
                 </div>
               </button>
               <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); move(i, -1) }}
+                  disabled={i === 0}
+                  title="Move up"
+                  style={{ border: 'none', background: 'transparent', cursor: i === 0 ? 'default' : 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6, opacity: i === 0 ? 0.3 : 1 }}
+                >
+                  <Icon name="arrow_upward" size={15} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); move(i, 1) }}
+                  disabled={i === ids.length - 1}
+                  title="Move down"
+                  style={{ border: 'none', background: 'transparent', cursor: i === ids.length - 1 ? 'default' : 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6, opacity: i === ids.length - 1 ? 0.3 : 1 }}
+                >
+                  <Icon name="arrow_downward" size={15} />
+                </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); openBrandModal({ mode: 'edit', id: b.id }) }}
                   style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6 }}

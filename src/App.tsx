@@ -7,8 +7,10 @@ import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { BottomNav } from './components/BottomNav'
 import { Dashboard } from './screens/Dashboard'
+import { Stores } from './screens/Stores'
 import { Visits } from './screens/Visits'
 import { Manage } from './screens/Manage'
+import { StoreVisitsDrawer } from './components/StoreVisitsDrawer'
 import { VisitDrawer } from './components/VisitDrawer'
 import { TransferModal } from './components/TransferModal'
 import { ScheduleModal } from './components/ScheduleModal'
@@ -43,6 +45,7 @@ function Shell() {
           <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--pad)' }}>
             <div style={{ maxWidth: 1300, margin: '0 auto' }}>
               {state.activeScreen === 'dashboard' && <Dashboard />}
+              {state.activeScreen === 'stores' && <Stores />}
               {state.activeScreen === 'visits' && <Visits />}
               {state.activeScreen === 'manage' && <Manage />}
             </div>
@@ -50,6 +53,7 @@ function Shell() {
           {isMobile && <BottomNav />}
         </div>
 
+        {state.storeVisits && <StoreVisitsDrawer />}
         <VisitDrawer key={state.openVisitId} />
         <TransferModal />
         <ScheduleModal />
