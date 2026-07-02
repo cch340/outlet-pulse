@@ -10,6 +10,7 @@ import { Dashboard } from './screens/Dashboard'
 import { Stores } from './screens/Stores'
 import { Visits } from './screens/Visits'
 import { Manage } from './screens/Manage'
+import { StoreVisitsDrawer } from './components/StoreVisitsDrawer'
 import { VisitDrawer } from './components/VisitDrawer'
 import { TransferModal } from './components/TransferModal'
 import { ScheduleModal } from './components/ScheduleModal'
@@ -52,6 +53,7 @@ function Shell() {
           {isMobile && <BottomNav />}
         </div>
 
+        {state.storeVisits && <StoreVisitsDrawer />}
         <VisitDrawer key={state.openVisitId} />
         <TransferModal />
         <ScheduleModal />
