@@ -13,7 +13,7 @@ export interface DataSnapshot {
 }
 
 async function fetchBrands(): Promise<Brand[]> {
-  const { data, error } = await supabase.from('brands').select('*').order('name')
+  const { data, error } = await supabase.from('brands').select('*').order('sort').order('name')
   if (error) throw error
   return data as Brand[]
 }
