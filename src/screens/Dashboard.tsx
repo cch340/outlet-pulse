@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useDashboardSummary } from '../data/queries/useDashboardSummary'
-import { useLatestFailedTasks } from '../data/queries/useLatestFailedTasks'
-import type { LatestFailedVisit } from '../data/queries/dashboardSummary'
-import { linked, staffCount, today, fmt, localDateStr, brandById, outletById } from '../data/derived'
-import { card, mono, pill, tint } from '../theme'
+import { linked, staffCount, today, fmt, localDateStr } from '../data/derived'
+import { card, mono, tint } from '../theme'
 import { useCardCollapse } from '../data/useCardCollapse'
 import { CollapsibleCard } from '../components/CollapsibleCard'
 import { Icon } from '../components/Icon'
@@ -14,7 +12,6 @@ import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 const CARD_IDS = [
-  'latestFailedTasks',
   'overdue',
   'upcoming',
   'trend',
@@ -65,7 +62,7 @@ function SectionHeader({ scope, label, title }: { scope: Scope; label: string; t
 }
 
 export function Dashboard() {
-  const { state, openVisit } = useStore()
+  const { openVisit } = useStore()
   const { data } = useData()
 
   const t = today()
@@ -81,8 +78,6 @@ export function Dashboard() {
     month: mo,
     listLimit: 20,
   })
-
-  const { rows: latestFailed, isError: failedError } = useLatestFailedTasks(mo)
 
   const collapse = useCardCollapse(CARD_IDS)
 
@@ -126,23 +121,6 @@ export function Dashboard() {
 
   const overdueList = summary.overdue
   const upcomingList = summary.upcoming
-
-  const latestByStore = new Map<string, LatestFailedVisit>(
-    latestFailed.map((r) => [`${r.brandId}:${r.outletId}`, r]),
-  )
-  const failedRows = data.stores
-    .map((s) => {
-      const brand = brandById(data, s.brandId)
-      const outlet = outletById(data, s.outletId)
-      return {
-        key: `${s.brandId}:${s.outletId}`,
-        brandName: brand.name,
-        brandColor: brand.color,
-        outletName: outlet.name,
-        visit: latestByStore.get(`${s.brandId}:${s.outletId}`) ?? null,
-      }
-    })
-    .sort((a, b) => a.brandName.localeCompare(b.brandName) || a.outletName.localeCompare(b.outletName))
 
   const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14 } as const
 
@@ -234,28 +212,6 @@ export function Dashboard() {
           </div>
         ))}
       </div>
-
-      {/* latest failed tasks */}
-      <CollapsibleCard
-        id="latestFailedTasks"
-        title="Latest failed tasks by outlet"
-        icon="rule"
-        iconColor="#dc2626"
-        open={collapse.isOpen('latestFailedTasks')}
-        onToggle={collapse.toggle}
-      >
-        {failedError ? (
-          <div style={{ fontSize: 12.5, color: '#dc2626' }}>Couldn't load latest failed tasks.</div>
-        ) : failedRows.length === 0 ? (
-          <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>No brand × outlet pairs yet.</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {failedRows.map((row) => (
-              <FailedRow key={row.key} row={row} onOpen={openVisit} isMobile={state.isMobile} />
-            ))}
-          </div>
-        )}
-      </CollapsibleCard>
 
       {/* ── Current status (live, today) ── */}
       <SectionHeader scope="live" label="Live · today" title="Current status" />
@@ -522,107 +478,4 @@ function AttentionRow({
       <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 12, fontWeight: 600, color: dateColor, whiteSpace: 'nowrap' }}>{date}</span>
     </button>
   )
-}
-
-function FailedRow({
-  row,
-  onOpen,
-  isMobile,
-}: {
-  row: {
-    key: string
-    brandName: string
-    brandColor: string
-    outletName: string
-    visit: LatestFailedVisit | null
-  }
-  onOpen: (id: string) => void
-  isMobile: boolean
-}) {
-  const v = row.visit
-  const header = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-      <span style={{ width: 9, height: 9, borderRadius: 3, background: row.brandColor, flexShrink: 0 }} />
-      <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {row.brandName} · {row.outletName}
-      </span>
-    </div>
-  )
-
-  // No completed visit yet
-  if (!v) {
-    return (
-      <div style={rowShell(false)}>
-        {header}
-        <span style={{ ...pill('var(--dim)'), marginLeft: 'auto' }}>No visit yet</span>
-      </div>
-    )
-  }
-
-  const meta = (
-    <span style={{ fontSize: 11.5, color: 'var(--dim)', whiteSpace: 'nowrap' }}>
-      {(v.staffName ?? 'Unassigned')} · {fmt(v.date)}
-    </span>
-  )
-  // On mobile the staff · date drops to its own line below so the store name and
-  // status pill can share one line without truncating.
-  const metaBottom = isMobile ? <div style={{ paddingLeft: 18 }}>{meta}</div> : null
-
-  // All success
-  if (v.status === 'done') {
-    return (
-      <button
-        onClick={() => onOpen(v.visitId)}
-        style={isMobile ? { ...rowShell(true), flexDirection: 'column', alignItems: 'stretch', gap: 6 } : rowShell(true)}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {header}
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-            {!isMobile && meta}
-            <span style={pill('#16a34a')}>Success</span>
-          </span>
-        </div>
-        {metaBottom}
-      </button>
-    )
-  }
-
-  // Has failures
-  return (
-    <button onClick={() => onOpen(v.visitId)} style={{ ...rowShell(true), flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {header}
-        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          {!isMobile && meta}
-          <span style={pill('#dc2626')}>{v.failed.length} failed</span>
-        </span>
-      </div>
-      {metaBottom}
-      <div style={{ height: 1, background: 'var(--border)' }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 18 }}>
-        {v.failed.map((t, i) => (
-          <div key={i} style={{ fontSize: 12 }}>
-            <span style={{ fontWeight: 600 }}>{t.label}</span>
-            {t.remark && <span style={{ color: 'var(--dim)' }}> — {t.remark}</span>}
-          </div>
-        ))}
-      </div>
-    </button>
-  )
-}
-
-function rowShell(clickable: boolean) {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 11,
-    width: '100%',
-    textAlign: 'left' as const,
-    color: 'var(--text)',
-    border: '1px solid var(--border)',
-    background: 'var(--surface2)',
-    borderRadius: 9,
-    padding: '10px 12px',
-    cursor: clickable ? 'pointer' : 'default',
-  }
 }
