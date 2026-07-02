@@ -3,6 +3,7 @@ import { useSession } from '../auth/AuthProvider'
 import { useOverdueCount } from '../data/queries/useOverdueCount'
 import { NAV } from '../data/nav'
 import { Icon } from './Icon'
+import { Mark } from './Logo'
 
 export function Sidebar() {
   const { state, go } = useStore()
@@ -24,22 +25,7 @@ export function Sidebar() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px 18px' }}>
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
-            background: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontWeight: 700,
-            fontSize: 15,
-          }}
-        >
-          P
-        </div>
+        <Mark size={30} radius={20} />
         <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '-.01em' }}>OutletPulse</div>
       </div>
       <div

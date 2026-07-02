@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 214" width="300" height="214">
+  <defs></defs>
+  <svg x="108" y="14" width="84" height="84" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#64748b"></rect><path d="M12 52 H36 L44 28 L54 74 L62 52 H88" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  <text x="150" y="176" text-anchor="middle" font-family="&#39;IBM Plex Sans&#39;,sans-serif" font-size="44" font-weight="700" letter-spacing="-0.9"><tspan fill="#1c1917">Outlet</tspan><tspan fill="#64748b">Pulse</tspan></text>
+</svg>

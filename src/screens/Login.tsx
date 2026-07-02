@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { Mark } from '../components/Logo'
 
 const ACCENT = '#1c1917'
 
@@ -89,22 +90,7 @@ export function Login() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: ACCENT,
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: 16,
-            }}
-          >
-            P
-          </div>
+          <Mark size={32} fill={ACCENT} radius={20} />
           <div style={{ fontWeight: 700, fontSize: 17, color: '#1c1917' }}>OutletPulse</div>
         </div>
 
