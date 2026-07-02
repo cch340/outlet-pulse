@@ -3,6 +3,7 @@ import { useStore } from '../data/store'
 import { useSession } from '../auth/AuthProvider'
 import { TITLES } from '../data/nav'
 import { Icon } from './Icon'
+import { Mark } from './Logo'
 
 export function TopBar() {
   const { state, setSearch, openAdd } = useStore()
@@ -52,20 +53,16 @@ export function TopBar() {
             style={{
               width: 32,
               height: 32,
-              borderRadius: 8,
               border: 'none',
-              background: 'var(--accent)',
+              background: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 13,
               cursor: 'pointer',
               padding: 0,
             }}
           >
-            P
+            <Mark size={32} radius={20} />
           </button>
           {menuOpen && (
             <div
