@@ -62,7 +62,7 @@ export function StoreVisitsDrawer() {
           {isLoading ? (
             <div style={{ fontSize: 13, color: 'var(--dim)' }}>Loading…</div>
           ) : visits.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--dim)' }}>No visits scheduled for this store yet.</div>
+            <div style={{ fontSize: 13, color: 'var(--dim)' }}>No visits recorded for this store yet.</div>
           ) : (
             visits.map((visit) => {
               const vm = visitVM(data, visit)
