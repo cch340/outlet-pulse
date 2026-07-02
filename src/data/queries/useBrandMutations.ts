@@ -68,3 +68,31 @@ export function useSetBrandStores() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.stores }),
   })
 }
+
+export function useLinkStore() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { brandId: string; outletId: string }) => {
+      const { error } = await supabase
+        .from('stores')
+        .insert({ brand_id: input.brandId, outlet_id: input.outletId })
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.stores }),
+  })
+}
+
+export function useUnlinkStore() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { brandId: string; outletId: string }) => {
+      const { error } = await supabase
+        .from('stores')
+        .delete()
+        .eq('brand_id', input.brandId)
+        .eq('outlet_id', input.outletId)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.stores }),
+  })
+}

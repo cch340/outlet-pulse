@@ -10,7 +10,7 @@ function detectMobile(): boolean {
 }
 
 export type Screen = 'dashboard' | 'visits' | 'manage'
-export type ManageTab = 'brands' | 'outlets' | 'staff' | 'tasks'
+export type ManageTab = 'brands' | 'outlets' | 'stores' | 'staff' | 'tasks'
 export type StaffBrandFilter = 'all' | string
 export type VisitFilter = 'all' | 'pending' | 'attention' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
