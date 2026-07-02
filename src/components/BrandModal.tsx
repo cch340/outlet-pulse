@@ -30,7 +30,7 @@ export function BrandModal() {
     if (!name.trim()) return
     if (m.mode === 'add') {
       create.mutate(
-        { name: name.trim(), color, category: category.trim() },
+        { name: name.trim(), color, category: category.trim(), sort: data.brands.length },
         { onSuccess: () => closeBrandModal() },
       )
     } else {
