@@ -35,6 +35,21 @@ const pagerBtn = (disabled: boolean) => ({
   opacity: disabled ? 0.45 : 1,
 })
 
+const chevronBtn = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  color: 'var(--dim)',
+  borderRadius: 7,
+  width: 30,
+  height: 30,
+  padding: 0,
+  cursor: 'pointer',
+  flexShrink: 0,
+} as const
+
 const dateInput = {
   border: '1px solid var(--border)',
   background: 'var(--surface2)',
@@ -228,7 +243,7 @@ export function Visits() {
               letterSpacing: '.05em',
             }}
           >
-            <div style={{ width: 22, flexShrink: 0 }} />
+            <div style={{ width: 30, flexShrink: 0 }} />
             <div style={{ width: 46, textAlign: 'center', flexShrink: 0 }}>Date</div>
             <div style={{ width: 1, flexShrink: 0 }} />
             <div style={{ flex: 1.6, minWidth: 0 }}>Brand · Outlet</div>
@@ -250,7 +265,7 @@ export function Visits() {
                 e.stopPropagation()
                 toggleExpand(f.vm.id)
               }}
-              style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 0, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+              style={chevronBtn}
             >
               <Icon name={expanded ? 'expand_less' : 'expand_more'} size={20} />
             </button>
@@ -259,155 +274,184 @@ export function Visits() {
           return (
             <div key={f.vm.id}>
               {!isMobile ? (
-                <div
-                  onClick={() => openVisit(f.vm.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', borderBottom: expanded ? 'none' : '1px solid var(--border)', cursor: 'pointer' }}
-                >
-                  <div style={{ width: 22, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{chevron}</div>
-                  <div style={{ width: 46, textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 17, fontWeight: 600, lineHeight: 1 }}>{f.day}</div>
-                    <div style={{ fontSize: 10.5, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '.03em' }}>{f.mon}</div>
-                  </div>
-                  <div style={{ width: 1, height: 34, background: 'var(--border)', flexShrink: 0 }} />
-                  <div style={{ flex: 1.6, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 9, height: 9, borderRadius: 3, background: f.vm.brandColor, flexShrink: 0 }} />
-                      {f.vm.brandName} · {f.vm.outletName}
+                <div style={{ display: 'flex', gap: 14, padding: '13px 16px', borderBottom: '1px solid var(--border)' }}>
+                  {/* left column: chevron + date */}
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexShrink: 0 }}>
+                    <div style={{ width: 30, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{chevron}</div>
+                    <div onClick={() => openVisit(f.vm.id)} style={{ width: 46, textAlign: 'center', cursor: 'pointer' }}>
+                      <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 17, fontWeight: 600, lineHeight: 1 }}>{f.day}</div>
+                      <div style={{ fontSize: 10.5, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '.03em' }}>{f.mon}</div>
                     </div>
-                    <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>{f.vm.staffName}</div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 90 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 90, display: 'flex' }}>
-                        {f.vm.successT > 0 && <div style={{ width: `${(f.vm.successT / f.vm.total) * 100}%`, background: '#16a34a' }} />}
-                        {f.vm.failedT > 0 && <div style={{ width: `${(f.vm.failedT / f.vm.total) * 100}%`, background: '#dc2626' }} />}
+
+                  {/* vertical divider — extends down through the expanded checklist */}
+                  <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', flexShrink: 0 }} />
+
+                  {/* right column: header (clickable) + expanded checklist */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+                      <div style={{ flex: 1.6, minWidth: 0 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 9, height: 9, borderRadius: 3, background: f.vm.brandColor, flexShrink: 0 }} />
+                          {f.vm.brandName} · {f.vm.outletName}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>{f.vm.staffName}</div>
                       </div>
-                      <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)' }}>
-                        {f.vm.resolvedT}/{f.vm.total}
-                      </span>
+                      <div style={{ flex: 1, minWidth: 90 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 90, display: 'flex' }}>
+                            {f.vm.successT > 0 && <div style={{ width: `${(f.vm.successT / f.vm.total) * 100}%`, background: '#16a34a' }} />}
+                            {f.vm.failedT > 0 && <div style={{ width: `${(f.vm.failedT / f.vm.total) * 100}%`, background: '#dc2626' }} />}
+                          </div>
+                          <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)' }}>
+                            {f.vm.resolvedT}/{f.vm.total}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ width: 116, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+                        {f.canComplete && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              markAllMutation.mutate({ visitId: f.vm.id })
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              border: '1px solid #16a34a',
+                              background: 'color-mix(in srgb, #16a34a 8%, transparent)',
+                              color: '#16a34a',
+                              borderRadius: 7,
+                              padding: '6px 10px',
+                              fontFamily: "'IBM Plex Sans'",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Icon name="check" size={16} />
+                            Pass pending
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ width: 132, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+                        <span style={pill(f.vm.statusColor)}>{f.vm.statusLabel}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ width: 116, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-                    {f.canComplete && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          markAllMutation.mutate({ visitId: f.vm.id })
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          border: '1px solid #16a34a',
-                          background: 'color-mix(in srgb, #16a34a 8%, transparent)',
-                          color: '#16a34a',
-                          borderRadius: 7,
-                          padding: '6px 10px',
-                          fontFamily: "'IBM Plex Sans'",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Icon name="check" size={16} />
-                        Pass pending
-                      </button>
+
+                    {/* horizontal divider (starts after the vertical divider) + checklist */}
+                    {expanded && (
+                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10 }}>
+                        <TaskLines tasks={f.tasks} />
+                      </div>
                     )}
-                  </div>
-                  <div style={{ width: 132, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-                    <span style={pill(f.vm.statusColor)}>{f.vm.statusLabel}</span>
                   </div>
                 </div>
               ) : (
-                <div
-                  onClick={() => openVisit(f.vm.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderBottom: expanded ? 'none' : '1px solid var(--border)', cursor: 'pointer' }}
-                >
-                  {chevron}
-                  <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 16, fontWeight: 600, lineHeight: 1 }}>{f.day}</div>
-                    <div style={{ fontSize: 10, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '.03em' }}>{f.mon}</div>
+                <div style={{ display: 'flex', gap: 12, padding: '13px 15px', borderBottom: '1px solid var(--border)' }}>
+                  {/* left column: chevron + date */}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexShrink: 0 }}>
+                    {chevron}
+                    <div onClick={() => openVisit(f.vm.id)} style={{ width: 40, textAlign: 'center', cursor: 'pointer' }}>
+                      <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 16, fontWeight: 600, lineHeight: 1 }}>{f.day}</div>
+                      <div style={{ fontSize: 10, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '.03em' }}>{f.mon}</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 7,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      <span style={{ width: 8, height: 8, borderRadius: 2, background: f.vm.brandColor, flexShrink: 0 }} />
-                      {f.vm.brandName} · {f.vm.outletName}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {f.vm.staffName}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                      <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 120, display: 'flex' }}>
-                        {f.vm.successT > 0 && <div style={{ width: `${(f.vm.successT / f.vm.total) * 100}%`, background: '#16a34a' }} />}
-                        {f.vm.failedT > 0 && <div style={{ width: `${(f.vm.failedT / f.vm.total) * 100}%`, background: '#dc2626' }} />}
+
+                  {/* vertical divider — extends down through the expanded checklist */}
+                  <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', flexShrink: 0 }} />
+
+                  {/* right column: header (clickable) + expanded checklist */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          <span style={{ width: 8, height: 8, borderRadius: 2, background: f.vm.brandColor, flexShrink: 0 }} />
+                          {f.vm.brandName} · {f.vm.outletName}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {f.vm.staffName}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                          <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'var(--surface2)', overflow: 'hidden', maxWidth: 120, display: 'flex' }}>
+                            {f.vm.successT > 0 && <div style={{ width: `${(f.vm.successT / f.vm.total) * 100}%`, background: '#16a34a' }} />}
+                            {f.vm.failedT > 0 && <div style={{ width: `${(f.vm.failedT / f.vm.total) * 100}%`, background: '#dc2626' }} />}
+                          </div>
+                          <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)', flexShrink: 0 }}>
+                            {f.vm.resolvedT}/{f.vm.total}
+                          </span>
+                        </div>
                       </div>
-                      <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)', flexShrink: 0 }}>
-                        {f.vm.resolvedT}/{f.vm.total}
-                      </span>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          aria-label={f.vm.statusLabel}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenStatusId((cur) => (cur === f.vm.id ? null : f.vm.id))
+                          }}
+                          style={{
+                            ...pill(f.vm.statusColor),
+                            width: 34,
+                            height: 34,
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 16,
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {f.vm.statusLabel[0]}
+                        </button>
+                        {statusOpen && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              right: 0,
+                              marginTop: 6,
+                              background: 'var(--text)',
+                              color: 'var(--surface)',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              padding: '4px 8px',
+                              borderRadius: 6,
+                              whiteSpace: 'nowrap',
+                              zIndex: 5,
+                              boxShadow: '0 4px 12px rgba(0,0,0,.18)',
+                            }}
+                          >
+                            {f.vm.statusLabel}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      aria-label={f.vm.statusLabel}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setOpenStatusId((cur) => (cur === f.vm.id ? null : f.vm.id))
-                      }}
-                      style={{
-                        ...pill(f.vm.statusColor),
-                        width: 34,
-                        height: 34,
-                        padding: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 16,
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {f.vm.statusLabel[0]}
-                    </button>
-                    {statusOpen && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '100%',
-                          right: 0,
-                          marginTop: 6,
-                          background: 'var(--text)',
-                          color: 'var(--surface)',
-                          fontSize: 11,
-                          fontWeight: 600,
-                          padding: '4px 8px',
-                          borderRadius: 6,
-                          whiteSpace: 'nowrap',
-                          zIndex: 5,
-                          boxShadow: '0 4px 12px rgba(0,0,0,.18)',
-                        }}
-                      >
-                        {f.vm.statusLabel}
+
+                    {/* horizontal divider (starts after the vertical divider) + checklist */}
+                    {expanded && (
+                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10 }}>
+                        <TaskLines tasks={f.tasks} />
                       </div>
                     )}
                   </div>
                 </div>
               )}
-
-              {expanded && <ChecklistDetail tasks={f.tasks} />}
             </div>
           )
         })}
@@ -435,23 +479,17 @@ export function Visits() {
   )
 }
 
-function ChecklistDetail({ tasks }: { tasks: Task[] }) {
+// Compact task lines — label colored by status, remark inline (mirrors the Store page drawer).
+function TaskLines({ tasks }: { tasks: Task[] }) {
   return (
-    <div style={{ padding: '4px 16px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {tasks.map((tk) => (
-          <div
-            key={tk.id ?? tk.label}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}
-          >
-            <span title={tk.status} style={{ width: 9, height: 9, borderRadius: '50%', background: TASK_STATUS_COLOR[tk.status], flexShrink: 0, marginTop: 5 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: 'var(--text)' }}>{tk.label}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>{tk.remark || '—'}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {tasks.map((tk) => (
+        <div key={tk.id ?? tk.label} style={{ fontSize: 12.5 }}>
+          <span style={{ fontWeight: 600, color: TASK_STATUS_COLOR[tk.status] }}>{tk.label}</span>
+          {tk.remark && <span style={{ color: 'var(--dim)' }}> — {tk.remark}</span>}
+        </div>
+      ))}
     </div>
   )
 }
+

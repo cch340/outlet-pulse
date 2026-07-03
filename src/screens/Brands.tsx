@@ -1,23 +1,15 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { initials, outletById } from '../data/derived'
-import { card, cardSel, tint } from '../theme'
+import { actionBtn, card } from '../theme'
 import { Icon } from '../components/Icon'
 import { useDeleteBrand, useReorderBrands } from '../data/queries/useBrandMutations'
 
-const sectionLabel = {
-  fontSize: 11,
-  letterSpacing: '.06em',
-  textTransform: 'uppercase' as const,
-  fontWeight: 600,
-  color: 'var(--dim)',
-}
-
 export function Brands() {
-  const { state, selBrand, openBrandModal } = useStore()
+  const { state, openBrandDetail, openBrandModal } = useStore()
   const { data } = useData()
   const del = useDeleteBrand()
   const reorderB = useReorderBrands()
+  const isMobile = state.isMobile
   const ids = data.brands.map((b) => b.id)
   const move = (index: number, dir: -1 | 1) => {
     const j = index + dir
@@ -26,194 +18,149 @@ export function Brands() {
     ;[next[index], next[j]] = [next[j], next[index]]
     reorderB.mutate({ ids: next }, { onError: (e) => alert(e.message) })
   }
-  const S = state
 
-  const selB = data.brands.find((b) => b.id === S.selectedBrandId) ?? data.brands[0]
-  const detailOutlets = selB
-    ? data.stores
-        .filter((s) => s.brandId === selB.id)
-        .map((s) => {
-          const o = outletById(data, s.outletId)
-          const staff = data.staff.filter((x) => x.brandId === selB.id && x.outletId === o.id)
-          return { ...o, staffCount: staff.length, staff }
-        })
-    : []
+  const rows = data.brands.map((b) => ({
+    id: b.id,
+    name: b.name,
+    color: b.color,
+    category: b.category,
+    outletCount: data.stores.filter((s) => s.brandId === b.id).length,
+    staffCount: data.staff.filter((s) => s.brandId === b.id).length,
+  }))
+
+  const del1 = (id: string) => {
+    if (confirm('Delete this brand?')) {
+      del.mutate(id, { onError: () => alert('Cannot delete: this brand still has staff or store links.') })
+    }
+  }
+
+  const Logo = ({ name, color, size }: { name: string; color: string; size: number }) => (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 10,
+        background: color,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: size < 40 ? 14 : 15,
+        flexShrink: 0,
+      }}
+    >
+      {name.slice(0, 2).toUpperCase()}
+    </div>
+  )
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, alignItems: 'start' }}>
-      {/* left list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 2 }}>
-          <div style={sectionLabel}>All brands</div>
-          <button
-            onClick={() => openBrandModal({ mode: 'add' })}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 11px', borderRadius: 8, cursor: 'pointer',
-              fontFamily: "'IBM Plex Sans'", fontSize: 12.5, fontWeight: 600,
-              border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
-            }}
-          >
-            <Icon name="add" size={16} />
-            Add brand
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--dim)' }}>
+          All brands
         </div>
-        {data.brands.map((b, i) => {
-          const storeCount = data.stores.filter((s) => s.brandId === b.id).length
-          const staffCount = data.staff.filter((s) => s.brandId === b.id).length
-          return (
-            <div key={b.id} style={{ position: 'relative' }}>
-              <button onClick={() => selBrand(b.id)} style={{ ...cardSel(b.id === S.selectedBrandId), width: '100%' }}>
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 10,
-                    background: b.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: 15,
-                    flexShrink: 0,
-                  }}
-                >
-                  {b.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>{b.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--dim)' }}>{b.category}</div>
-                </div>
-                <div style={{ textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0, paddingRight: 112 }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{storeCount} outlets</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{staffCount} staff</div>
-                </div>
-              </button>
-              <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); move(i, -1) }}
-                  disabled={i === 0}
-                  title="Move up"
-                  style={{ border: 'none', background: 'transparent', cursor: i === 0 ? 'default' : 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6, opacity: i === 0 ? 0.3 : 1 }}
-                >
-                  <Icon name="arrow_upward" size={15} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); move(i, 1) }}
-                  disabled={i === ids.length - 1}
-                  title="Move down"
-                  style={{ border: 'none', background: 'transparent', cursor: i === ids.length - 1 ? 'default' : 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6, opacity: i === ids.length - 1 ? 0.3 : 1 }}
-                >
-                  <Icon name="arrow_downward" size={15} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); openBrandModal({ mode: 'edit', id: b.id }) }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6 }}
-                >
-                  <Icon name="edit" size={15} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm('Delete this brand?')) {
-                      del.mutate(b.id, {
-                        onError: () => alert('Cannot delete: this brand still has staff or store links.'),
-                      })
-                    }
-                  }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--dim)', padding: 4, borderRadius: 6 }}
-                >
-                  <Icon name="delete" size={15} />
-                </button>
-              </div>
-            </div>
-          )
-        })}
+        <button onClick={() => openBrandModal({ mode: 'add' })} style={actionBtn()}>
+          <Icon name="add" size={16} />
+          Add brand
+        </button>
       </div>
 
-      {/* right detail */}
-      {selB && <div style={{ ...card, padding: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 13, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 11,
-              background: selB.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 18,
-            }}
-          >
-            {selB.name.slice(0, 2).toUpperCase()}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{selB.name}</div>
-            <div style={{ fontSize: 13, color: 'var(--dim)' }}>
-              {selB.category} · operates in {data.stores.filter((s) => s.brandId === selB.id).length} outlets ·{' '}
-              {data.staff.filter((s) => s.brandId === selB.id).length} staff
+      {!isMobile && (
+        <div style={{ ...card, overflowX: 'auto' }}>
+          <div style={{ minWidth: 640 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 16px',
+                borderBottom: '1px solid var(--border)',
+                fontSize: 11,
+                letterSpacing: '.04em',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+                color: 'var(--dim)',
+              }}
+            >
+              <div style={{ flex: 2.4, minWidth: 160 }}>Brand</div>
+              <div style={{ flex: 1, minWidth: 80 }}>Outlets</div>
+              <div style={{ flex: 1, minWidth: 80 }}>Staff</div>
+              <div style={{ width: 300, textAlign: 'right' }}>Action</div>
             </div>
-          </div>
-        </div>
-        <div style={{ ...sectionLabel, margin: '16px 0 10px' }}>Outlets &amp; on-site staff</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {detailOutlets.map((o) => (
-            <div key={o.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', background: 'var(--surface2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Icon name="storefront" size={18} color="var(--dim)" />
-                  <div>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{o.name}</span>{' '}
-                    <span style={{ fontSize: 12, color: 'var(--dim)' }}>· {o.location}</span>
+            {rows.map((r, i) => (
+              <div
+                key={r.id}
+                style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)' }}
+              >
+                <div style={{ flex: 2.4, minWidth: 160, display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <Logo name={r.name} color={r.color} size={36} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600 }}>{r.name}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{r.category}</div>
                   </div>
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 12, fontWeight: 600, color: 'var(--dim)' }}>{o.staffCount} staff</span>
+                <div style={{ flex: 1, minWidth: 80, fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{r.outletCount}</div>
+                <div style={{ flex: 1, minWidth: 80, fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{r.staffCount}</div>
+                <div style={{ width: 300, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                  <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                    <Icon name="arrow_upward" size={16} />
+                  </button>
+                  <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
+                    <Icon name="arrow_downward" size={16} />
+                  </button>
+                  <button onClick={() => openBrandDetail(r.id)} style={actionBtn()}>
+                    <Icon name="visibility" size={16} />
+                    Detail
+                  </button>
+                  <button onClick={() => openBrandModal({ mode: 'edit', id: r.id })} style={actionBtn()}>
+                    <Icon name="edit" size={16} />
+                    Edit
+                  </button>
+                  <button onClick={() => del1(r.id)} title="Delete" style={actionBtn({ danger: true })}>
+                    <Icon name="delete" size={16} />
+                  </button>
+                </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                {o.staff.map((p) => (
-                  <span
-                    key={p.id}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 20,
-                      padding: '4px 11px 4px 4px',
-                      fontSize: 12,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: tint('var(--accent)', 16),
-                        color: 'var(--accent)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontFamily: "'IBM Plex Mono'",
-                        fontSize: 10,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {initials(p.name)}
-                    </span>
-                    <span style={{ fontWeight: 600 }}>{p.name}</span>
-                    <span style={{ color: 'var(--dim)' }}>{p.role}</span>
-                  </span>
-                ))}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {rows.map((r, i) => (
+            <div key={r.id} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                <Logo name={r.name} color={r.color} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--dim)' }}>{r.category}</div>
+                </div>
+                <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 12, color: 'var(--dim)', flexShrink: 0 }}>
+                  {r.outletCount} outlets · {r.staffCount} staff
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                  <Icon name="arrow_upward" size={16} />
+                </button>
+                <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
+                  <Icon name="arrow_downward" size={16} />
+                </button>
+                <button onClick={() => openBrandDetail(r.id)} title="Detail" style={{ ...actionBtn(), marginLeft: 'auto' }}>
+                  <Icon name="visibility" size={16} />
+                </button>
+                <button onClick={() => openBrandModal({ mode: 'edit', id: r.id })} style={actionBtn()}>
+                  <Icon name="edit" size={16} />
+                </button>
+                <button onClick={() => del1(r.id)} title="Delete" style={actionBtn({ danger: true })}>
+                  <Icon name="delete" size={16} />
+                </button>
               </div>
             </div>
           ))}
         </div>
-      </div>}
+      )}
     </div>
   )
 }

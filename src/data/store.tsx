@@ -36,8 +36,8 @@ export interface AppState {
   manageTab: ManageTab
   isMobile: boolean
   q: string
-  selectedBrandId: string
-  selectedOutletId: string
+  brandDetailId: string | null
+  outletDetailId: string | null
   staffBrandFilter: StaffBrandFilter
   visitFilter: VisitFilter
   // overlays
@@ -62,8 +62,8 @@ function seed(): AppState {
     manageTab: 'brands',
     isMobile: detectMobile(),
     q: '',
-    selectedBrandId: '',
-    selectedOutletId: '',
+    brandDetailId: null,
+    outletDetailId: null,
     staffBrandFilter: 'all',
     visitFilter: 'all',
     openVisitId: null,
@@ -84,8 +84,10 @@ function seed(): AppState {
 export interface StoreActions {
   go(s: Screen): void
   setSearch(q: string): void
-  selBrand(id: string): void
-  selOutlet(id: string): void
+  openBrandDetail(id: string): void
+  closeBrandDetail(): void
+  openOutletDetail(id: string): void
+  closeOutletDetail(): void
   setStaffBrandFilter(id: StaffBrandFilter): void
   setVisitFilter(f: VisitFilter): void
   openVisit(id: string): void
@@ -122,8 +124,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return {
       go: (activeScreen) => patch({ activeScreen, openVisitId: null, storeVisits: null }),
       setSearch: (q) => patch({ q }),
-      selBrand: (selectedBrandId) => patch({ selectedBrandId }),
-      selOutlet: (selectedOutletId) => patch({ selectedOutletId }),
+      openBrandDetail: (brandDetailId) => patch({ brandDetailId }),
+      closeBrandDetail: () => patch({ brandDetailId: null }),
+      openOutletDetail: (outletDetailId) => patch({ outletDetailId }),
+      closeOutletDetail: () => patch({ outletDetailId: null }),
       setStaffBrandFilter: (staffBrandFilter) => patch({ staffBrandFilter }),
       setVisitFilter: (visitFilter) => patch({ visitFilter }),
       openVisit: (openVisitId) => patch({ openVisitId }),
