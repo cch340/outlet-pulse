@@ -124,6 +124,22 @@ export const tabBtn = (active: boolean): CSSProperties => ({
   cursor: 'pointer',
 })
 
+/** Bordered "button" style for row actions (edit / delete / reorder). Icon-only or icon+label. */
+export const actionBtn = (opts?: { danger?: boolean }): CSSProperties => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--surface2)',
+  color: opts?.danger ? '#dc2626' : 'var(--text)',
+  borderRadius: 7,
+  padding: '6px 10px',
+  fontFamily: "'IBM Plex Sans'",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: 'pointer',
+})
+
 export const pill = (c: string): CSSProperties => ({
   fontSize: 11,
   fontWeight: 600,

@@ -2,7 +2,7 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useDeleteStaff } from '../data/queries/useStaffCrudMutations'
 import { brandById, initials, outletById, tenure } from '../data/derived'
-import { card, chip, tint } from '../theme'
+import { actionBtn, card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
 
 const transferredBadge = (label: string, small = false) => (
@@ -58,21 +58,6 @@ export function Staff() {
       transferred: s.history.length > 1,
     }
   })
-
-  const transferBtn = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    border: '1px solid var(--border)',
-    background: 'var(--surface2)',
-    color: 'var(--text)',
-    borderRadius: 7,
-    padding: '6px 11px',
-    fontFamily: "'IBM Plex Sans'",
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: 'pointer',
-  } as const
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -154,12 +139,12 @@ export function Staff() {
                 <div style={{ width: 200, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
-                    style={transferBtn}
+                    style={actionBtn()}
                   >
                     <Icon name="edit" size={16} />
                     Edit
                   </button>
-                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={transferBtn}>
+                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={actionBtn()}>
                     <Icon name="swap_horiz" size={16} />
                     Transfer
                   </button>
@@ -168,7 +153,7 @@ export function Staff() {
                       e.stopPropagation()
                       if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
                     }}
-                    style={{ ...transferBtn, color: '#dc2626' }}
+                    style={actionBtn({ danger: true })}
                   >
                     <Icon name="delete" size={16} />
                   </button>
@@ -195,40 +180,11 @@ export function Staff() {
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      border: '1px solid var(--border)',
-                      background: 'var(--surface2)',
-                      color: 'var(--text)',
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontFamily: "'IBM Plex Sans'",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    style={actionBtn()}
                   >
                     <Icon name="edit" size={16} />
                   </button>
-                  <button
-                    onClick={() => openTransfer(r.id, r.brandId, r.outletId)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      border: '1px solid var(--border)',
-                      background: 'var(--surface2)',
-                      color: 'var(--text)',
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontFamily: "'IBM Plex Sans'",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
+                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={actionBtn()}>
                     <Icon name="swap_horiz" size={16} />
                   </button>
                   <button
@@ -236,20 +192,7 @@ export function Staff() {
                       e.stopPropagation()
                       if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
                     }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      border: '1px solid var(--border)',
-                      background: 'var(--surface2)',
-                      color: '#dc2626',
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontFamily: "'IBM Plex Sans'",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    style={actionBtn({ danger: true })}
                   >
                     <Icon name="delete" size={16} />
                   </button>

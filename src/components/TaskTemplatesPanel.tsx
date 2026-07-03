@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../data/queries/useData'
-import { card } from '../theme'
+import { actionBtn, card } from '../theme'
 import { Icon } from './Icon'
 import { AddTaskToVisitsModal } from './AddTaskToVisitsModal'
 import {
@@ -45,15 +45,6 @@ export function TaskTemplatesPanel() {
     fontFamily: "'IBM Plex Sans'",
     fontSize: 13,
     color: 'var(--text)',
-  } as const
-  const iconBtn = {
-    border: 'none',
-    background: 'none',
-    cursor: 'pointer',
-    color: 'var(--dim)',
-    padding: 2,
-    display: 'flex',
-    alignItems: 'center',
   } as const
 
   return (
@@ -127,22 +118,22 @@ export function TaskTemplatesPanel() {
             <button
               onClick={() => setAddToVisitsLabel(t.label)}
               title="Add to existing visits"
-              style={iconBtn}
+              style={actionBtn()}
             >
-              <Icon name="add_task" size={18} />
+              <Icon name="add_task" size={16} />
             </button>
-            <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...iconBtn, opacity: i === 0 ? 0.3 : 1 }}>
-              <Icon name="arrow_upward" size={18} />
+            <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+              <Icon name="arrow_upward" size={16} />
             </button>
-            <button onClick={() => move(i, 1)} disabled={i === templates.length - 1} title="Move down" style={{ ...iconBtn, opacity: i === templates.length - 1 ? 0.3 : 1 }}>
-              <Icon name="arrow_downward" size={18} />
+            <button onClick={() => move(i, 1)} disabled={i === templates.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === templates.length - 1 ? 'default' : 'pointer', opacity: i === templates.length - 1 ? 0.3 : 1 }}>
+              <Icon name="arrow_downward" size={16} />
             </button>
             <button
               onClick={() => deleteT.mutate({ id: t.id }, { onError: (err) => alert(err.message) })}
               title="Delete"
-              style={{ ...iconBtn, color: '#dc2626' }}
+              style={actionBtn({ danger: true })}
             >
-              <Icon name="delete" size={18} />
+              <Icon name="delete" size={16} />
             </button>
           </div>
         ))}
