@@ -177,26 +177,7 @@ export function Staff() {
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--dim)' }}>{r.role}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
-                    style={actionBtn()}
-                  >
-                    <Icon name="edit" size={16} />
-                  </button>
-                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={actionBtn()}>
-                    <Icon name="swap_horiz" size={16} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
-                    }}
-                    style={actionBtn({ danger: true })}
-                  >
-                    <Icon name="delete" size={16} />
-                  </button>
-                </div>
+                <span style={{ color: 'var(--dim)', fontFamily: "'IBM Plex Mono'", fontSize: 12, flexShrink: 0 }}>{r.tenure}</span>
               </div>
               <div
                 style={{
@@ -205,8 +186,6 @@ export function Staff() {
                   gap: 8,
                   flexWrap: 'wrap',
                   fontSize: 12.5,
-                  paddingTop: 10,
-                  borderTop: '1px solid var(--border)',
                 }}
               >
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
@@ -214,7 +193,26 @@ export function Staff() {
                   {r.brandName}
                 </span>
                 <span style={{ color: 'var(--dim)' }}>· {r.outletName}</span>
-                <span style={{ color: 'var(--dim)', fontFamily: "'IBM Plex Mono'", marginLeft: 'auto' }}>{r.tenure}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
+                  style={{ ...actionBtn(), marginLeft: 'auto' }}
+                >
+                  <Icon name="edit" size={16} />
+                </button>
+                <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={actionBtn()}>
+                  <Icon name="swap_horiz" size={16} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
+                  }}
+                  style={actionBtn({ danger: true })}
+                >
+                  <Icon name="delete" size={16} />
+                </button>
               </div>
             </div>
           ))}
