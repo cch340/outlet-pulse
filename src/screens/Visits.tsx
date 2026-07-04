@@ -343,7 +343,10 @@ export function Visits() {
 
                     {/* horizontal divider (starts after the vertical divider) + checklist */}
                     {expanded && (
-                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10 }}>
+                      <div
+                        onClick={() => openVisit(f.vm.id)}
+                        style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10, cursor: 'pointer' }}
+                      >
                         <TaskLines tasks={f.tasks} />
                       </div>
                     )}
@@ -445,7 +448,10 @@ export function Visits() {
 
                     {/* horizontal divider (starts after the vertical divider) + checklist */}
                     {expanded && (
-                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10 }}>
+                      <div
+                        onClick={() => openVisit(f.vm.id)}
+                        style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10, cursor: 'pointer' }}
+                      >
                         <TaskLines tasks={f.tasks} />
                       </div>
                     )}
