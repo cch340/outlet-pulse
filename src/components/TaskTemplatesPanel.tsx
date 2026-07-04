@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { actionBtn, card } from '../theme'
 import { Icon } from './Icon'
@@ -11,6 +12,8 @@ import {
 } from '../data/queries/useTaskTemplateMutations'
 
 export function TaskTemplatesPanel() {
+  const { state } = useStore()
+  const isMobile = state.isMobile
   const { data } = useData()
   const createT = useCreateTaskTemplate()
   const renameT = useRenameTaskTemplate()
@@ -98,12 +101,13 @@ export function TaskTemplatesPanel() {
             key={t.id}
             style={{
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'stretch' : 'center',
               gap: 8,
               border: '1px solid var(--border)',
               background: 'var(--surface2)',
               borderRadius: 9,
-              padding: '8px 10px 8px 12px',
+              padding: isMobile ? '10px 12px' : '8px 10px 8px 12px',
             }}
           >
             <input
@@ -115,26 +119,35 @@ export function TaskTemplatesPanel() {
               }}
               style={{ ...inputStyle, flex: 1, background: 'transparent', border: '1px solid transparent' }}
             />
-            <button
-              onClick={() => setAddToVisitsLabel(t.label)}
-              title="Add to existing visits"
-              style={actionBtn()}
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                flexWrap: 'wrap',
+                ...(isMobile ? { paddingTop: 10, borderTop: '1px solid var(--border)' } : {}),
+              }}
             >
-              <Icon name="add_task" size={16} />
-            </button>
-            <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
-              <Icon name="arrow_upward" size={16} />
-            </button>
-            <button onClick={() => move(i, 1)} disabled={i === templates.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === templates.length - 1 ? 'default' : 'pointer', opacity: i === templates.length - 1 ? 0.3 : 1 }}>
-              <Icon name="arrow_downward" size={16} />
-            </button>
-            <button
-              onClick={() => deleteT.mutate({ id: t.id }, { onError: (err) => alert(err.message) })}
-              title="Delete"
-              style={actionBtn({ danger: true })}
-            >
-              <Icon name="delete" size={16} />
-            </button>
+              <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                <Icon name="arrow_upward" size={16} />
+              </button>
+              <button onClick={() => move(i, 1)} disabled={i === templates.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === templates.length - 1 ? 'default' : 'pointer', opacity: i === templates.length - 1 ? 0.3 : 1 }}>
+                <Icon name="arrow_downward" size={16} />
+              </button>
+              <button
+                onClick={() => setAddToVisitsLabel(t.label)}
+                title="Add to existing visits"
+                style={{ ...actionBtn(), marginLeft: 'auto' }}
+              >
+                <Icon name="add_task" size={16} />
+              </button>
+              <button
+                onClick={() => deleteT.mutate({ id: t.id }, { onError: (err) => alert(err.message) })}
+                title="Delete"
+                style={actionBtn({ danger: true })}
+              >
+                <Icon name="delete" size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
