@@ -114,7 +114,7 @@ function StoreRowItem({ row, showDetails, onView }: { row: StoreRow; showDetails
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {row.outletName} <span style={{ color: 'var(--dim)', fontWeight: 400 }}>· {row.location}</span>
+            {row.outletName}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 2 }}>
             {row.staffCount} staff{v ? ` · ${fmt(v.date)}` : ''}

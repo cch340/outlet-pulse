@@ -25,7 +25,16 @@ export function useCardCollapse(ids: string[]): {
   setAll: (open: boolean) => void
   allOpen: boolean
 } {
-  const [state, setState] = useState<CollapseState>(read)
+  const [state, setState] = useState<CollapseState>(() => {
+    const raw = typeof localStorage === 'undefined' ? null : localStorage.getItem(STORAGE_KEY)
+    if (raw === null) {
+      // No stored preference yet — default every card to open (Expand all on).
+      const initial = setAllPure(ids, true)
+      persist(initial)
+      return initial
+    }
+    return parseState(raw)
+  })
 
   const update = useCallback((next: CollapseState) => {
     setState(next)

@@ -117,7 +117,7 @@ export function TaskTemplatesPanel() {
                 if (label && label !== t.label) renameT.mutate({ id: t.id, label }, { onError: (err) => alert(err.message) })
                 else e.target.value = t.label
               }}
-              style={{ ...inputStyle, flex: 1, background: 'transparent', border: '1px solid transparent' }}
+              style={{ ...inputStyle, flex: 1, fontWeight: 600, background: 'transparent', border: '1px solid transparent' }}
             />
             <div
               style={{
