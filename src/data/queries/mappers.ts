@@ -17,6 +17,7 @@ export interface StaffRow {
   brand_id: string
   outlet_id: string
   role: string
+  phone: string | null
   joined: string
   staff_history: StaffHistoryRow[]
 }
@@ -70,6 +71,7 @@ export const rowToStaff = (r: StaffRow): Staff => ({
   brandId: r.brand_id,
   outletId: r.outlet_id,
   role: r.role,
+  phone: r.phone ?? undefined,
   joined: r.joined,
   history: [...r.staff_history]
     .sort((a, b) => a.created_at.localeCompare(b.created_at))

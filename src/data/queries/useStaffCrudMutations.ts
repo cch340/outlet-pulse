@@ -11,6 +11,7 @@ export function useCreateStaff() {
       brandId: string
       outletId: string
       role: string
+      phone?: string
       joined: string
     }) => {
       const { data: st, error } = await supabase
@@ -20,6 +21,7 @@ export function useCreateStaff() {
           brand_id: input.brandId,
           outlet_id: input.outletId,
           role: input.role,
+          phone: input.phone?.trim() || null,
           joined: input.joined,
         })
         .select('id')
@@ -40,10 +42,10 @@ export function useCreateStaff() {
 export function useUpdateStaff() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { id: string; name: string; role: string; joined: string }) => {
+    mutationFn: async (input: { id: string; name: string; role: string; phone?: string; joined: string }) => {
       const { error } = await supabase
         .from('staff')
-        .update({ name: input.name, role: input.role, joined: input.joined })
+        .update({ name: input.name, role: input.role, phone: input.phone?.trim() || null, joined: input.joined })
         .eq('id', input.id)
       if (error) throw error
     },

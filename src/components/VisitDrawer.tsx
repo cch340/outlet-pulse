@@ -5,6 +5,7 @@ import { useVisit } from '../data/queries/useVisit'
 import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
 import { pill, chip } from '../theme'
 import { Icon } from './Icon'
+import { WhatsAppButton } from './WhatsAppButton'
 import type { TaskStatus } from '../data/model'
 import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks } from '../data/queries/useVisitMutations'
 import { taskHasResult, importableTemplates } from '../data/queries/visitEdit'
@@ -36,6 +37,7 @@ export function VisitDrawer() {
   const vm = visitVM(data, openF)
   const ovPos = S.isMobile ? 'absolute' : 'fixed'
   const storeStaff = staffForStore(data, openF.brandId, openF.outletId)
+  const onDutyPhone = storeStaff.find((st) => st.id === openF.staffId)?.phone
 
   const submitTask = () => {
     const label = newTaskLabel.trim()
@@ -225,6 +227,7 @@ export function VisitDrawer() {
                   </button>
                 ))
               )}
+              <WhatsAppButton phone={onDutyPhone} compact />
             </div>
           </div>
           <span style={pill(vm.statusColor)}>{vm.statusLabel}</span>

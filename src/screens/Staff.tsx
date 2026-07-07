@@ -4,6 +4,7 @@ import { useDeleteStaff } from '../data/queries/useStaffCrudMutations'
 import { brandById, initials, outletById, tenure } from '../data/derived'
 import { actionBtn, card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
+import { WhatsAppButton } from '../components/WhatsAppButton'
 
 const transferredBadge = (label: string, small = false) => (
   <span
@@ -49,6 +50,7 @@ export function Staff() {
       name: s.name,
       initials: initials(s.name),
       role: s.role,
+      phone: s.phone,
       brandId: s.brandId,
       outletId: s.outletId,
       brandName: b.name,
@@ -137,6 +139,7 @@ export function Staff() {
                 <div style={{ flex: 1.4, minWidth: 90, fontSize: 12.5 }}>{r.outletName}</div>
                 <div style={{ flex: 1, minWidth: 70, fontFamily: "'IBM Plex Mono'", fontSize: 12, color: 'var(--dim)' }}>{r.tenure}</div>
                 <div style={{ width: 200, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                  <WhatsAppButton phone={r.phone} compact />
                   <button
                     onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
                     style={actionBtn()}
@@ -195,6 +198,7 @@ export function Staff() {
                 <span style={{ color: 'var(--dim)' }}>· {r.outletName}</span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <WhatsAppButton phone={r.phone} compact />
                 <button
                   onClick={(e) => { e.stopPropagation(); openStaffModal({ mode: 'edit', id: r.id }) }}
                   style={{ ...actionBtn(), marginLeft: 'auto' }}
