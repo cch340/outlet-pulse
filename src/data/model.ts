@@ -35,6 +35,7 @@ export interface Staff {
   brandId: string
   outletId: string
   role: string
+  phone?: string
   joined: string // ISO date
   history: HistoryEntry[]
 }

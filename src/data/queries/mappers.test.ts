@@ -15,6 +15,7 @@ describe('rowToStaff', () => {
       brand_id: 'b1',
       outlet_id: 'o1',
       role: 'Supervisor',
+      phone: null,
       joined: '2023-03-01',
       staff_history: [
         { id: 'h2', staff_id: 's1', brand_id: 'b1', outlet_id: 'o2', from_label: 'Feb 2025', to_label: null, reason: null, created_at: '2025-02-01T00:00:00Z' },
