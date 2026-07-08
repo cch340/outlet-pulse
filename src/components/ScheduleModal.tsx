@@ -7,6 +7,8 @@ import { Icon } from './Icon'
 import { useCreateVisit } from '../data/queries/useVisitMutations'
 import { useCreateTaskTemplate } from '../data/queries/useTaskTemplateMutations'
 import { itemsFromTemplates, planSchedule, type ScheduleTaskItem } from '../data/queries/scheduleTasks'
+import { StoreCombobox } from './StoreCombobox'
+import { storeOptions } from '../data/queries/storePicker'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -138,23 +140,11 @@ export function ScheduleModal() {
                 outlet it operates in under <strong style={{ color: 'var(--text)' }}>Operates in outlets</strong>.
               </div>
             )}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {data.stores.map((s) => {
-                const b = brandById(data, s.brandId)
-                const o = outletById(data, s.outletId)
-                const key = `${s.brandId}|${s.outletId}`
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setAf('storeKey', key)}
-                    style={chip(af.storeKey === key)}
-                  >
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
-                    {b.name} · {o.name}
-                  </button>
-                )
-              })}
-            </div>
+            <StoreCombobox
+              options={storeOptions(data)}
+              value={af.storeKey}
+              onChange={(key) => setAf('storeKey', key)}
+            />
           </div>
           <div>
             <div style={fieldLabel}>Assign staff</div>
