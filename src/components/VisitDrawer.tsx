@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useVisit } from '../data/queries/useVisit'
-import { visitVM, staffForStore, brandById, outletById } from '../data/derived'
+import { visitVM, staffForStore } from '../data/derived'
 import { pill, chip } from '../theme'
 import { Icon } from './Icon'
 import { WhatsAppButton } from './WhatsAppButton'
+import { StoreCombobox } from './StoreCombobox'
+import { storeOptions } from '../data/queries/storePicker'
 import type { TaskStatus } from '../data/model'
 import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks } from '../data/queries/useVisitMutations'
 import { taskHasResult, importableTemplates } from '../data/queries/visitEdit'
@@ -26,7 +28,6 @@ export function VisitDrawer() {
   const removeTask = useRemoveVisitTask()
   const importTasks = useImportVisitTasks()
   const [newTaskLabel, setNewTaskLabel] = useState('')
-  const [storePickerOpen, setStorePickerOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [selectedImportIds, setSelectedImportIds] = useState<string[]>([])
   const { data } = useData()
@@ -95,93 +96,20 @@ export function VisitDrawer() {
               {vm.title}
             </div>
 
-            {/* Store (brand · outlet) — dropdown menu */}
-            <div style={{ position: 'relative', width: 'fit-content' }}>
-              <button
-                type="button"
-                onClick={() => setStorePickerOpen((o) => !o)}
-                aria-expanded={storePickerOpen}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  width: 'fit-content',
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface2)',
-                  borderRadius: 8,
-                  padding: '7px 11px',
-                  fontFamily: "'IBM Plex Sans'",
-                  fontSize: 13,
-                  color: 'var(--text)',
-                  cursor: 'pointer',
-                }}
-              >
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: brandById(data, openF.brandId).color }} />
-                {brandById(data, openF.brandId).name} · {outletById(data, openF.outletId).name}
-                <Icon name={storePickerOpen ? 'expand_less' : 'expand_more'} size={18} />
-              </button>
-              {storePickerOpen && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 4px)',
-                    left: 0,
-                    zIndex: 5,
-                    minWidth: '100%',
-                    maxHeight: 240,
-                    overflow: 'auto',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    boxShadow: '0 8px 24px rgba(0,0,0,.18)',
-                    padding: 4,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2,
-                  }}
-                >
-                  {data.stores.map((s) => {
-                    const b = brandById(data, s.brandId)
-                    const o = outletById(data, s.outletId)
-                    const active = s.brandId === openF.brandId && s.outletId === openF.outletId
-                    return (
-                      <button
-                        key={`${s.brandId}|${s.outletId}`}
-                        type="button"
-                        onClick={() => {
-                          setStorePickerOpen(false)
-                          if (active) return
-                          const list = staffForStore(data, s.brandId, s.outletId)
-                          updateVisit.mutate(
-                            { visitId: openF.id, brandId: s.brandId, outletId: s.outletId, staffId: list[0]?.id ?? null },
-                            { onError: (e) => alert(e.message) },
-                          )
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          width: '100%',
-                          textAlign: 'left',
-                          border: 'none',
-                          background: active ? 'var(--surface2)' : 'transparent',
-                          borderRadius: 6,
-                          padding: '8px 10px',
-                          fontFamily: "'IBM Plex Sans'",
-                          fontSize: 13,
-                          color: 'var(--text)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <span style={{ width: 8, height: 8, borderRadius: 2, background: b.color }} />
-                        <span style={{ flex: 1 }}>{b.name} · {o.name}</span>
-                        {active && <Icon name="check" size={16} />}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+            {/* Store (brand · outlet) — reassigns the visit's store on change */}
+            <StoreCombobox
+              options={storeOptions(data)}
+              value={`${openF.brandId}|${openF.outletId}`}
+              onChange={(key) => {
+                const [brandId, outletId] = key.split('|')
+                if (brandId === openF.brandId && outletId === openF.outletId) return
+                const list = staffForStore(data, brandId, outletId)
+                updateVisit.mutate(
+                  { visitId: openF.id, brandId, outletId, staffId: list[0]?.id ?? null },
+                  { onError: (e) => alert(e.message) },
+                )
+              }}
+            />
 
             {/* Date */}
             <input

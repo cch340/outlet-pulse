@@ -4,6 +4,18 @@
 body {
   margin: 0;
 }
+/* Mobile browsers (iOS Safari, Chrome) auto-zoom when focusing a form field
+   whose font-size is under 16px. Our inputs are inline-styled at 13px, so we
+   force >=16px at the mobile breakpoint (matches MOBILE_BREAKPOINT = 768px).
+   `!important` is required to win over the inline styles; pinch-to-zoom stays
+   available since we don't touch the viewport meta. */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

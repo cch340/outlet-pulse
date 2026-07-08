@@ -6,7 +6,7 @@ import { Icon } from './Icon'
 import { Mark } from './Logo'
 
 export function TopBar() {
-  const { state, setSearch, openAdd } = useStore()
+  const { state, openAdd } = useStore()
   const { session, signOut } = useSession()
   const isMobile = state.isMobile
   const [title, subtitle] = TITLES[state.activeScreen]
@@ -148,36 +148,6 @@ export function TopBar() {
         </div>
       </div>
       <div style={{ flex: 1 }} />
-      {!isMobile && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'var(--surface2)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: '7px 10px',
-            width: 230,
-          }}
-        >
-          <Icon name="search" size={18} color="var(--dim)" />
-          <input
-            value={state.q}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search staff, outlets…"
-            style={{
-              border: 'none',
-              background: 'none',
-              outline: 'none',
-              fontFamily: "'IBM Plex Sans'",
-              fontSize: 13,
-              color: 'var(--text)',
-              width: '100%',
-            }}
-          />
-        </div>
-      )}
       <button
         onClick={openAdd}
         style={{

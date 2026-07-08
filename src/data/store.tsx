@@ -83,7 +83,6 @@ function seed(): AppState {
 
 export interface StoreActions {
   go(s: Screen): void
-  setSearch(q: string): void
   openBrandDetail(id: string): void
   closeBrandDetail(): void
   openOutletDetail(id: string): void
@@ -123,7 +122,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }))
     return {
       go: (activeScreen) => patch({ activeScreen, openVisitId: null, storeVisits: null }),
-      setSearch: (q) => patch({ q }),
       openBrandDetail: (brandDetailId) => patch({ brandDetailId }),
       closeBrandDetail: () => patch({ brandDetailId: null }),
       openOutletDetail: (outletDetailId) => patch({ outletDetailId }),
