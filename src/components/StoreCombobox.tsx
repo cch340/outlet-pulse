@@ -49,7 +49,7 @@ export function StoreCombobox({
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) { setQuery(''); setOpen(false) }
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -100,10 +100,10 @@ export function StoreCombobox({
         <input
           autoFocus={open}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setOpen(false)
+            if (e.key === 'Escape') { setQuery(''); setOpen(false) }
             if (e.key === 'Enter' && matches.length === 1) {
               e.preventDefault()
               pick(matches[0].key)
@@ -136,7 +136,7 @@ export function StoreCombobox({
             </div>
           ) : (
             groups.map((g) => (
-              <div key={g.brandName}>
+              <div key={g.brandId}>
                 <div style={groupHeader}>{g.brandName}</div>
                 {g.options.map((o) => (
                   <button

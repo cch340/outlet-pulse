@@ -72,4 +72,28 @@ describe('groupByBrand', () => {
     expect(groups[1]).toMatchObject({ brandColor: '#111' })
     expect(groups[1].options.map((o) => o.outletName)).toEqual(['Mid Valley', 'Suria KLCC'])
   })
+
+  it('keeps brands with the same display name but different ids as separate groups', () => {
+    const dupNameOptions: StoreOption[] = [
+      {
+        key: 'b-nike-1|o-mv',
+        brandId: 'b-nike-1',
+        outletId: 'o-mv',
+        brandName: 'Nike',
+        outletName: 'Mid Valley',
+        brandColor: '#111',
+      },
+      {
+        key: 'b-nike-2|o-pav',
+        brandId: 'b-nike-2',
+        outletId: 'o-pav',
+        brandName: 'Nike',
+        outletName: 'Pavilion',
+        brandColor: '#333',
+      },
+    ]
+    const groups = groupByBrand(dupNameOptions)
+    expect(groups).toHaveLength(2)
+    expect(groups.map((g) => g.brandId)).toEqual(['b-nike-1', 'b-nike-2'])
+  })
 })

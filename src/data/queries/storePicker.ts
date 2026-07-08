@@ -11,6 +11,7 @@ export type StoreOption = {
 }
 
 export type StoreGroup = {
+  brandId: string
   brandName: string
   brandColor: string
   options: StoreOption[]
@@ -45,9 +46,9 @@ export function filterStores(options: StoreOption[], query: string): StoreOption
 export function groupByBrand(options: StoreOption[]): StoreGroup[] {
   const groups: StoreGroup[] = []
   for (const o of options) {
-    let g = groups.find((x) => x.brandName === o.brandName)
+    let g = groups.find((x) => x.brandId === o.brandId)
     if (!g) {
-      g = { brandName: o.brandName, brandColor: o.brandColor, options: [] }
+      g = { brandId: o.brandId, brandName: o.brandName, brandColor: o.brandColor, options: [] }
       groups.push(g)
     }
     g.options.push(o)
