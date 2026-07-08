@@ -174,6 +174,9 @@ export function ScheduleModal() {
                 onChange={(e) => setAf('date', e.target.value)}
                 style={{
                   width: '100%',
+                  minWidth: 0,
+                  maxWidth: '100%',
+                  textAlign: 'left',
                   border: '1px solid var(--border)',
                   background: 'var(--surface2)',
                   borderRadius: 8,
