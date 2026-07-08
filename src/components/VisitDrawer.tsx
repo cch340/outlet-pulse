@@ -130,7 +130,10 @@ export function VisitDrawer() {
                 fontFamily: "'IBM Plex Sans'",
                 fontSize: 13,
                 color: 'var(--text)',
-                width: 'fit-content',
+                width: '100%',
+                minWidth: 0,
+                maxWidth: '100%',
+                textAlign: 'left',
               }}
             />
 
