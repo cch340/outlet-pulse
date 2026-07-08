@@ -28,19 +28,11 @@ export function Staff() {
   const del = useDeleteStaff()
   const { data } = useData()
   const S = state
-  const q = S.q.trim().toLowerCase()
   const isMobile = S.isMobile
 
   const filters = [{ id: 'all', label: 'All staff' }, ...data.brands.map((b) => ({ id: b.id, label: b.name }))]
 
-  let list = data.staff.filter((s) => S.staffBrandFilter === 'all' || s.brandId === S.staffBrandFilter)
-  if (q) {
-    list = list.filter((s) => {
-      const b = brandById(data, s.brandId)
-      const o = outletById(data, s.outletId)
-      return `${s.name} ${s.role} ${b.name} ${o.name}`.toLowerCase().includes(q)
-    })
-  }
+  const list = data.staff.filter((s) => S.staffBrandFilter === 'all' || s.brandId === S.staffBrandFilter)
 
   const rows = list.map((s) => {
     const b = brandById(data, s.brandId)
