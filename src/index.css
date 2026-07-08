@@ -15,6 +15,22 @@ body {
   textarea {
     font-size: 16px !important;
   }
+  /* iOS Safari sizes native date inputs to their content (overflowing our
+     containers) regardless of an inline width:100%. Stripping the native
+     appearance lets the width be honoured. Desktop is unaffected — it renders
+     date inputs differently, which is why shrinking a desktop window doesn't
+     reproduce the mobile overflow. */
+  input[type='date'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+/* The date's displayed value lives in a shadow-DOM pseudo-element that ignores
+   the input's inline text-align and defaults to centre on iOS; left-align it
+   and drop its intrinsic min-width so the field can shrink to its container. */
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  min-width: 0;
 }
 ::-webkit-scrollbar {
   width: 10px;
