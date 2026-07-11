@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Icon } from './Icon'
+import { useDialogA11y } from './useDialogA11y'
 
 const btnBase: CSSProperties = {
   borderRadius: 9,
@@ -26,12 +27,14 @@ export function EntityModal({
   children: ReactNode
 }) {
   const ovPos = isMobile ? 'absolute' : 'fixed'
+  const { dialogProps } = useDialogA11y({ onClose, label: title })
   return (
     <div
       onClick={onClose}
       style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
         style={{ width: 500, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto', background: 'var(--surface)', borderRadius: 14, boxShadow: '0 30px 80px rgba(0,0,0,.3)', animation: 'pop var(--motion-dur) var(--motion-ease)' }}
       >

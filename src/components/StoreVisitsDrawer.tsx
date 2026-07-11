@@ -4,6 +4,7 @@ import { useVisitsPage } from '../data/queries/useVisitsPage'
 import { brandById, outletById, visitVM, today, localDateStr, TASK_STATUS_COLOR } from '../data/derived'
 import { pill } from '../theme'
 import { Icon } from './Icon'
+import { useDialogA11y } from './useDialogA11y'
 
 export function StoreVisitsDrawer() {
   const { state, closeStoreVisits, openVisit } = useStore()
@@ -26,6 +27,7 @@ export function StoreVisitsDrawer() {
     offset: 0,
   })
 
+  const { dialogProps } = useDialogA11y({ onClose: closeStoreVisits, label: 'Store visit history', enabled: !!sv })
   if (!sv) return null
   const brand = brandById(data, sv.brandId)
   const outlet = outletById(data, sv.outletId)
@@ -36,6 +38,7 @@ export function StoreVisitsDrawer() {
       style={{ position: ovPos, inset: 0, zIndex: 45, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 430,

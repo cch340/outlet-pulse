@@ -3,6 +3,7 @@ import { useStore } from '../data/store'
 import { ACCENT_PRESETS, type ThemePref } from '../data/settings'
 import type { Density } from '../data/store'
 import { Icon } from './Icon'
+import { useDialogA11y } from './useDialogA11y'
 
 const sectionLabel: CSSProperties = {
   fontSize: 12,
@@ -50,6 +51,7 @@ const DENSITY_OPTS: [Density, string][] = [
 export function SettingsModal() {
   const { state, closeSettings, setThemePref, setAccent, setDensity } = useStore()
   const ovPos = state.isMobile ? 'absolute' : 'fixed'
+  const { dialogProps } = useDialogA11y({ onClose: closeSettings, label: 'Settings' })
 
   return (
     <div
@@ -67,9 +69,8 @@ export function SettingsModal() {
       }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-label="Settings"
         style={{
           width: 420,
           maxWidth: '100%',

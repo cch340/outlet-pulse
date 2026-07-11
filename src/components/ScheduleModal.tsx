@@ -11,6 +11,7 @@ import { itemsFromTemplates, planSchedule, type ScheduleTaskItem } from '../data
 import { StoreCombobox } from './StoreCombobox'
 import { storeOptions } from '../data/queries/storePicker'
 import { useToast } from './ToastProvider'
+import { useDialogA11y } from './useDialogA11y'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -50,6 +51,7 @@ export function ScheduleModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [S.addOpen, S.addForm?.storeKey, data.staff])
 
+  const { dialogProps } = useDialogA11y({ onClose: closeAdd, label: 'Schedule a visit', enabled: S.addOpen && !!S.addForm })
   if (!S.addOpen || !S.addForm) return null
 
   const af = S.addForm
@@ -125,6 +127,7 @@ export function ScheduleModal() {
       style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 520,

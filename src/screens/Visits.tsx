@@ -12,6 +12,7 @@ import { Icon } from '../components/Icon'
 import { useToast } from '../components/ToastProvider'
 import { visitRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
 import { downloadTextFile } from '../data/download'
+import { rowButtonProps } from '../components/useDialogA11y'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const PAGE_SIZE = 25
@@ -357,7 +358,7 @@ export function Visits() {
 
                   {/* right column: header (clickable) + expanded checklist */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+                    <div {...rowButtonProps(() => openVisit(f.vm.id))} onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
                       <div style={{ flex: 1.6, minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ width: 9, height: 9, borderRadius: 3, background: f.vm.brandColor, flexShrink: 0 }} />
@@ -436,7 +437,7 @@ export function Visits() {
 
                   {/* right column: header (clickable) + expanded checklist */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                    <div {...rowButtonProps(() => openVisit(f.vm.id))} onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{

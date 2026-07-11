@@ -9,6 +9,7 @@ import { useToast } from './ToastProvider'
 import { useConfirm } from './ConfirmProvider'
 import { WhatsAppButton } from './WhatsAppButton'
 import { StoreCombobox } from './StoreCombobox'
+import { useDialogA11y } from './useDialogA11y'
 import { storeOptions } from '../data/queries/storePicker'
 import type { TaskStatus } from '../data/model'
 import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks } from '../data/queries/useVisitMutations'
@@ -37,6 +38,7 @@ export function VisitDrawer() {
   const { data } = useData()
   const { visit: openF } = useVisit(state.openVisitId)
   const S = state
+  const { dialogProps } = useDialogA11y({ onClose: closeVisit, label: 'Visit details', enabled: !!openF })
   if (!openF) return null
 
   const vm = visitVM(data, openF)
@@ -81,6 +83,7 @@ export function VisitDrawer() {
       style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 430,
