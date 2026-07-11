@@ -63,3 +63,20 @@ export interface TaskTemplate {
   label: string
   sort: number
 }
+
+export type Frequency = 'weekly' | 'monthly'
+
+/** A rule that materializes a store visit on a repeating schedule. Occurrences
+ *  are generated client-side into `Visit` rows; `lastGenerated` tracks the most
+ *  recent occurrence already materialized (null until the first is generated). */
+export interface RecurringSchedule {
+  id: string
+  brandId: string
+  outletId: string
+  staffId: string | null
+  frequency: Frequency
+  startDate: string // ISO date (occurrence grid origin)
+  taskLabels: string[]
+  active: boolean
+  lastGenerated: string | null // ISO date, or null if never generated
+}
