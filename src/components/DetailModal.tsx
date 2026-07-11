@@ -19,7 +19,7 @@ export function DetailModal({
   return (
     <div
       onClick={onClose}
-      style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop .2s ease' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}

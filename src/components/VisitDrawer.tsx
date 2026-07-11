@@ -73,7 +73,7 @@ export function VisitDrawer() {
   return (
     <div
       onClick={closeVisit}
-      style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end' }}
+      style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop .2s ease' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}

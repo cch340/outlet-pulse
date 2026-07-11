@@ -70,3 +70,24 @@ input[type='date']::-webkit-date-and-time-value {
     transform: none;
   }
 }
+/* Fade the dark overlay behind modals/drawers in from transparent. */
+@keyframes backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Respect users who ask for less motion: neutralise every animation and
+   transition so state changes are instant rather than animated. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+}

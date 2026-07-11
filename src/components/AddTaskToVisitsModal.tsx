@@ -48,7 +48,7 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
   return (
     <div
       onClick={onClose}
-      style={{ position: ovPos, inset: 0, zIndex: 70, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      style={{ position: ovPos, inset: 0, zIndex: 70, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop .2s ease' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
