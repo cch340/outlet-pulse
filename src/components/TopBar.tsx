@@ -6,7 +6,7 @@ import { Icon } from './Icon'
 import { Mark } from './Logo'
 
 export function TopBar() {
-  const { state, openAdd } = useStore()
+  const { state, openAdd, openSettings } = useStore()
   const { session, signOut } = useSession()
   const isMobile = state.isMobile
   const [title, subtitle] = TITLES[state.activeScreen]
@@ -98,6 +98,31 @@ export function TopBar() {
                 role="menuitem"
                 onClick={() => {
                   setMenuOpen(false)
+                  openSettings()
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text)',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                <Icon name="settings" size={18} color="var(--dim)" />
+                Settings
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false)
                   signOut()
                 }}
                 style={{
@@ -147,7 +172,7 @@ export function TopBar() {
           {subtitle}
         </div>
       </div>
-      <div style={{ flex: 1 }} />
+      {state.activeScreen === 'visits' ? <VisitsSearch isMobile={isMobile} /> : <div style={{ flex: 1 }} />}
       <button
         onClick={openAdd}
         style={{
@@ -171,5 +196,82 @@ export function TopBar() {
         {!isMobile && <span>Schedule</span>}
       </button>
     </header>
+  )
+}
+
+/** Debounced search box for the Visits screen. Local state drives the input for
+ *  responsiveness; the store (and thus the RPC) is updated ~250ms after typing stops. */
+function VisitsSearch({ isMobile }: { isMobile: boolean }) {
+  const { state, setQ } = useStore()
+  const [value, setValue] = useState(state.q)
+
+  // Reflect external changes to `q` (e.g. cleared on navigation) back into the input.
+  useEffect(() => {
+    setValue(state.q)
+  }, [state.q])
+
+  // Debounce the store update so the RPC doesn't fire on every keystroke.
+  useEffect(() => {
+    if (value === state.q) return
+    const timer = setTimeout(() => setQ(value), 250)
+    return () => clearTimeout(timer)
+  }, [value, state.q, setQ])
+
+  const clear = () => {
+    setValue('')
+    setQ('')
+  }
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        maxWidth: isMobile ? undefined : 320,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        height: 38,
+        padding: '0 10px',
+        borderRadius: 8,
+        border: '1px solid var(--border)',
+        background: 'var(--surface2)',
+      }}
+    >
+      <Icon name="search" size={18} color="var(--dim)" />
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Search visits…"
+        aria-label="Search visits"
+        style={{
+          flex: 1,
+          minWidth: 0,
+          border: 'none',
+          background: 'transparent',
+          outline: 'none',
+          fontFamily: "'IBM Plex Sans'",
+          fontSize: 13,
+          color: 'var(--text)',
+        }}
+      />
+      {value && (
+        <button
+          onClick={clear}
+          aria-label="Clear search"
+          title="Clear search"
+          style={{
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'var(--dim)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: 0,
+          }}
+        >
+          <Icon name="close" size={18} />
+        </button>
+      )}
+    </div>
   )
 }

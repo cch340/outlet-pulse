@@ -1,5 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { ScheduleTaskItem } from './queries/scheduleTasks'
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  parseSettings,
+  serializeSettings,
+  resolveTheme,
+  type Settings,
+  type ThemePref,
+} from './settings'
 
 /** Viewport width (px) at or below which we render the mobile layout. */
 export const MOBILE_BREAKPOINT = 768
@@ -7,6 +16,21 @@ export const MOBILE_BREAKPOINT = 768
 function detectMobile(): boolean {
   if (typeof window === 'undefined') return false
   return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
+}
+
+function detectSystemDark(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+function readSettings(): Settings {
+  if (typeof localStorage === 'undefined') return DEFAULT_SETTINGS
+  return parseSettings(localStorage.getItem(SETTINGS_STORAGE_KEY))
+}
+
+function persistSettings(s: Settings): void {
+  if (typeof localStorage === 'undefined') return
+  localStorage.setItem(SETTINGS_STORAGE_KEY, serializeSettings(s))
 }
 
 export type Screen = 'dashboard' | 'stores' | 'visits' | 'manage'
@@ -50,13 +74,18 @@ export interface AppState {
   brandModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
   outletModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
   staffModal: { mode: 'add' } | { mode: 'edit'; id: string } | null
+  settingsOpen: boolean
   // theme
   accent: string
+  /** User preference (light/dark/system); persisted. */
+  themePref: ThemePref
+  /** Resolved mode actually rendered by `rootStyle` (system → light/dark). */
   themeMode: ThemeMode
   density: Density
 }
 
 function seed(): AppState {
+  const settings = readSettings()
   return {
     activeScreen: 'dashboard',
     manageTab: 'brands',
@@ -75,9 +104,11 @@ function seed(): AppState {
     brandModal: null,
     outletModal: null,
     staffModal: null,
-    accent: '#64748b',
-    themeMode: 'light',
-    density: 'comfortable',
+    settingsOpen: false,
+    accent: settings.accent,
+    themePref: settings.themePref,
+    themeMode: resolveTheme(settings.themePref, detectSystemDark()),
+    density: settings.density,
   }
 }
 
@@ -106,8 +137,11 @@ export interface StoreActions {
   openStaffModal(payload: { mode: 'add' } | { mode: 'edit'; id: string }): void
   closeStaffModal(): void
   setManageTab(tab: ManageTab): void
+  setQ(q: string): void
+  openSettings(): void
+  closeSettings(): void
   setAccent(c: string): void
-  setThemeMode(m: ThemeMode): void
+  setThemePref(p: ThemePref): void
   setDensity(d: Density): void
 }
 
@@ -120,8 +154,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const actions = useMemo<StoreActions>(() => {
     const patch = (p: Partial<AppState>) => setState((s) => ({ ...s, ...p }))
+    // Write the persisted theme/accent/density subset whenever one changes.
+    const persistFrom = (s: AppState) =>
+      persistSettings({ themePref: s.themePref, accent: s.accent, density: s.density })
     return {
-      go: (activeScreen) => patch({ activeScreen, openVisitId: null, storeVisits: null }),
+      // Clear the global search when leaving a screen — it's scoped to Visits.
+      go: (activeScreen) => patch({ activeScreen, q: '', openVisitId: null, storeVisits: null }),
       openBrandDetail: (brandDetailId) => patch({ brandDetailId }),
       closeBrandDetail: () => patch({ brandDetailId: null }),
       openOutletDetail: (outletDetailId) => patch({ outletDetailId }),
@@ -153,9 +191,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openStaffModal: (staffModal) => patch({ staffModal }),
       closeStaffModal: () => patch({ staffModal: null }),
       setManageTab: (manageTab) => patch({ manageTab }),
-      setAccent: (accent) => patch({ accent }),
-      setThemeMode: (themeMode) => patch({ themeMode }),
-      setDensity: (density) => patch({ density }),
+      setQ: (q) => patch({ q }),
+      openSettings: () => patch({ settingsOpen: true }),
+      closeSettings: () => patch({ settingsOpen: false }),
+      setAccent: (accent) =>
+        setState((s) => {
+          const next = { ...s, accent }
+          persistFrom(next)
+          return next
+        }),
+      setThemePref: (themePref) =>
+        setState((s) => {
+          const next = { ...s, themePref, themeMode: resolveTheme(themePref, detectSystemDark()) }
+          persistFrom(next)
+          return next
+        }),
+      setDensity: (density) =>
+        setState((s) => {
+          const next = { ...s, density }
+          persistFrom(next)
+          return next
+        }),
     }
   }, [])
 
@@ -164,6 +220,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`)
     const onChange = () => setState((s) => (s.isMobile === mql.matches ? s : { ...s, isMobile: mql.matches }))
     onChange()
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+
+  // When the preference is `system`, track OS light/dark changes live.
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () =>
+      setState((s) => {
+        if (s.themePref !== 'system') return s
+        const themeMode = resolveTheme('system', mql.matches)
+        return s.themeMode === themeMode ? s : { ...s, themeMode }
+      })
     mql.addEventListener('change', onChange)
     return () => mql.removeEventListener('change', onChange)
   }, [])
