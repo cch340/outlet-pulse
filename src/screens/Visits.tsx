@@ -9,6 +9,7 @@ import type { VisitFilter } from '../data/store'
 import type { Task } from '../data/model'
 import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
+import { ExportCsvButton } from '../components/ExportCsvButton'
 import { useToast } from '../components/ToastProvider'
 import { visitRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
 import { downloadTextFile } from '../data/download'
@@ -263,32 +264,7 @@ export function Visits() {
           <input type="checkbox" checked={allExpanded} onChange={toggleAll} />
           Expand all
         </label>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          aria-label="Export CSV"
-          title="Export the filtered visits as CSV"
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            border: '1px solid var(--border)',
-            background: 'var(--surface)',
-            color: 'var(--text)',
-            borderRadius: 8,
-            padding: '6px 11px',
-            fontFamily: "'IBM Plex Sans'",
-            fontSize: 12.5,
-            fontWeight: 600,
-            cursor: exporting ? 'not-allowed' : 'pointer',
-            opacity: exporting ? 0.55 : 1,
-          }}
-        >
-          <Icon name={exporting ? 'progress_activity' : 'download'} size={17} />
-          {!isMobile && (exporting ? 'Exporting…' : 'Export CSV')}
-        </button>
+        <ExportCsvButton onClick={handleExport} busy={exporting} title="Export the filtered visits as CSV" />
       </div>
 
       <div style={{ ...card, overflow: 'hidden' }}>

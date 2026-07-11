@@ -6,6 +6,7 @@ import { buildStoreGroups, type StoreRow } from '../data/queries/storeRows'
 import { today, fmt, localDateStr } from '../data/derived'
 import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
+import { ExportCsvButton } from '../components/ExportCsvButton'
 import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
 import { useToast } from '../components/ToastProvider'
 import { failedTaskRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
@@ -64,30 +65,6 @@ export function Stores() {
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={failedCount === 0}
-          title="Export this month's failed tasks as CSV"
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            border: 'none',
-            background: 'none',
-            padding: '2px 0',
-            fontFamily: "'IBM Plex Sans'",
-            fontSize: 12.5,
-            fontWeight: 600,
-            color: 'var(--accent)',
-            cursor: failedCount === 0 ? 'not-allowed' : 'pointer',
-            opacity: failedCount === 0 ? 0.45 : 1,
-          }}
-        >
-          <Icon name="download" size={16} />
-          Export CSV
-        </button>
         <label
           style={{
             display: 'flex',
@@ -102,6 +79,12 @@ export function Stores() {
           <input type="checkbox" checked={showDetails} onChange={(e) => setShowDetails(e.target.checked)} />
           Show failed task details
         </label>
+        <ExportCsvButton
+          onClick={handleExport}
+          disabled={failedCount === 0}
+          disabledHint="No failed tasks this month"
+          title="Export this month's failed tasks as CSV"
+        />
       </div>
 
       {isError && <div style={{ fontSize: 12.5, color: '#dc2626' }}>Couldn't load latest visit status.</div>}
