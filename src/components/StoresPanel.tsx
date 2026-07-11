@@ -4,6 +4,7 @@ import { linked } from '../data/derived'
 import { card, chip } from '../theme'
 import { Icon } from './Icon'
 import { useLinkStore, useUnlinkStore } from '../data/queries/useBrandMutations'
+import { useToast } from './ToastProvider'
 
 const emptyBtn = {
   display: 'flex',
@@ -23,6 +24,7 @@ const emptyBtn = {
 export function StoresPanel() {
   const { data } = useData()
   const { setManageTab } = useStore()
+  const toast = useToast()
   const link = useLinkStore()
   const unlink = useUnlinkStore()
 
@@ -56,8 +58,8 @@ export function StoresPanel() {
   }
 
   const toggle = (brandId: string, outletId: string, isLinked: boolean) => {
-    if (isLinked) unlink.mutate({ brandId, outletId }, { onError: (e) => alert(e.message) })
-    else link.mutate({ brandId, outletId }, { onError: (e) => alert(e.message) })
+    if (isLinked) unlink.mutate({ brandId, outletId }, { onError: (e) => toast.error("Couldn't unlink store: " + e.message) })
+    else link.mutate({ brandId, outletId }, { onError: (e) => toast.error("Couldn't link store: " + e.message) })
   }
 
   return (

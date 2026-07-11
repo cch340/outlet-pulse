@@ -5,6 +5,8 @@ import { brandById, initials, outletById, tenure } from '../data/derived'
 import { actionBtn, card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
 import { WhatsAppButton } from '../components/WhatsAppButton'
+import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
 
 const transferredBadge = (label: string, small = false) => (
   <span
@@ -24,11 +26,27 @@ const transferredBadge = (label: string, small = false) => (
 )
 
 export function Staff() {
-  const { state, setStaffBrandFilter, openTransfer, openStaffModal } = useStore()
+  const { state, setStaffBrandFilter, openTransfer, openStaffModal, openStaffDetail } = useStore()
   const del = useDeleteStaff()
+  const toast = useToast()
+  const confirm = useConfirm()
   const { data } = useData()
   const S = state
   const isMobile = S.isMobile
+
+  const removeStaff = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: 'Delete staff member?',
+      message: `${name} will be removed permanently.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    del.mutate(id, {
+      onSuccess: () => toast.success(`${name} deleted`),
+      onError: (e) => toast.error("Couldn't delete staff: " + e.message),
+    })
+  }
 
   const filters = [{ id: 'all', label: 'All staff' }, ...data.brands.map((b) => ({ id: b.id, label: b.name }))]
 
@@ -110,7 +128,8 @@ export function Staff() {
             {rows.map((r) => (
               <div
                 key={r.id}
-                style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)' }}
+                onClick={() => openStaffDetail(r.id)}
+                style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
               >
                 <div style={{ flex: 2.4, minWidth: 140, display: 'flex', alignItems: 'center', gap: 11 }}>
                   <Avatar initials={r.initials} size={36} />
@@ -139,15 +158,12 @@ export function Staff() {
                     <Icon name="edit" size={16} />
                     Edit
                   </button>
-                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={actionBtn()}>
+                  <button onClick={(e) => { e.stopPropagation(); openTransfer(r.id, r.brandId, r.outletId) }} style={actionBtn()}>
                     <Icon name="swap_horiz" size={16} />
                     Transfer
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
-                    }}
+                    onClick={(e) => { e.stopPropagation(); removeStaff(r.id, r.name) }}
                     style={actionBtn({ danger: true })}
                   >
                     <Icon name="delete" size={16} />
@@ -162,7 +178,7 @@ export function Staff() {
       {isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map((r) => (
-            <div key={r.id} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+            <div key={r.id} onClick={() => openStaffDetail(r.id)} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11, cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                 <Avatar initials={r.initials} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -201,10 +217,7 @@ export function Staff() {
                   <Icon name="swap_horiz" size={16} />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
-                  }}
+                  onClick={(e) => { e.stopPropagation(); removeStaff(r.id, r.name) }}
                   style={actionBtn({ danger: true })}
                 >
                   <Icon name="delete" size={16} />

@@ -6,7 +6,7 @@ import { Icon } from './Icon'
 import { Mark } from './Logo'
 
 export function Sidebar() {
-  const { state, go } = useStore()
+  const { state, go, openSettings } = useStore()
   const { session, signOut } = useSession()
   const overdueCount = useOverdueCount()
   const email = session?.user.email ?? ''
@@ -128,6 +128,22 @@ export function Sidebar() {
           </div>
           <div style={{ color: 'var(--sidebar-text)', fontSize: 11 }}>Signed in</div>
         </div>
+        <button
+          onClick={openSettings}
+          title="Settings"
+          aria-label="Settings"
+          style={{
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'var(--sidebar-text)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: 4,
+          }}
+        >
+          <Icon name="settings" size={20} />
+        </button>
         <button
           onClick={() => signOut()}
           title="Sign out"

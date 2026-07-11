@@ -2,12 +2,16 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { actionBtn, card, tint } from '../theme'
 import { Icon } from '../components/Icon'
+import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
 import { useDeleteOutlet } from '../data/queries/useOutletMutations'
 
 export function Outlets() {
   const { state, openOutletDetail, openOutletModal } = useStore()
   const { data } = useData()
   const del = useDeleteOutlet()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isMobile = state.isMobile
 
   const rows = data.outlets.map((o) => ({
@@ -18,10 +22,18 @@ export function Outlets() {
     staffCount: data.staff.filter((s) => s.outletId === o.id).length,
   }))
 
-  const del1 = (id: string) => {
-    if (confirm('Delete this outlet?')) {
-      del.mutate(id, { onError: () => alert('Cannot delete: this outlet still has staff or store links.') })
-    }
+  const del1 = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: 'Delete outlet?',
+      message: `${name} will be removed permanently.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    del.mutate(id, {
+      onSuccess: () => toast.success(`${name} deleted`),
+      onError: () => toast.error("Couldn't delete outlet: it still has staff or store links."),
+    })
   }
 
   const OutletIcon = ({ size }: { size: number }) => (
@@ -97,7 +109,7 @@ export function Outlets() {
                     <Icon name="edit" size={16} />
                     Edit
                   </button>
-                  <button onClick={() => del1(r.id)} title="Delete" style={actionBtn({ danger: true })}>
+                  <button onClick={() => del1(r.id, r.name)} title="Delete" style={actionBtn({ danger: true })}>
                     <Icon name="delete" size={16} />
                   </button>
                 </div>
@@ -128,7 +140,7 @@ export function Outlets() {
                 <button onClick={() => openOutletModal({ mode: 'edit', id: r.id })} style={actionBtn()}>
                   <Icon name="edit" size={16} />
                 </button>
-                <button onClick={() => del1(r.id)} title="Delete" style={actionBtn({ danger: true })}>
+                <button onClick={() => del1(r.id, r.name)} title="Delete" style={actionBtn({ danger: true })}>
                   <Icon name="delete" size={16} />
                 </button>
               </div>

@@ -4,10 +4,12 @@ import { fmt } from '../data/derived'
 import { useVisitsMissingLabel, MISSING_LABEL_LIMIT } from '../data/queries/useVisitsMissingLabel'
 import { useAddTaskToVisits } from '../data/queries/useVisitMutations'
 import { Icon } from './Icon'
+import { useToast } from './ToastProvider'
 
 /** Adds a single task template into multiple existing visits that don't have it yet. */
 export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClose: () => void }) {
   const { state } = useStore()
+  const toast = useToast()
   const { visits: eligible, isLoading } = useVisitsMissingLabel(label)
   const addToVisits = useAddTaskToVisits()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -19,9 +21,13 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
 
   const submit = () => {
     if (!selectedIds.length) return
+    const count = selectedIds.length
     addToVisits.mutate(
       { label, visitIds: selectedIds },
-      { onSuccess: onClose, onError: (e) => alert(e.message) },
+      {
+        onSuccess: () => { onClose(); toast.success(`"${label}" added to ${count} visit${count === 1 ? '' : 's'}`) },
+        onError: (e) => toast.error("Couldn't add task to visits: " + e.message),
+      },
     )
   }
 

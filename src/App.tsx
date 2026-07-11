@@ -1,4 +1,6 @@
 import { StoreProvider, useStore } from './data/store'
+import { ToastProvider } from './components/ToastProvider'
+import { ConfirmProvider } from './components/ConfirmProvider'
 import { useData } from './data/queries/useData'
 import { useSession } from './auth/AuthProvider'
 import { Login } from './screens/Login'
@@ -19,6 +21,8 @@ import { OutletModal } from './components/OutletModal'
 import { StaffModal } from './components/StaffModal'
 import { BrandDetailModal } from './components/BrandDetailModal'
 import { OutletDetailModal } from './components/OutletDetailModal'
+import { StaffDetailModal } from './components/StaffDetailModal'
+import { SettingsModal } from './components/SettingsModal'
 
 function Shell() {
   const { state } = useStore()
@@ -29,8 +33,7 @@ function Shell() {
   if (isError) return <div style={{ padding: 40 }}>Failed to load data. Check your Supabase connection.</div>
 
   return (
-    <div style={rootStyle(state)}>
-      <div style={appShellStyle(isMobile)}>
+    <div style={appShellStyle(isMobile)}>
         {!isMobile && <Sidebar />}
 
         <div
@@ -65,7 +68,26 @@ function Shell() {
         {state.staffModal && <StaffModal />}
         {state.brandDetailId && <BrandDetailModal />}
         {state.outletDetailId && <OutletDetailModal />}
-      </div>
+        {state.staffDetailId && <StaffDetailModal />}
+        {state.settingsOpen && <SettingsModal />}
+    </div>
+  )
+}
+
+/**
+ * Wraps the app UI in the themed `rootStyle` root so the CSS variables + app font
+ * apply to everything inside — crucially including the Toast/Confirm provider overlays,
+ * which render alongside Shell. Must live inside StoreProvider to read `state`.
+ */
+function ThemedRoot() {
+  const { state } = useStore()
+  return (
+    <div style={rootStyle(state)}>
+      <ToastProvider>
+        <ConfirmProvider>
+          <Shell />
+        </ConfirmProvider>
+      </ToastProvider>
     </div>
   )
 }
@@ -78,7 +100,7 @@ export function App() {
 
   return (
     <StoreProvider>
-      <Shell />
+      <ThemedRoot />
     </StoreProvider>
   )
 }

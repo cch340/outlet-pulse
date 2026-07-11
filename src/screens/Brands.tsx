@@ -2,6 +2,8 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { actionBtn, card } from '../theme'
 import { Icon } from '../components/Icon'
+import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
 import { useDeleteBrand, useReorderBrands } from '../data/queries/useBrandMutations'
 
 export function Brands() {
@@ -9,6 +11,8 @@ export function Brands() {
   const { data } = useData()
   const del = useDeleteBrand()
   const reorderB = useReorderBrands()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isMobile = state.isMobile
   const ids = data.brands.map((b) => b.id)
   const move = (index: number, dir: -1 | 1) => {
@@ -16,7 +20,7 @@ export function Brands() {
     if (j < 0 || j >= ids.length) return
     const next = ids.slice()
     ;[next[index], next[j]] = [next[j], next[index]]
-    reorderB.mutate({ ids: next }, { onError: (e) => alert(e.message) })
+    reorderB.mutate({ ids: next }, { onError: (e) => toast.error("Couldn't reorder brands: " + e.message) })
   }
 
   const rows = data.brands.map((b) => ({
@@ -28,10 +32,18 @@ export function Brands() {
     staffCount: data.staff.filter((s) => s.brandId === b.id).length,
   }))
 
-  const del1 = (id: string) => {
-    if (confirm('Delete this brand?')) {
-      del.mutate(id, { onError: () => alert('Cannot delete: this brand still has staff or store links.') })
-    }
+  const del1 = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: 'Delete brand?',
+      message: `${name} will be removed permanently.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    del.mutate(id, {
+      onSuccess: () => toast.success(`${name} deleted`),
+      onError: () => toast.error("Couldn't delete brand: it still has staff or store links."),
+    })
   }
 
   const Logo = ({ name, color, size }: { name: string; color: string; size: number }) => (
@@ -116,7 +128,7 @@ export function Brands() {
                     <Icon name="edit" size={16} />
                     Edit
                   </button>
-                  <button onClick={() => del1(r.id)} title="Delete" style={actionBtn({ danger: true })}>
+                  <button onClick={() => del1(r.id, r.name)} title="Delete" style={actionBtn({ danger: true })}>
                     <Icon name="delete" size={16} />
                   </button>
                 </div>
@@ -153,7 +165,7 @@ export function Brands() {
                 <button onClick={() => openBrandModal({ mode: 'edit', id: r.id })} style={actionBtn()}>
                   <Icon name="edit" size={16} />
                 </button>
-                <button onClick={() => del1(r.id)} title="Delete" style={actionBtn({ danger: true })}>
+                <button onClick={() => del1(r.id, r.name)} title="Delete" style={actionBtn({ danger: true })}>
                   <Icon name="delete" size={16} />
                 </button>
               </div>

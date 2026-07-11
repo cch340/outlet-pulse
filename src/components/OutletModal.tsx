@@ -3,9 +3,11 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useCreateOutlet, useUpdateOutlet } from '../data/queries/useOutletMutations'
 import { EntityModal, modalFieldLabel, modalInput } from './EntityModal'
+import { useToast } from './ToastProvider'
 
 export function OutletModal() {
   const { state, closeOutletModal } = useStore()
+  const toast = useToast()
   const { data } = useData()
   const m = state.outletModal
   const existing = m?.mode === 'edit' ? data.outlets.find((o) => o.id === m.id) : undefined
@@ -20,9 +22,21 @@ export function OutletModal() {
   const submit = () => {
     if (!name.trim()) return
     if (m.mode === 'add') {
-      create.mutate({ name: name.trim(), location: location.trim() }, { onSuccess: () => closeOutletModal(), onError: (e) => alert(e.message) })
+      create.mutate(
+        { name: name.trim(), location: location.trim() },
+        {
+          onSuccess: () => { closeOutletModal(); toast.success(`Outlet "${name.trim()}" created`) },
+          onError: (e) => toast.error("Couldn't create outlet: " + e.message),
+        },
+      )
     } else {
-      update.mutate({ id: m.id, name: name.trim(), location: location.trim() }, { onSuccess: () => closeOutletModal(), onError: (e) => alert(e.message) })
+      update.mutate(
+        { id: m.id, name: name.trim(), location: location.trim() },
+        {
+          onSuccess: () => { closeOutletModal(); toast.success('Outlet updated') },
+          onError: (e) => toast.error("Couldn't update outlet: " + e.message),
+        },
+      )
     }
   }
 

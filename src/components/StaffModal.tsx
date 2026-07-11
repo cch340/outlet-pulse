@@ -5,9 +5,11 @@ import { useCreateStaff, useUpdateStaff } from '../data/queries/useStaffCrudMuta
 import { EntityModal, modalFieldLabel, modalInput } from './EntityModal'
 import { chip } from '../theme'
 import { isValidPhone } from '../data/whatsapp'
+import { useToast } from './ToastProvider'
 
 export function StaffModal() {
   const { state, closeStaffModal } = useStore()
+  const toast = useToast()
   const { data } = useData()
   const m = state.staffModal
   const existing = m?.mode === 'edit' ? data.staff.find((s) => s.id === m.id) : undefined
@@ -34,12 +36,18 @@ export function StaffModal() {
       if (!brandId || !outletId) return
       create.mutate(
         { name: name.trim(), role: role.trim(), phone: phone.trim(), joined, brandId, outletId },
-        { onSuccess: () => closeStaffModal(), onError: (e) => alert(e.message) },
+        {
+          onSuccess: () => { closeStaffModal(); toast.success(`${name.trim()} added`) },
+          onError: (e) => toast.error("Couldn't add staff: " + e.message),
+        },
       )
     } else {
       update.mutate(
         { id: m.id, name: name.trim(), role: role.trim(), phone: phone.trim(), joined },
-        { onSuccess: () => closeStaffModal(), onError: (e) => alert(e.message) },
+        {
+          onSuccess: () => { closeStaffModal(); toast.success('Staff updated') },
+          onError: (e) => toast.error("Couldn't update staff: " + e.message),
+        },
       )
     }
   }

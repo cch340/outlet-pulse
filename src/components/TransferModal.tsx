@@ -5,6 +5,7 @@ import { brandById, initials, outletById } from '../data/derived'
 import { chip, tint } from '../theme'
 import { Icon } from './Icon'
 import { useTransferStaff } from '../data/queries/useStaffMutations'
+import { useToast } from './ToastProvider'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -28,6 +29,7 @@ const input: CSSProperties = {
 
 export function TransferModal() {
   const { state, closeTransfer, setTf } = useStore()
+  const toast = useToast()
   const transfer = useTransferStaff()
   const { data } = useData()
   const S = state
@@ -168,7 +170,10 @@ export function TransferModal() {
             onClick={() => {
               transfer.mutate(
                 { staffId: S.transferStaffId!, brandId: tf.brandId, outletId: tf.outletId, reason: tf.reason, date: tf.date },
-                { onSuccess: () => closeTransfer(), onError: (e) => alert(e.message) },
+                {
+                  onSuccess: () => { closeTransfer(); toast.success(`${st.name} transferred to ${nb.name} · ${no.name}`) },
+                  onError: (e) => toast.error("Couldn't transfer staff: " + e.message),
+                },
               )
             }}
             style={{

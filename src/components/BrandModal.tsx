@@ -3,9 +3,11 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useCreateBrand, useUpdateBrand } from '../data/queries/useBrandMutations'
 import { EntityModal, modalFieldLabel, modalInput } from './EntityModal'
+import { useToast } from './ToastProvider'
 
 export function BrandModal() {
   const { state, closeBrandModal } = useStore()
+  const toast = useToast()
   const { data } = useData()
   const m = state.brandModal
   const existing = m?.mode === 'edit' ? data.brands.find((b) => b.id === m.id) : undefined
@@ -23,12 +25,18 @@ export function BrandModal() {
     if (m.mode === 'add') {
       create.mutate(
         { name: name.trim(), color, category: category.trim(), sort: data.brands.length },
-        { onSuccess: () => closeBrandModal(), onError: (e) => alert(e.message) },
+        {
+          onSuccess: () => { closeBrandModal(); toast.success(`Brand "${name.trim()}" created`) },
+          onError: (e) => toast.error("Couldn't create brand: " + e.message),
+        },
       )
     } else {
       update.mutate(
         { id: m.id, name: name.trim(), color, category: category.trim() },
-        { onSuccess: () => closeBrandModal(), onError: (e) => alert(e.message) },
+        {
+          onSuccess: () => { closeBrandModal(); toast.success('Brand updated') },
+          onError: (e) => toast.error("Couldn't update brand: " + e.message),
+        },
       )
     }
   }
