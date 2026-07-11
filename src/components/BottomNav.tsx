@@ -37,6 +37,7 @@ export function BottomNav() {
               color: active ? 'var(--accent)' : 'var(--dim)',
               fontFamily: "'IBM Plex Sans'",
               position: 'relative',
+              transition: 'color var(--motion-dur-fast) var(--motion-ease)',
             }}
           >
             <span style={{ position: 'relative' }}>

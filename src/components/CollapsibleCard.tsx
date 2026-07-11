@@ -47,14 +47,15 @@ export function CollapsibleCard({
         {icon && <Icon name={icon} size={19} color={iconColor} />}
         <div style={{ fontSize: 14, fontWeight: 700 }}>{title}</div>
         {accessory}
+        {/* Single chevron rotated 180° when open so the flip animates smoothly. */}
         <Icon
-          name={open ? 'expand_less' : 'expand_more'}
+          name="expand_more"
           size={20}
           color="var(--dim)"
-          style={{ marginLeft: 'auto' }}
+          style={{ marginLeft: 'auto', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform var(--motion-dur-fast) var(--motion-ease)' }}
         />
       </button>
-      {open && <div style={{ marginTop: 14 }}>{children}</div>}
+      {open && <div style={{ marginTop: 14, animation: 'fadein var(--motion-dur) var(--motion-ease)' }}>{children}</div>}
     </div>
   )
 }

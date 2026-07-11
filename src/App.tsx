@@ -45,7 +45,8 @@ function Shell() {
         >
           <TopBar />
           <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--pad)' }}>
-            <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+            {/* Keyed by activeScreen so the fadein re-runs each screen switch. */}
+            <div key={state.activeScreen} style={{ maxWidth: 1300, margin: '0 auto', animation: 'fadein var(--motion-dur) var(--motion-ease)' }}>
               {state.activeScreen === 'dashboard' && <Dashboard />}
               {state.activeScreen === 'stores' && <Stores />}
               {state.activeScreen === 'visits' && <Visits />}

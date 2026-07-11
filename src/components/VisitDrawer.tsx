@@ -73,7 +73,7 @@ export function VisitDrawer() {
   return (
     <div
       onClick={closeVisit}
-      style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end' }}
+      style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -85,7 +85,7 @@ export function VisitDrawer() {
           display: 'flex',
           flexDirection: 'column',
           borderLeft: '1px solid var(--border)',
-          animation: 'slidein .22s ease',
+          animation: 'slidein var(--motion-dur) var(--motion-ease)',
         }}
       >
         {/* header */}

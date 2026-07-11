@@ -62,6 +62,7 @@ export function Sidebar() {
               fontWeight: active ? 600 : 500,
               background: active ? 'var(--accent)' : 'transparent',
               color: active ? '#fff' : 'var(--sidebar-text)',
+              transition: 'background var(--motion-dur-fast) var(--motion-ease), color var(--motion-dur-fast) var(--motion-ease)',
             }}
           >
             <Icon name={n.icon} size={20} />
