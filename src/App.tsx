@@ -1,4 +1,6 @@
 import { StoreProvider, useStore } from './data/store'
+import { ToastProvider } from './components/ToastProvider'
+import { ConfirmProvider } from './components/ConfirmProvider'
 import { useData } from './data/queries/useData'
 import { useSession } from './auth/AuthProvider'
 import { Login } from './screens/Login'
@@ -78,7 +80,11 @@ export function App() {
 
   return (
     <StoreProvider>
-      <Shell />
+      <ToastProvider>
+        <ConfirmProvider>
+          <Shell />
+        </ConfirmProvider>
+      </ToastProvider>
     </StoreProvider>
   )
 }

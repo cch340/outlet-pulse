@@ -4,6 +4,7 @@ import { useData } from '../data/queries/useData'
 import { actionBtn, card } from '../theme'
 import { Icon } from './Icon'
 import { AddTaskToVisitsModal } from './AddTaskToVisitsModal'
+import { useToast } from './ToastProvider'
 import {
   useCreateTaskTemplate,
   useRenameTaskTemplate,
@@ -14,6 +15,7 @@ import {
 export function TaskTemplatesPanel() {
   const { state } = useStore()
   const isMobile = state.isMobile
+  const toast = useToast()
   const { data } = useData()
   const createT = useCreateTaskTemplate()
   const renameT = useRenameTaskTemplate()
@@ -28,7 +30,7 @@ export function TaskTemplatesPanel() {
   const add = () => {
     const label = newLabel.trim()
     if (!label) return
-    createT.mutate({ label, sort: templates.length }, { onError: (e) => alert(e.message) })
+    createT.mutate({ label, sort: templates.length }, { onError: (e) => toast.error("Couldn't add task: " + e.message) })
     setNewLabel('')
   }
 
@@ -37,7 +39,7 @@ export function TaskTemplatesPanel() {
     if (j < 0 || j >= ids.length) return
     const next = ids.slice()
     ;[next[index], next[j]] = [next[j], next[index]]
-    reorderT.mutate({ ids: next }, { onError: (e) => alert(e.message) })
+    reorderT.mutate({ ids: next }, { onError: (e) => toast.error("Couldn't reorder tasks: " + e.message) })
   }
 
   const inputStyle = {
@@ -114,7 +116,7 @@ export function TaskTemplatesPanel() {
               defaultValue={t.label}
               onBlur={(e) => {
                 const label = e.target.value.trim()
-                if (label && label !== t.label) renameT.mutate({ id: t.id, label }, { onError: (err) => alert(err.message) })
+                if (label && label !== t.label) renameT.mutate({ id: t.id, label }, { onError: (err) => toast.error("Couldn't rename task: " + err.message) })
                 else e.target.value = t.label
               }}
               style={{ ...inputStyle, flex: 1, fontWeight: 600, background: 'transparent', border: '1px solid transparent' }}
@@ -141,7 +143,7 @@ export function TaskTemplatesPanel() {
                 <Icon name="add_task" size={16} />
               </button>
               <button
-                onClick={() => deleteT.mutate({ id: t.id }, { onError: (err) => alert(err.message) })}
+                onClick={() => deleteT.mutate({ id: t.id }, { onSuccess: () => toast.success(`Task "${t.label}" deleted`), onError: (err) => toast.error("Couldn't delete task: " + err.message) })}
                 title="Delete"
                 style={actionBtn({ danger: true })}
               >

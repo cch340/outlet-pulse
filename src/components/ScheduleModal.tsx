@@ -9,6 +9,7 @@ import { useCreateTaskTemplate } from '../data/queries/useTaskTemplateMutations'
 import { itemsFromTemplates, planSchedule, type ScheduleTaskItem } from '../data/queries/scheduleTasks'
 import { StoreCombobox } from './StoreCombobox'
 import { storeOptions } from '../data/queries/storePicker'
+import { useToast } from './ToastProvider'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -24,6 +25,7 @@ const weekdayOf = (iso: string) => (iso ? FULL_WD[new Date(iso + 'T00:00:00').ge
 
 export function ScheduleModal() {
   const { state, closeAdd, setAf } = useStore()
+  const toast = useToast()
   const create = useCreateVisit()
   const createTemplate = useCreateTaskTemplate()
   const { data } = useData()
@@ -85,8 +87,9 @@ export function ScheduleModal() {
             createTemplate.mutate({ label, sort: data.taskTemplates.length + i }),
           )
           closeAdd()
+          toast.success(`Visit scheduled at ${bName} · ${oName}`)
         },
-        onError: (e) => alert(e.message),
+        onError: (e) => toast.error("Couldn't schedule visit: " + e.message),
       },
     )
   }

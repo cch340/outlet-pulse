@@ -5,6 +5,8 @@ import { brandById, initials, outletById, tenure } from '../data/derived'
 import { actionBtn, card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
 import { WhatsAppButton } from '../components/WhatsAppButton'
+import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
 
 const transferredBadge = (label: string, small = false) => (
   <span
@@ -26,9 +28,25 @@ const transferredBadge = (label: string, small = false) => (
 export function Staff() {
   const { state, setStaffBrandFilter, openTransfer, openStaffModal } = useStore()
   const del = useDeleteStaff()
+  const toast = useToast()
+  const confirm = useConfirm()
   const { data } = useData()
   const S = state
   const isMobile = S.isMobile
+
+  const removeStaff = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: 'Delete staff member?',
+      message: `${name} will be removed permanently.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    del.mutate(id, {
+      onSuccess: () => toast.success(`${name} deleted`),
+      onError: (e) => toast.error("Couldn't delete staff: " + e.message),
+    })
+  }
 
   const filters = [{ id: 'all', label: 'All staff' }, ...data.brands.map((b) => ({ id: b.id, label: b.name }))]
 
@@ -144,10 +162,7 @@ export function Staff() {
                     Transfer
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
-                    }}
+                    onClick={(e) => { e.stopPropagation(); removeStaff(r.id, r.name) }}
                     style={actionBtn({ danger: true })}
                   >
                     <Icon name="delete" size={16} />
@@ -201,10 +216,7 @@ export function Staff() {
                   <Icon name="swap_horiz" size={16} />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm('Delete this staff member?')) del.mutate(r.id, { onError: (e) => alert(e.message) })
-                  }}
+                  onClick={(e) => { e.stopPropagation(); removeStaff(r.id, r.name) }}
                   style={actionBtn({ danger: true })}
                 >
                   <Icon name="delete" size={16} />

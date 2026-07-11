@@ -5,6 +5,8 @@ import { useVisit } from '../data/queries/useVisit'
 import { visitVM, staffForStore } from '../data/derived'
 import { pill, chip } from '../theme'
 import { Icon } from './Icon'
+import { useToast } from './ToastProvider'
+import { useConfirm } from './ConfirmProvider'
 import { WhatsAppButton } from './WhatsAppButton'
 import { StoreCombobox } from './StoreCombobox'
 import { storeOptions } from '../data/queries/storePicker'
@@ -20,6 +22,8 @@ const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string
 
 export function VisitDrawer() {
   const { state, closeVisit } = useStore()
+  const toast = useToast()
+  const confirm = useConfirm()
   const setStatus = useSetTaskStatus()
   const setRemark = useSetTaskRemark()
   const markAll = useMarkAllSuccess()
@@ -45,7 +49,7 @@ export function VisitDrawer() {
     if (!label) return
     addTask.mutate(
       { visitId: openF.id, label },
-      { onSuccess: () => setNewTaskLabel(''), onError: (err) => alert(err.message) },
+      { onSuccess: () => setNewTaskLabel(''), onError: (err) => toast.error("Couldn't add task: " + err.message) },
     )
   }
 
@@ -64,8 +68,9 @@ export function VisitDrawer() {
         onSuccess: () => {
           setSelectedImportIds([])
           setImportOpen(false)
+          toast.success(`Imported ${labels.length} task${labels.length === 1 ? '' : 's'}`)
         },
-        onError: (err) => alert(err.message),
+        onError: (err) => toast.error("Couldn't import tasks: " + err.message),
       },
     )
   }
@@ -106,7 +111,7 @@ export function VisitDrawer() {
                 const list = staffForStore(data, brandId, outletId)
                 updateVisit.mutate(
                   { visitId: openF.id, brandId, outletId, staffId: list[0]?.id ?? null },
-                  { onError: (e) => alert(e.message) },
+                  { onError: (e) => toast.error("Couldn't reassign store: " + e.message) },
                 )
               }}
             />
@@ -119,7 +124,7 @@ export function VisitDrawer() {
               onChange={(e) =>
                 updateVisit.mutate(
                   { visitId: openF.id, date: e.target.value },
-                  { onError: (err) => alert(err.message) },
+                  { onError: (err) => toast.error("Couldn't change date: " + err.message) },
                 )
               }
               style={{
@@ -149,7 +154,7 @@ export function VisitDrawer() {
                     onClick={() =>
                       updateVisit.mutate(
                         { visitId: openF.id, staffId: st.id },
-                        { onError: (e) => alert(e.message) },
+                        { onError: (e) => toast.error("Couldn't reassign staff: " + e.message) },
                       )
                     }
                     style={chip(openF.staffId === st.id)}
@@ -195,10 +200,18 @@ export function VisitDrawer() {
                     type="button"
                     title="Remove task"
                     aria-label={`Remove ${t.label}`}
-                    onClick={() => {
-                      if (openF.tasks.length <= 1) { alert('A visit needs at least one task.'); return }
-                      if (taskHasResult(t) && !confirm(`Remove "${t.label}"? It already has a recorded result.`)) return
-                      removeTask.mutate({ taskId: t.id! }, { onError: (e) => alert(e.message) })
+                    onClick={async () => {
+                      if (openF.tasks.length <= 1) { toast.error('A visit needs at least one task.'); return }
+                      if (taskHasResult(t)) {
+                        const ok = await confirm({
+                          title: 'Remove task?',
+                          message: `"${t.label}" already has a recorded result.`,
+                          confirmLabel: 'Remove',
+                          danger: true,
+                        })
+                        if (!ok) return
+                      }
+                      removeTask.mutate({ taskId: t.id! }, { onError: (e) => toast.error("Couldn't remove task: " + e.message) })
                     }}
                     style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dim)', padding: 2, flexShrink: 0 }}
                   >
@@ -218,7 +231,7 @@ export function VisitDrawer() {
                         onClick={() =>
                           setStatus.mutate(
                             { taskId: t.id!, status: seg.value },
-                            { onError: (e) => alert(e.message) },
+                            { onError: (e) => toast.error("Couldn't update task: " + e.message) },
                           )
                         }
                         style={{
@@ -247,7 +260,7 @@ export function VisitDrawer() {
                     if (next !== t.remark)
                       setRemark.mutate(
                         { taskId: t.id!, remark: next },
-                        { onError: (err) => alert(err.message) },
+                        { onError: (err) => toast.error("Couldn't save remark: " + err.message) },
                       )
                   }}
                   style={{
@@ -419,7 +432,7 @@ export function VisitDrawer() {
             type="button"
             disabled={vm.pendingT === 0}
             onClick={() =>
-              markAll.mutate({ visitId: openF.id }, { onSuccess: () => closeVisit(), onError: (e) => alert(e.message) })
+              markAll.mutate({ visitId: openF.id }, { onSuccess: () => { closeVisit(); toast.success('Pending tasks marked as success') }, onError: (e) => toast.error("Couldn't update tasks: " + e.message) })
             }
             style={{
               width: '100%',
