@@ -4,7 +4,7 @@ import { useData } from '../data/queries/useData'
 import { actionBtn, card } from '../theme'
 import { Icon } from '../components/Icon'
 import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchInput'
-import { matchesQuery, compareBy } from '../data/listFilter'
+import { matchesQuery, compareBy, distinctValues } from '../data/listFilter'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
 import { useDeleteBrand, useReorderBrands } from '../data/queries/useBrandMutations'
@@ -21,6 +21,8 @@ export function Brands() {
   const isMobile = state.isMobile
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<BrandSort>('custom')
+  const [category, setCategory] = useState('')
+  const categories = distinctValues(data.brands.map((b) => b.category))
   const ids = data.brands.map((b) => b.id)
   const move = (index: number, dir: -1 | 1) => {
     const j = index + dir
@@ -41,8 +43,12 @@ export function Brands() {
 
   // Reordering is only coherent in the default view; a filtered or re-sorted
   // list has row indices that no longer map to the persisted `sort` order.
-  const reorderable = q.trim() === '' && sort === 'custom'
-  const filtered = allRows.filter((r) => matchesQuery(q, r.name, r.category))
+  const reorderable = q.trim() === '' && sort === 'custom' && category === ''
+  const filtered = allRows.filter(
+    (r) =>
+      matchesQuery(q, r.name, r.category) &&
+      (category === '' || (r.category ?? '').trim().toLowerCase() === category.toLowerCase()),
+  )
   const rows =
     sort === 'custom'
       ? filtered
@@ -105,10 +111,23 @@ export function Brands() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <ListSearchInput value={q} onChange={setQ} placeholder="Search brands…" isMobile={isMobile} />
         <select
+          aria-label="Filter by category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+        >
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select
           aria-label="Sort brands"
           value={sort}
           onChange={(e) => setSort(e.target.value as BrandSort)}
-          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+          style={listSortSelectStyle}
         >
           <option value="custom">Custom order</option>
           <option value="name-asc">Name A–Z</option>

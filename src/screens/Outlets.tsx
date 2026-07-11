@@ -4,7 +4,7 @@ import { useData } from '../data/queries/useData'
 import { actionBtn, card, tint } from '../theme'
 import { Icon } from '../components/Icon'
 import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchInput'
-import { matchesQuery, compareBy } from '../data/listFilter'
+import { matchesQuery, compareBy, distinctValues } from '../data/listFilter'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
 import { useDeleteOutlet, useReorderOutlets } from '../data/queries/useOutletMutations'
@@ -21,6 +21,8 @@ export function Outlets() {
   const isMobile = state.isMobile
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<OutletSort>('custom')
+  const [location, setLocation] = useState('')
+  const locations = distinctValues(data.outlets.map((o) => o.location))
   const ids = data.outlets.map((o) => o.id)
   const move = (index: number, dir: -1 | 1) => {
     const j = index + dir
@@ -40,8 +42,12 @@ export function Outlets() {
 
   // Reordering is only coherent in the default view; a filtered or re-sorted
   // list has row indices that no longer map to the persisted `sort` order.
-  const reorderable = q.trim() === '' && sort === 'custom'
-  const filtered = allRows.filter((r) => matchesQuery(q, r.name, r.location))
+  const reorderable = q.trim() === '' && sort === 'custom' && location === ''
+  const filtered = allRows.filter(
+    (r) =>
+      matchesQuery(q, r.name, r.location) &&
+      (location === '' || (r.location ?? '').trim().toLowerCase() === location.toLowerCase()),
+  )
   const rows =
     sort === 'custom'
       ? filtered
@@ -101,10 +107,23 @@ export function Outlets() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <ListSearchInput value={q} onChange={setQ} placeholder="Search outlets…" isMobile={isMobile} />
         <select
+          aria-label="Filter by location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+        >
+          <option value="">All locations</option>
+          {locations.map((l) => (
+            <option key={l} value={l}>
+              {l}
+            </option>
+          ))}
+        </select>
+        <select
           aria-label="Sort outlets"
           value={sort}
           onChange={(e) => setSort(e.target.value as OutletSort)}
-          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+          style={listSortSelectStyle}
         >
           <option value="custom">Custom order</option>
           <option value="name-asc">Name A–Z</option>
