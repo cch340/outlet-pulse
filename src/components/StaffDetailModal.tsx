@@ -1,7 +1,9 @@
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { brandById, fmt, initials, outletById, tenure } from '../data/derived'
+import { brandById, fmt, initials, localDateStr, outletById, tenure, today, STATUS_COLOR } from '../data/derived'
 import { buildStaffTimeline } from '../data/queries/staffTimeline'
+import { useStaffVisits } from '../data/queries/useStaffVisits'
+import { computeStaffStats } from '../data/staffStats'
 import { actionBtn, tint } from '../theme'
 import { Icon } from './Icon'
 import { WhatsAppButton } from './WhatsAppButton'
@@ -31,6 +33,95 @@ const tag = (label: string, color: string) => (
     {label}
   </span>
 )
+
+function StatTile({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div
+      style={{
+        flex: '1 1 0',
+        minWidth: 76,
+        background: 'var(--surface2)',
+        border: '1px solid var(--border)',
+        borderRadius: 9,
+        padding: '9px 11px',
+      }}
+    >
+      <div style={{ fontSize: 18, fontWeight: 700, color: color ?? 'var(--text)', fontFamily: "'IBM Plex Mono'" }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--dim)', marginTop: 2 }}>{label}</div>
+    </div>
+  )
+}
+
+/** 6-month visit trend: one bar per month, height ∝ total, done portion in accent. */
+function MonthlyChart({ monthly }: { monthly: ReturnType<typeof computeStaffStats>['monthly'] }) {
+  const maxTotal = Math.max(1, ...monthly.map((m) => m.total))
+  const MAX_H = 48
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', marginTop: 12 }}>
+      {monthly.map((m) => {
+        const barH = m.total > 0 ? Math.max(2, Math.round((m.total / maxTotal) * MAX_H)) : 0
+        const doneH = m.total > 0 ? Math.round((m.done / m.total) * barH) : 0
+        return (
+          <div
+            key={m.ym}
+            title={`${m.label}: ${m.total} visit${m.total === 1 ? '' : 's'}, ${m.done} done`}
+            style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+          >
+            <div style={{ height: MAX_H, width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: 20,
+                  height: barH,
+                  borderRadius: 3,
+                  background: 'var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column-reverse',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ height: doneH, background: 'var(--accent)' }} />
+              </div>
+            </div>
+            <span style={{ fontSize: 10, color: 'var(--dim)' }}>{m.label}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function StaffPerformance({ staffId }: { staffId: string }) {
+  const { visits, isLoading } = useStaffVisits(staffId)
+
+  if (isLoading) {
+    return <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>Loading…</div>
+  }
+  if (visits.length === 0) {
+    return <div style={{ fontSize: 12.5, color: 'var(--dim)' }}>No visits recorded yet.</div>
+  }
+
+  const stats = computeStaffStats(visits, localDateStr(today()))
+  const pct = (n: number) => `${Math.round(n * 100)}%`
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <StatTile label="Visits" value={String(stats.totalVisits)} />
+        <StatTile label="Completed" value={stats.totalVisits === 0 ? '—' : pct(stats.completionRate)} />
+        <StatTile label="Task success" value={stats.taskSuccessRate == null ? '—' : pct(stats.taskSuccessRate)} />
+        <StatTile
+          label="Overdue now"
+          value={String(stats.overdueCount)}
+          color={stats.overdueCount > 0 ? STATUS_COLOR.overdue : undefined}
+        />
+      </div>
+      <MonthlyChart monthly={stats.monthly} />
+    </div>
+  )
+}
 
 export function StaffDetailModal() {
   const { state, closeStaffDetail, openTransfer, openStaffModal } = useStore()
@@ -100,6 +191,10 @@ export function StaffDetailModal() {
           <WhatsAppButton phone={s.phone} compact />
         </div>
       </div>
+
+      {/* Performance analytics — reflects visits assigned to this staff */}
+      <div style={{ ...sectionLabel, margin: '18px 0 12px' }}>Performance</div>
+      <StaffPerformance staffId={s.id} />
 
       {/* Posting history timeline */}
       <div style={{ ...sectionLabel, margin: '18px 0 12px' }}>Posting history</div>

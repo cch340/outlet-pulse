@@ -7,6 +7,9 @@ export const queryKeys = {
   visitsPage: (params: unknown) => ['visits', 'page', params] as const,
   visitStatusCounts: (params: unknown) => ['visits', 'counts', params] as const,
   visit: (id: string | null) => ['visits', 'one', id] as const,
+  // Under the 'visits' namespace so visit mutations (which invalidate
+  // ['visits']) also refresh a staff member's performance stats.
+  staffVisits: (staffId: string | null) => ['visits', 'staff', staffId] as const,
   dashboardSummary: (params: unknown) => ['visits', 'dashboard', params] as const,
   visitsMissingLabel: (params: unknown) => ['visits', 'missing', params] as const,
   latestFailedTasks: (month: string) => ['visits', 'latestFailed', month] as const,
