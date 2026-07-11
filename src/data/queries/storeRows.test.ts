@@ -4,7 +4,7 @@ import type { DataSnapshot } from './useData'
 import type { LatestFailedVisit } from './dashboardSummary'
 
 const brand = (id: string, name: string, sort: number) => ({ id, name, color: '#000', category: '', sort })
-const outlet = (id: string, name: string, location = '') => ({ id, name, location })
+const outlet = (id: string, name: string, location = '', sort = 0) => ({ id, name, location, sort })
 const staff = (id: string, brandId: string, outletId: string) => ({
   id, name: id, brandId, outletId, role: '', joined: '2026-01-01', history: [],
 })

@@ -12,8 +12,8 @@ describe('buildStaffTimeline', () => {
   it('orders most-recent-first and flags the initial + current postings', () => {
     // Input is oldest→newest, as produced by rowToStaff.
     const history: HistoryEntry[] = [
-      { brandId: 'b1', outletId: 'o1', from: 'Mar 2023', to: 'Feb 2025', reason: undefined },
-      { brandId: 'b1', outletId: 'o2', from: 'Feb 2025', to: undefined, reason: 'Store closure' },
+      { id: 'h1', brandId: 'b1', outletId: 'o1', from: 'Mar 2023', to: 'Feb 2025', reason: undefined },
+      { id: 'h2', brandId: 'b1', outletId: 'o2', from: 'Feb 2025', to: undefined, reason: 'Store closure' },
     ]
     const vms = buildStaffTimeline(history, resolve)
 
@@ -32,7 +32,7 @@ describe('buildStaffTimeline', () => {
   })
 
   it('handles a single never-transferred posting (initial and current)', () => {
-    const history: HistoryEntry[] = [{ brandId: 'b1', outletId: 'o1', from: 'Jul 2026', to: undefined }]
+    const history: HistoryEntry[] = [{ id: 'h1', brandId: 'b1', outletId: 'o1', from: 'Jul 2026', to: undefined }]
     const vms = buildStaffTimeline(history, resolve)
     expect(vms).toHaveLength(1)
     expect(vms[0].isCurrent).toBe(true)
@@ -42,8 +42,8 @@ describe('buildStaffTimeline', () => {
 
   it('produces stable unique keys per entry', () => {
     const history: HistoryEntry[] = [
-      { brandId: 'b1', outletId: 'o1', from: 'Mar 2023', to: 'Feb 2025' },
-      { brandId: 'b1', outletId: 'o2', from: 'Feb 2025', to: undefined },
+      { id: 'h1', brandId: 'b1', outletId: 'o1', from: 'Mar 2023', to: 'Feb 2025' },
+      { id: 'h2', brandId: 'b1', outletId: 'o2', from: 'Feb 2025', to: undefined },
     ]
     const keys = buildStaffTimeline(history, resolve).map((v) => v.key)
     expect(new Set(keys).size).toBe(keys.length)

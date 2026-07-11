@@ -26,3 +26,34 @@ export function compareBy<T>(get: (t: T) => string | number, dir: 'asc' | 'desc'
     return String(av).localeCompare(String(bv), undefined, { sensitivity: 'base' }) * sign
   }
 }
+
+/**
+ * Distinct, display-ready values for a free-text filter dropdown. Trims each
+ * value, drops empties, de-duplicates case-insensitively (keeping the casing of
+ * the first occurrence), and sorts the result alphabetically (case-insensitive).
+ */
+export function distinctValues(values: (string | undefined | null)[]): string[] {
+  const seen = new Map<string, string>()
+  for (const v of values) {
+    if (typeof v !== 'string') continue
+    const trimmed = v.trim()
+    if (trimmed === '') continue
+    const key = trimmed.toLowerCase()
+    if (!seen.has(key)) seen.set(key, trimmed)
+  }
+  return [...seen.values()].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base' }),
+  )
+}
+
+/**
+ * Split an array into consecutive chunks of at most `size` items. Used to keep
+ * Supabase `.in(...)` lists short enough to stay under URL-length limits. A
+ * non-positive `size` yields a single chunk containing everything.
+ */
+export function chunk<T>(arr: T[], size: number): T[][] {
+  if (size <= 0) return arr.length ? [arr.slice()] : []
+  const out: T[][] = []
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+  return out
+}

@@ -13,6 +13,7 @@ export interface Outlet {
   id: string
   name: string
   location: string
+  sort: number
 }
 
 /** JOIN row: a brand operating in an outlet. */
@@ -22,6 +23,9 @@ export interface Store {
 }
 
 export interface HistoryEntry {
+  /** The staff_history row id, carried through so the current posting can be
+   *  corrected in place (see postingCorrection.ts). */
+  id: string
   brandId: string
   outletId: string
   from: string

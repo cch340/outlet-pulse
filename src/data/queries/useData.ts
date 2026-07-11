@@ -20,7 +20,7 @@ async function fetchBrands(): Promise<Brand[]> {
 }
 
 async function fetchOutlets(): Promise<Outlet[]> {
-  const { data, error } = await supabase.from('outlets').select('*').order('name')
+  const { data, error } = await supabase.from('outlets').select('*').order('sort').order('name')
   if (error) throw error
   return data as Outlet[]
 }

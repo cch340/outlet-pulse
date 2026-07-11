@@ -29,6 +29,8 @@ export interface VisitResolver {
   staffName(id: string | null): string
   /** Human-readable derived status (pending / attention / overdue / done). */
   status(visit: Visit): string
+  /** Number of task photos attached to the visit. */
+  photoCount(visitId: string): number
 }
 
 const VISIT_HEADER = [
@@ -41,6 +43,7 @@ const VISIT_HEADER = [
   'Success',
   'Failed',
   'Pending',
+  'Photos',
   'Failed tasks',
   'Remarks',
 ]
@@ -71,6 +74,7 @@ export function visitRows(visits: Visit[], resolve: VisitResolver): string[][] {
       String(success),
       String(failed),
       String(pending),
+      String(resolve.photoCount(v.id)),
       failedLabels,
       remarks,
     ])

@@ -11,6 +11,9 @@ export const queryKeys = {
   visitsMissingLabel: (params: unknown) => ['visits', 'missing', params] as const,
   latestFailedTasks: (month: string) => ['visits', 'latestFailed', month] as const,
   taskPhotos: (visitId: string | null) => ['taskPhotos', visitId] as const,
+  // Kept under the 'taskPhotos' prefix so photo upload/delete mutations, which
+  // invalidate ['taskPhotos'], also refresh the per-visit count badges.
+  photoCounts: (taskIds: string[]) => ['taskPhotos', 'counts', taskIds] as const,
   photoUrl: (path: string) => ['photoUrl', path] as const,
   taskTemplates: ['taskTemplates'] as const,
   recurringSchedules: ['recurringSchedules'] as const,

@@ -3,6 +3,7 @@ import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useMarkAllSuccess } from '../data/queries/useVisitMutations'
 import { useVisitsPage, useVisitStatusCounts, fetchVisitsForExport, EXPORT_CAP } from '../data/queries/useVisitsPage'
+import { usePhotoCountsForVisits, fetchPhotoCounts, visitTaskIdMap } from '../data/queries/useTaskPhotos'
 import { visitVM, today, localDateStr, brandById, outletById, staffById, TASK_STATUS_COLOR } from '../data/derived'
 import { resolveDateRange, pageCount, type DatePreset } from '../data/queries/visitsQuery'
 import type { VisitFilter } from '../data/store'
@@ -154,10 +155,19 @@ export function Visits() {
     ['done', 'Completed'],
   ]
 
+  const photoCounts = usePhotoCountsForVisits(visits)
+
   const rows = visits.map((f) => {
     const vm = visitVM(data, f)
     const d = new Date(f.date + 'T00:00:00')
-    return { vm, tasks: f.tasks, day: pad(d.getDate()), mon: MON[d.getMonth()], canComplete: vm.pendingT > 0 }
+    return {
+      vm,
+      tasks: f.tasks,
+      day: pad(d.getDate()),
+      mon: MON[d.getMonth()],
+      canComplete: vm.pendingT > 0,
+      photos: photoCounts.get(f.id) ?? 0,
+    }
   })
 
   const toggleExpand = (id: string) =>
@@ -211,11 +221,13 @@ export function Visits() {
         toast.error('No visits match this filter.')
         return
       }
+      const exportPhotoCounts = await fetchPhotoCounts(visitTaskIdMap(all))
       const matrix = visitRows(all, {
         brandName: (id) => brandById(data, id).name,
         outletName: (id) => outletById(data, id).name,
         staffName: (id) => (id ? staffById(data, id).name : ''),
         status: (v) => visitVM(data, v).statusLabel,
+        photoCount: (id) => exportPhotoCounts.get(id) ?? 0,
       })
       downloadTextFile(exportFilename('visits', todayStr), 'text/csv;charset=utf-8', CSV_BOM + toCsv(matrix))
       if (matched > all.length) {
@@ -366,6 +378,7 @@ export function Visits() {
                           <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)' }}>
                             {f.vm.resolvedT}/{f.vm.total}
                           </span>
+                          {f.photos > 0 && <PhotoBadge count={f.photos} />}
                         </div>
                       </div>
                       <div style={{ width: 116, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
@@ -456,6 +469,7 @@ export function Visits() {
                           <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: 'var(--dim)', flexShrink: 0 }}>
                             {f.vm.resolvedT}/{f.vm.total}
                           </span>
+                          {f.photos > 0 && <PhotoBadge count={f.photos} />}
                         </div>
                       </div>
                       <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -542,6 +556,28 @@ export function Visits() {
         )}
       </div>
     </div>
+  )
+}
+
+// Subtle "N photos attached" indicator shown inline with the task-progress meta.
+// flexShrink:0 + whiteSpace:nowrap keep it from wrapping or squashing the row.
+function PhotoBadge({ count }: { count: number }) {
+  return (
+    <span
+      title={`${count} photo${count === 1 ? '' : 's'} attached`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        color: 'var(--dim)',
+        fontSize: 11.5,
+        flexShrink: 0,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <Icon name="photo_camera" size={13} />
+      {count}
+    </span>
   )
 }
 

@@ -57,6 +57,7 @@ const resolver: VisitResolver = {
   outletName: (id) => ({ o1: 'Downtown' })[id] ?? id,
   staffName: (id) => (id ? ({ s1: 'Alice' })[id] ?? id : ''),
   status: () => 'Attention required',
+  photoCount: (id) => ({ v1: 3 })[id] ?? 0,
 }
 
 describe('visitRows', () => {
@@ -79,11 +80,11 @@ describe('visitRows', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toEqual([
       'Date', 'Brand', 'Outlet', 'Staff', 'Status',
-      'Tasks total', 'Success', 'Failed', 'Pending', 'Failed tasks', 'Remarks',
+      'Tasks total', 'Success', 'Failed', 'Pending', 'Photos', 'Failed tasks', 'Remarks',
     ])
   })
 
-  it('resolves names, counts, failed labels and remarks', () => {
+  it('resolves names, counts, photo count, failed labels and remarks', () => {
     const [, row] = visitRows([visit], resolver)
     expect(row).toEqual([
       '2026-07-11',
@@ -95,6 +96,7 @@ describe('visitRows', () => {
       '1', // success
       '2', // failed
       '1', // pending
+      '3', // photos
       'Stock; Signage', // failed task labels joined
       'Stock: Empty shelf; Signage: Torn poster', // non-empty remarks as "label: remark"
     ])
@@ -107,9 +109,15 @@ describe('visitRows', () => {
   })
 
   it('handles a visit with no tasks (all counts zero, empty aggregates)', () => {
-    const empty: Visit = { ...visit, tasks: [] }
+    const empty: Visit = { ...visit, id: 'v0', tasks: [] }
     const [, row] = visitRows([empty], resolver)
-    expect(row.slice(5)).toEqual(['0', '0', '0', '0', '', ''])
+    // total, success, failed, pending, photos, failedLabels, remarks
+    expect(row.slice(5)).toEqual(['0', '0', '0', '0', '0', '', ''])
+  })
+
+  it('emits the resolved photo count in the Photos column', () => {
+    const [, row] = visitRows([visit], resolver)
+    expect(row[9]).toBe('3')
   })
 })
 
