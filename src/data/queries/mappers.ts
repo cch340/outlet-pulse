@@ -1,4 +1,14 @@
-import type { Visit, HistoryEntry, Staff, Store, Task, TaskTemplate, TaskStatus } from '../model'
+import type {
+  Visit,
+  HistoryEntry,
+  Staff,
+  Store,
+  Task,
+  TaskTemplate,
+  TaskStatus,
+  RecurringSchedule,
+  Frequency,
+} from '../model'
 
 export interface StaffHistoryRow {
   id: string
@@ -50,6 +60,32 @@ export const rowToTaskTemplate = (r: TaskTemplateRow): TaskTemplate => ({
   id: r.id,
   label: r.label,
   sort: r.sort,
+})
+
+export interface RecurringScheduleRow {
+  id: string
+  brand_id: string
+  outlet_id: string
+  staff_id: string | null
+  frequency: Frequency
+  start_date: string
+  task_labels: string[]
+  active: boolean
+  lead_days: number
+  last_generated: string | null
+}
+
+export const rowToRecurringSchedule = (r: RecurringScheduleRow): RecurringSchedule => ({
+  id: r.id,
+  brandId: r.brand_id,
+  outletId: r.outlet_id,
+  staffId: r.staff_id,
+  frequency: r.frequency,
+  startDate: r.start_date,
+  taskLabels: r.task_labels ?? [],
+  active: r.active,
+  leadDays: r.lead_days ?? 0,
+  lastGenerated: r.last_generated,
 })
 
 export const rowToStore = (r: { brand_id: string; outlet_id: string }): Store => ({

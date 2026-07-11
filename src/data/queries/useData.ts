@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import type { Brand, Outlet, Staff, Store, TaskTemplate } from '../model'
-import { rowToStaff, rowToStore, rowToTaskTemplate } from './mappers'
+import type { Brand, Outlet, Staff, Store, TaskTemplate, RecurringSchedule } from '../model'
+import { rowToStaff, rowToStore, rowToTaskTemplate, rowToRecurringSchedule } from './mappers'
 import { queryKeys } from './keys'
 
 export interface DataSnapshot {
@@ -10,6 +10,7 @@ export interface DataSnapshot {
   stores: Store[]
   staff: Staff[]
   taskTemplates: TaskTemplate[]
+  recurringSchedules: RecurringSchedule[]
 }
 
 async function fetchBrands(): Promise<Brand[]> {
@@ -45,14 +46,24 @@ async function fetchTaskTemplates(): Promise<TaskTemplate[]> {
   return data.map(rowToTaskTemplate)
 }
 
+async function fetchRecurringSchedules(): Promise<RecurringSchedule[]> {
+  const { data, error } = await supabase.from('recurring_schedules').select('*').order('created_at')
+  if (error) throw error
+  return data.map(rowToRecurringSchedule)
+}
+
 export function useData(): { data: DataSnapshot; isLoading: boolean; isError: boolean } {
   const brands = useQuery({ queryKey: queryKeys.brands, queryFn: fetchBrands })
   const outlets = useQuery({ queryKey: queryKeys.outlets, queryFn: fetchOutlets })
   const stores = useQuery({ queryKey: queryKeys.stores, queryFn: fetchStores })
   const staff = useQuery({ queryKey: queryKeys.staff, queryFn: fetchStaff })
   const taskTemplates = useQuery({ queryKey: queryKeys.taskTemplates, queryFn: fetchTaskTemplates })
+  const recurringSchedules = useQuery({
+    queryKey: queryKeys.recurringSchedules,
+    queryFn: fetchRecurringSchedules,
+  })
 
-  const queries = [brands, outlets, stores, staff, taskTemplates]
+  const queries = [brands, outlets, stores, staff, taskTemplates, recurringSchedules]
   return {
     data: {
       brands: brands.data ?? [],
@@ -60,6 +71,7 @@ export function useData(): { data: DataSnapshot; isLoading: boolean; isError: bo
       stores: stores.data ?? [],
       staff: staff.data ?? [],
       taskTemplates: taskTemplates.data ?? [],
+      recurringSchedules: recurringSchedules.data ?? [],
     },
     isLoading: queries.some((q) => q.isLoading),
     isError: queries.some((q) => q.isError),

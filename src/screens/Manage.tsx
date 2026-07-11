@@ -4,6 +4,7 @@ import { Brands } from './Brands'
 import { Outlets } from './Outlets'
 import { Staff } from './Staff'
 import { TaskTemplatesPanel } from '../components/TaskTemplatesPanel'
+import { RecurringPanel } from '../components/RecurringPanel'
 import { StoresPanel } from '../components/StoresPanel'
 
 const TABS: [ManageTab, string][] = [
@@ -12,6 +13,7 @@ const TABS: [ManageTab, string][] = [
   ['stores', 'Stores'],
   ['staff', 'Staff'],
   ['tasks', 'Tasks'],
+  ['recurring', 'Recurring'],
 ]
 
 export function Manage() {
@@ -32,6 +34,7 @@ export function Manage() {
       {tab === 'stores' && <StoresPanel />}
       {tab === 'staff' && <Staff />}
       {tab === 'tasks' && <TaskTemplatesPanel />}
+      {tab === 'recurring' && <RecurringPanel />}
     </div>
   )
 }

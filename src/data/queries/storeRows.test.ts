@@ -10,7 +10,7 @@ const staff = (id: string, brandId: string, outletId: string) => ({
 })
 
 function snap(partial: Partial<DataSnapshot>): DataSnapshot {
-  return { brands: [], outlets: [], stores: [], staff: [], taskTemplates: [], ...partial }
+  return { brands: [], outlets: [], stores: [], staff: [], taskTemplates: [], recurringSchedules: [], ...partial }
 }
 
 describe('buildStoreGroups', () => {

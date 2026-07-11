@@ -11,4 +11,5 @@ export const queryKeys = {
   visitsMissingLabel: (params: unknown) => ['visits', 'missing', params] as const,
   latestFailedTasks: (month: string) => ['visits', 'latestFailed', month] as const,
   taskTemplates: ['taskTemplates'] as const,
+  recurringSchedules: ['recurringSchedules'] as const,
 }

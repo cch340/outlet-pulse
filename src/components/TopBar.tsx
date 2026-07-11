@@ -15,6 +15,21 @@ export function TopBar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const accountRef = useRef<HTMLDivElement>(null)
 
+  const onVisits = state.activeScreen === 'visits'
+  const [searchExpanded, setSearchExpanded] = useState(false)
+
+  // Auto-expand the mobile search when arriving on Visits with an active query
+  // (e.g. deep link `#/visits?q=…`), and reset when leaving the screen.
+  useEffect(() => {
+    if (!onVisits) {
+      setSearchExpanded(false)
+      return
+    }
+    if (state.q) setSearchExpanded(true)
+  }, [onVisits, state.q])
+
+  const searchMode = isMobile && onVisits && searchExpanded
+
   useEffect(() => {
     if (!menuOpen) return
     const onDown = (e: MouseEvent) => {
@@ -147,32 +162,43 @@ export function TopBar() {
           )}
         </div>
       )}
-      <div style={{ minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 16,
-            fontWeight: 700,
-            letterSpacing: '-.01em',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {title}
+      {!searchMode && (
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              letterSpacing: '-.01em',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {title}
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--dim)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {subtitle}
+          </div>
         </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: 'var(--dim)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {subtitle}
-        </div>
-      </div>
-      {state.activeScreen === 'visits' ? <VisitsSearch isMobile={isMobile} /> : <div style={{ flex: 1 }} />}
+      )}
+      {onVisits ? (
+        <VisitsSearch
+          isMobile={isMobile}
+          expanded={searchExpanded}
+          onExpand={() => setSearchExpanded(true)}
+          onCollapse={() => setSearchExpanded(false)}
+        />
+      ) : (
+        <div style={{ flex: 1 }} />
+      )}
       <button
         onClick={openAdd}
         style={{
@@ -201,9 +227,20 @@ export function TopBar() {
 
 /** Debounced search box for the Visits screen. Local state drives the input for
  *  responsiveness; the store (and thus the RPC) is updated ~250ms after typing stops. */
-function VisitsSearch({ isMobile }: { isMobile: boolean }) {
+function VisitsSearch({
+  isMobile,
+  expanded,
+  onExpand,
+  onCollapse,
+}: {
+  isMobile: boolean
+  expanded: boolean
+  onExpand: () => void
+  onCollapse: () => void
+}) {
   const { state, setQ } = useStore()
   const [value, setValue] = useState(state.q)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Reflect external changes to `q` (e.g. cleared on navigation) back into the input.
   useEffect(() => {
@@ -217,15 +254,65 @@ function VisitsSearch({ isMobile }: { isMobile: boolean }) {
     return () => clearTimeout(timer)
   }, [value, state.q, setQ])
 
+  // Auto-focus the input when the mobile search bar expands.
+  useEffect(() => {
+    if (isMobile && expanded) inputRef.current?.focus()
+  }, [isMobile, expanded])
+
   const clear = () => {
     setValue('')
     setQ('')
   }
 
-  return (
+  // Mobile, collapsed: show a compact search icon button. A subtle accent dot
+  // signals an active filter so it's never hidden behind the icon.
+  if (isMobile && !expanded) {
+    return (
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: 0 }}>
+        <button
+          onClick={onExpand}
+          aria-label="Search visits"
+          title="Search visits"
+          style={{
+            position: 'relative',
+            width: 38,
+            height: 38,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'var(--surface2)',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        >
+          <Icon name="search" size={18} color="var(--dim)" />
+          {value && (
+            <span
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--accent)',
+              }}
+            />
+          )}
+        </button>
+      </div>
+    )
+  }
+
+  const bar = (
     <div
       style={{
         flex: 1,
+        minWidth: 0,
         maxWidth: isMobile ? undefined : 320,
         display: 'flex',
         alignItems: 'center',
@@ -235,14 +322,16 @@ function VisitsSearch({ isMobile }: { isMobile: boolean }) {
         borderRadius: 8,
         border: '1px solid var(--border)',
         background: 'var(--surface2)',
+        animation: isMobile ? 'fadein var(--motion-dur-fast) var(--motion-ease)' : undefined,
       }}
     >
       <Icon name="search" size={18} color="var(--dim)" />
       <input
+        ref={inputRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search visits…"
-        aria-label="Search visits"
+        placeholder="Search brand, outlet or staff…"
+        aria-label="Search visits by brand, outlet or staff"
         style={{
           flex: 1,
           minWidth: 0,
@@ -273,5 +362,35 @@ function VisitsSearch({ isMobile }: { isMobile: boolean }) {
         </button>
       )}
     </div>
+  )
+
+  // Desktop: inline bar only. Mobile (expanded): full-flex bar with a back
+  // affordance that collapses search mode (an active query is kept intact).
+  if (!isMobile) return bar
+
+  return (
+    <>
+      <button
+        onClick={onCollapse}
+        aria-label="Close search"
+        title="Close search"
+        style={{
+          width: 38,
+          height: 38,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--surface2)',
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        <Icon name="arrow_back" size={18} color="var(--dim)" />
+      </button>
+      {bar}
+    </>
   )
 }

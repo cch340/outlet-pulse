@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useDeleteStaff } from '../data/queries/useStaffCrudMutations'
 import { brandById, initials, outletById, tenure } from '../data/derived'
+import { matchesQuery, compareBy } from '../data/listFilter'
 import { actionBtn, card, chip, tint } from '../theme'
 import { Icon } from '../components/Icon'
+import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchInput'
 import { WhatsAppButton } from '../components/WhatsAppButton'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
@@ -25,6 +28,8 @@ const transferredBadge = (label: string, small = false) => (
   </span>
 )
 
+type StaffSort = 'name-asc' | 'name-desc' | 'tenure' | 'newest'
+
 export function Staff() {
   const { state, setStaffBrandFilter, openTransfer, openStaffModal, openStaffDetail } = useStore()
   const del = useDeleteStaff()
@@ -33,6 +38,8 @@ export function Staff() {
   const { data } = useData()
   const S = state
   const isMobile = S.isMobile
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<StaffSort>('name-asc')
 
   const removeStaff = async (id: string, name: string) => {
     const ok = await confirm({
@@ -50,9 +57,10 @@ export function Staff() {
 
   const filters = [{ id: 'all', label: 'All staff' }, ...data.brands.map((b) => ({ id: b.id, label: b.name }))]
 
+  // Chip filter first, then the free-text search composes on top of it.
   const list = data.staff.filter((s) => S.staffBrandFilter === 'all' || s.brandId === S.staffBrandFilter)
 
-  const rows = list.map((s) => {
+  const allRows = list.map((s) => {
     const b = brandById(data, s.brandId)
     const o = outletById(data, s.outletId)
     return {
@@ -66,10 +74,23 @@ export function Staff() {
       brandName: b.name,
       brandColor: b.color,
       outletName: o.name,
+      joined: s.joined,
       tenure: tenure(s.joined),
       transferred: s.history.length > 1,
     }
   })
+
+  const rows = allRows
+    .filter((r) => matchesQuery(q, r.name, r.role, r.brandName, r.outletName))
+    .sort(
+      sort === 'name-asc'
+        ? compareBy((r) => r.name, 'asc')
+        : sort === 'name-desc'
+          ? compareBy((r) => r.name, 'desc')
+          : sort === 'tenure'
+            ? compareBy((r) => r.joined, 'asc') // earliest join date = longest tenure
+            : compareBy((r) => r.joined, 'desc'), // newest first
+    )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -103,7 +124,28 @@ export function Staff() {
         </button>
       </div>
 
-      {!isMobile && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <ListSearchInput value={q} onChange={setQ} placeholder="Search staff…" isMobile={isMobile} />
+        <select
+          aria-label="Sort staff"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as StaffSort)}
+          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+        >
+          <option value="name-asc">Name A–Z</option>
+          <option value="name-desc">Name Z–A</option>
+          <option value="tenure">Longest tenure</option>
+          <option value="newest">Newest</option>
+        </select>
+      </div>
+
+      {rows.length === 0 && (
+        <div style={{ ...card, padding: '18px 16px', fontSize: 13, color: 'var(--dim)' }}>
+          No staff match your search.
+        </div>
+      )}
+
+      {rows.length > 0 && !isMobile && (
         <div style={{ ...card, overflowX: 'auto' }}>
           <div style={{ minWidth: 600 }}>
             <div
@@ -175,7 +217,7 @@ export function Staff() {
         </div>
       )}
 
-      {isMobile && (
+      {rows.length > 0 && isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map((r) => (
             <div key={r.id} onClick={() => openStaffDetail(r.id)} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11, cursor: 'pointer' }}>
