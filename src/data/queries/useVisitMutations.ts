@@ -2,7 +2,23 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { queryKeys } from './keys'
 import { photoPathsForTasks, removeObjectsQuietly } from './useTaskPhotos'
+import { chunk } from '../listFilter'
 import type { TaskStatus } from '../model'
+
+// Keep `.in(...)` / `.delete().in(...)` lists short enough to stay under
+// URL-length limits (mirrors the constant in useTaskPhotos).
+const IN_CHUNK = 500
+
+/** Every task id belonging to the given visits (chunked to stay under URL limits). */
+async function taskIdsForVisits(visitIds: string[]): Promise<string[]> {
+  const out: string[] = []
+  for (const ids of chunk(visitIds, IN_CHUNK)) {
+    const { data, error } = await supabase.from('visit_tasks').select('id').in('visit_id', ids)
+    if (error) throw error
+    for (const r of (data as { id: string }[]) ?? []) out.push(r.id)
+  }
+  return out
+}
 
 export function useCreateVisit() {
   const qc = useQueryClient()
@@ -112,16 +128,55 @@ export function useDeleteVisit() {
     // cascade with the tasks (0016). The storage objects can't cascade in
     // Postgres, so remove them client-side first (best-effort).
     mutationFn: async (input: { visitId: string }) => {
-      const { data: taskRows, error: tErr } = await supabase
-        .from('visit_tasks')
-        .select('id')
-        .eq('visit_id', input.visitId)
-      if (tErr) throw tErr
-      const taskIds = ((taskRows as { id: string }[]) ?? []).map((r) => r.id)
+      const taskIds = await taskIdsForVisits([input.visitId])
       await removeObjectsQuietly(await photoPathsForTasks(taskIds))
 
       const { error } = await supabase.from('visits').delete().eq('id', input.visitId)
       if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
+  })
+}
+
+/**
+ * Mark every pending task across the selected visits as success in one batched
+ * update (chunked by visit id): `update visit_tasks set status='success' where
+ * visit_id in (...) and status='pending'`.
+ */
+export function useBulkMarkDone() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { visitIds: string[] }) => {
+      if (!input.visitIds.length) return
+      for (const ids of chunk(input.visitIds, IN_CHUNK)) {
+        const { error } = await supabase
+          .from('visit_tasks')
+          .update({ status: 'success' })
+          .in('visit_id', ids)
+          .eq('status', 'pending')
+        if (error) throw error
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
+  })
+}
+
+/**
+ * Delete the selected visits. Tasks + task_photos rows cascade with the visit
+ * (0004 / 0016), but the photo storage objects can't cascade in Postgres, so
+ * remove them client-side first (best-effort, same as {@link useDeleteVisit}).
+ */
+export function useBulkDeleteVisits() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { visitIds: string[] }) => {
+      if (!input.visitIds.length) return
+      const taskIds = await taskIdsForVisits(input.visitIds)
+      await removeObjectsQuietly(await photoPathsForTasks(taskIds))
+      for (const ids of chunk(input.visitIds, IN_CHUNK)) {
+        const { error } = await supabase.from('visits').delete().in('id', ids)
+        if (error) throw error
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
   })

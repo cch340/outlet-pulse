@@ -113,12 +113,16 @@ export function useSignedPhotoUrl(path: string) {
 /** Fetch the storage paths of every photo attached to the given task ids. */
 async function photoPathsForTasks(taskIds: string[]): Promise<string[]> {
   if (!taskIds.length) return []
-  const { data, error } = await supabase
-    .from('task_photos')
-    .select('path')
-    .in('task_id', taskIds)
-  if (error) throw error
-  return ((data as { path: string }[]) ?? []).map((r) => r.path)
+  const paths: string[] = []
+  for (const ids of chunk(taskIds, IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from('task_photos')
+      .select('path')
+      .in('task_id', ids)
+    if (error) throw error
+    for (const r of (data as { path: string }[]) ?? []) paths.push(r.path)
+  }
+  return paths
 }
 
 /** Best-effort removal of storage objects; never throws (orphans are tolerable). */

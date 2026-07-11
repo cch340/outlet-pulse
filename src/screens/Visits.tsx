@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
-import { useMarkAllSuccess } from '../data/queries/useVisitMutations'
+import { useMarkAllSuccess, useBulkMarkDone, useBulkDeleteVisits } from '../data/queries/useVisitMutations'
 import { useVisitsPage, useVisitStatusCounts, fetchVisitsForExport, EXPORT_CAP } from '../data/queries/useVisitsPage'
 import { usePhotoCountsForVisits, fetchPhotoCounts, visitTaskIdMap } from '../data/queries/useTaskPhotos'
 import { visitVM, today, localDateStr, brandById, outletById, staffById, TASK_STATUS_COLOR } from '../data/derived'
 import { resolveDateRange, pageCount, type DatePreset } from '../data/queries/visitsQuery'
 import type { VisitFilter } from '../data/store'
 import type { Task } from '../data/model'
-import { card, pill } from '../theme'
+import { card, pill, chip, tint } from '../theme'
+import { toggleId, selectAll, allSelected } from '../data/bulkSelection'
 import { Icon } from '../components/Icon'
 import { ExportCsvButton } from '../components/ExportCsvButton'
 import { useToast } from '../components/ToastProvider'
@@ -83,11 +84,15 @@ export function Visits() {
   const { state, setVisitFilter, openVisit } = useStore()
   const { data } = useData()
   const markAllMutation = useMarkAllSuccess()
+  const bulkMarkDone = useBulkMarkDone()
+  const bulkDelete = useBulkDeleteVisits()
   const toast = useToast()
   const confirm = useConfirm()
   const S = state
   const isMobile = S.isMobile
   const [exporting, setExporting] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const [datePreset, setDatePreset] = useState<DatePreset>('all')
   const [customFrom, setCustomFrom] = useState('')
@@ -117,6 +122,12 @@ export function Visits() {
   useEffect(() => {
     setAllExpanded(false)
     setExpandedIds(new Set())
+  }, [page, S.visitFilter, datePreset, customFrom, customTo, brandFilter, outletFilter, latestPerStore, search])
+
+  // Selection is scoped to the current page of results, so any page/filter/
+  // search change clears it (stale ids would no longer be on screen).
+  useEffect(() => {
+    setSelected(new Set())
   }, [page, S.visitFilter, datePreset, customFrom, customTo, brandFilter, outletFilter, latestPerStore, search])
 
   // Mobile status tooltip: dismiss on tap-outside or after a short timeout
@@ -242,6 +253,93 @@ export function Visits() {
     }
   }
 
+  // --- bulk selection ---------------------------------------------------
+  const pageIds = visits.map((v) => v.id)
+  const pageAllSelected = allSelected(selected, pageIds)
+  const toggleSel = (id: string) => setSelected((s) => toggleId(s, id))
+  const rowActivate = (id: string) => (selectMode ? toggleSel(id) : openVisit(id))
+
+  const toggleSelectMode = () =>
+    setSelectMode((on) => {
+      if (on) setSelected(new Set()) // leaving selection mode discards the picks
+      return !on
+    })
+
+  const toggleSelectAllOnPage = () => setSelected(pageAllSelected ? new Set() : selectAll(pageIds))
+
+  const rowCheckbox = (id: string, label: string) => (
+    <input
+      type="checkbox"
+      aria-label={label}
+      checked={selected.has(id)}
+      onClick={(e) => e.stopPropagation()}
+      onChange={() => toggleSel(id)}
+      style={{ width: 17, height: 17, flexShrink: 0, cursor: 'pointer', accentColor: 'var(--accent)' }}
+    />
+  )
+
+  const handleBulkMarkDone = async () => {
+    const n = selected.size
+    if (n === 0) return
+    const ok = await confirm({
+      title: 'Mark visits done',
+      message: `Mark ${n} visit${n === 1 ? '' : 's'} done? All their pending tasks become success.`,
+      confirmLabel: 'Mark done',
+    })
+    if (!ok) return
+    try {
+      await bulkMarkDone.mutateAsync({ visitIds: [...selected] })
+      toast.success(`${n} visit${n === 1 ? '' : 's'} marked done.`)
+      setSelected(new Set())
+    } catch {
+      toast.error("Couldn't mark visits done.")
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const n = selected.size
+    if (n === 0) return
+    const ok = await confirm({
+      title: 'Delete visits',
+      message: `Delete ${n} visit${n === 1 ? '' : 's'}? Their tasks and photos are removed. This can't be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await bulkDelete.mutateAsync({ visitIds: [...selected] })
+      toast.success(`${n} visit${n === 1 ? '' : 's'} deleted.`)
+      setSelected(new Set())
+    } catch {
+      toast.error("Couldn't delete visits.")
+    }
+  }
+
+  const handleExportSelected = async () => {
+    if (exporting) return
+    // Explicit selection IS the scope — no confirm. The page already holds the
+    // full Visit objects, so we only need photo counts for the chosen ones.
+    const chosen = visits.filter((v) => selected.has(v.id))
+    if (chosen.length === 0) return
+    setExporting(true)
+    try {
+      const exportPhotoCounts = await fetchPhotoCounts(visitTaskIdMap(chosen))
+      const matrix = visitRows(chosen, {
+        brandName: (id) => brandById(data, id).name,
+        outletName: (id) => outletById(data, id).name,
+        staffName: (id) => (id ? staffById(data, id).name : ''),
+        status: (v) => visitVM(data, v).statusLabel,
+        photoCount: (id) => exportPhotoCounts.get(id) ?? 0,
+      })
+      downloadTextFile(exportFilename('visits-selected', todayStr), 'text/csv;charset=utf-8', CSV_BOM + toCsv(matrix))
+      toast.success(`Exported ${chosen.length} visit${chosen.length === 1 ? '' : 's'}.`)
+    } catch {
+      toast.error("Couldn't export visits.")
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* filter toolbar */}
@@ -291,6 +389,16 @@ export function Visits() {
           <input type="checkbox" checked={allExpanded} onChange={toggleAll} />
           Expand all
         </label>
+        <button
+          type="button"
+          onClick={toggleSelectMode}
+          aria-pressed={selectMode}
+          title={selectMode ? 'Exit selection mode' : 'Select visits for bulk actions'}
+          style={{ ...chip(selectMode), marginLeft: 'auto' }}
+        >
+          <Icon name={selectMode ? 'check_box' : 'check_box_outline_blank'} size={16} />
+          {selectMode ? 'Selecting' : 'Select'}
+        </button>
         <ExportCsvButton onClick={handleExport} busy={exporting} title="Export the filtered visits as CSV" />
       </div>
 
@@ -315,6 +423,15 @@ export function Visits() {
               letterSpacing: '.05em',
             }}
           >
+            {selectMode && (
+              <input
+                type="checkbox"
+                aria-label="Select all visits on this page"
+                checked={pageAllSelected}
+                onChange={toggleSelectAllOnPage}
+                style={{ width: 17, height: 17, flexShrink: 0, cursor: 'pointer', accentColor: 'var(--accent)' }}
+              />
+            )}
             <div style={{ width: 30, flexShrink: 0 }} />
             <div style={{ width: 46, textAlign: 'center', flexShrink: 0 }}>Date</div>
             <div style={{ width: 1, flexShrink: 0 }} />
@@ -328,6 +445,7 @@ export function Visits() {
         {rows.map((f) => {
           const expanded = expandedIds.has(f.vm.id)
           const statusOpen = openStatusId === f.vm.id
+          const isSel = selectMode && selected.has(f.vm.id)
           const chevron = (
             <button
               type="button"
@@ -346,11 +464,25 @@ export function Visits() {
           return (
             <div key={f.vm.id}>
               {!isMobile ? (
-                <div style={{ display: 'flex', gap: 14, padding: '13px 16px', borderBottom: '1px solid var(--border)' }}>
-                  {/* left column: chevron + date */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 14,
+                    padding: '13px 16px',
+                    borderBottom: '1px solid var(--border)',
+                    background: isSel ? tint('var(--accent)', 8) : undefined,
+                    boxShadow: isSel ? 'inset 3px 0 0 var(--accent)' : undefined,
+                  }}
+                >
+                  {/* left column: (checkbox) + chevron + date */}
                   <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexShrink: 0 }}>
+                    {selectMode && (
+                      <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch' }}>
+                        {rowCheckbox(f.vm.id, `Select visit ${f.vm.brandName} · ${f.vm.outletName}`)}
+                      </div>
+                    )}
                     <div style={{ width: 30, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{chevron}</div>
-                    <div onClick={() => openVisit(f.vm.id)} style={{ width: 46, textAlign: 'center', cursor: 'pointer' }}>
+                    <div onClick={() => rowActivate(f.vm.id)} style={{ width: 46, textAlign: 'center', cursor: 'pointer' }}>
                       <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 17, fontWeight: 600, lineHeight: 1 }}>{f.day}</div>
                       <div style={{ fontSize: 10.5, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '.03em' }}>{f.mon}</div>
                     </div>
@@ -361,7 +493,7 @@ export function Visits() {
 
                   {/* right column: header (clickable) + expanded checklist */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div {...rowButtonProps(() => openVisit(f.vm.id))} onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+                    <div {...rowButtonProps(() => rowActivate(f.vm.id))} onClick={() => rowActivate(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
                       <div style={{ flex: 1.6, minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ width: 9, height: 9, borderRadius: 3, background: f.vm.brandColor, flexShrink: 0 }} />
@@ -417,7 +549,7 @@ export function Visits() {
                     {/* horizontal divider (starts after the vertical divider) + checklist */}
                     {expanded && (
                       <div
-                        onClick={() => openVisit(f.vm.id)}
+                        onClick={() => rowActivate(f.vm.id)}
                         style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10, cursor: 'pointer' }}
                       >
                         <TaskLines tasks={f.tasks} />
@@ -426,11 +558,25 @@ export function Visits() {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: 12, padding: '13px 15px', borderBottom: '1px solid var(--border)' }}>
-                  {/* left column: chevron + date */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    padding: '13px 15px',
+                    borderBottom: '1px solid var(--border)',
+                    background: isSel ? tint('var(--accent)', 8) : undefined,
+                    boxShadow: isSel ? 'inset 3px 0 0 var(--accent)' : undefined,
+                  }}
+                >
+                  {/* left column: (checkbox) + chevron + date */}
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexShrink: 0 }}>
+                    {selectMode && (
+                      <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch' }}>
+                        {rowCheckbox(f.vm.id, `Select visit ${f.vm.brandName} · ${f.vm.outletName}`)}
+                      </div>
+                    )}
                     {chevron}
-                    <div onClick={() => openVisit(f.vm.id)} style={{ width: 40, textAlign: 'center', cursor: 'pointer' }}>
+                    <div onClick={() => rowActivate(f.vm.id)} style={{ width: 40, textAlign: 'center', cursor: 'pointer' }}>
                       <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 16, fontWeight: 600, lineHeight: 1 }}>{f.day}</div>
                       <div style={{ fontSize: 10, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '.03em' }}>{f.mon}</div>
                     </div>
@@ -441,7 +587,7 @@ export function Visits() {
 
                   {/* right column: header (clickable) + expanded checklist */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div {...rowButtonProps(() => openVisit(f.vm.id))} onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                    <div {...rowButtonProps(() => rowActivate(f.vm.id))} onClick={() => rowActivate(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
@@ -523,7 +669,7 @@ export function Visits() {
                     {/* horizontal divider (starts after the vertical divider) + checklist */}
                     {expanded && (
                       <div
-                        onClick={() => openVisit(f.vm.id)}
+                        onClick={() => rowActivate(f.vm.id)}
                         style={{ borderTop: '1px solid var(--border)', marginTop: 11, paddingTop: 10, cursor: 'pointer' }}
                       >
                         <TaskLines tasks={f.tasks} />
@@ -555,6 +701,112 @@ export function Visits() {
           </div>
         )}
       </div>
+
+      {/* Bulk action bar — sticky to the bottom of the scroll area (sits above
+          the mobile BottomNav, which is a sibling of the scroll container, so it
+          never covers the list content). Only shown once something is picked. */}
+      {selectMode && selected.size > 0 && (
+        <div style={{ position: 'sticky', bottom: 0, zIndex: 20, animation: 'fadein var(--motion-dur) var(--motion-ease)' }}>
+          <div
+            style={{
+              ...card,
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 12,
+              padding: '10px 14px',
+              boxShadow: '0 10px 34px rgba(0,0,0,.22)',
+            }}
+          >
+            <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'var(--text)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                aria-label="Select all visits on this page"
+                checked={pageAllSelected}
+                onChange={toggleSelectAllOnPage}
+                style={{ width: 17, height: 17, cursor: 'pointer', accentColor: 'var(--accent)' }}
+              />
+              Select all on this page
+            </label>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontFamily: "'IBM Plex Mono'" }}>
+              {selected.size} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              style={{ border: 'none', background: 'transparent', color: 'var(--dim)', fontFamily: "'IBM Plex Sans'", fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: '4px 2px' }}
+            >
+              Clear
+            </button>
+            <div style={{ flex: 1, minWidth: 8 }} />
+            <button
+              type="button"
+              onClick={handleBulkMarkDone}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                border: '1px solid #16a34a',
+                background: 'color-mix(in srgb, #16a34a 8%, transparent)',
+                color: '#16a34a',
+                borderRadius: 7,
+                padding: '7px 11px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <Icon name="check" size={16} />
+              Mark done
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                border: '1px solid #dc2626',
+                background: 'color-mix(in srgb, #dc2626 8%, transparent)',
+                color: '#dc2626',
+                borderRadius: 7,
+                padding: '7px 11px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <Icon name="delete" size={16} />
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={handleExportSelected}
+              disabled={exporting}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--surface2)',
+                color: 'var(--text)',
+                borderRadius: 7,
+                padding: '7px 11px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: exporting ? 'not-allowed' : 'pointer',
+                opacity: exporting ? 0.55 : 1,
+              }}
+            >
+              <Icon name={exporting ? 'progress_activity' : 'download'} size={16} />
+              Export CSV
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
