@@ -226,6 +226,7 @@ function VisitsSearch({ isMobile }: { isMobile: boolean }) {
     <div
       style={{
         flex: 1,
+        minWidth: 0,
         maxWidth: isMobile ? undefined : 320,
         display: 'flex',
         alignItems: 'center',
@@ -241,8 +242,8 @@ function VisitsSearch({ isMobile }: { isMobile: boolean }) {
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search visits…"
-        aria-label="Search visits"
+        placeholder="Search brand, outlet or staff…"
+        aria-label="Search visits by brand, outlet or staff"
         style={{
           flex: 1,
           minWidth: 0,
