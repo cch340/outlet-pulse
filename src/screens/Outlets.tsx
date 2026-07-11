@@ -1,10 +1,15 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { actionBtn, card, tint } from '../theme'
 import { Icon } from '../components/Icon'
+import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchInput'
+import { matchesQuery, compareBy } from '../data/listFilter'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
 import { useDeleteOutlet } from '../data/queries/useOutletMutations'
+
+type OutletSort = 'name-asc' | 'name-desc' | 'brands' | 'staff'
 
 export function Outlets() {
   const { state, openOutletDetail, openOutletModal } = useStore()
@@ -13,14 +18,28 @@ export function Outlets() {
   const toast = useToast()
   const confirm = useConfirm()
   const isMobile = state.isMobile
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<OutletSort>('name-asc')
 
-  const rows = data.outlets.map((o) => ({
+  const allRows = data.outlets.map((o) => ({
     id: o.id,
     name: o.name,
     location: o.location,
     brandCount: data.stores.filter((s) => s.outletId === o.id).length,
     staffCount: data.staff.filter((s) => s.outletId === o.id).length,
   }))
+
+  const rows = allRows
+    .filter((r) => matchesQuery(q, r.name, r.location))
+    .sort(
+      sort === 'name-asc'
+        ? compareBy((r) => r.name, 'asc')
+        : sort === 'name-desc'
+          ? compareBy((r) => r.name, 'desc')
+          : sort === 'brands'
+            ? compareBy((r) => r.brandCount, 'desc')
+            : compareBy((r) => r.staffCount, 'desc'),
+    )
 
   const del1 = async (id: string, name: string) => {
     const ok = await confirm({
@@ -65,7 +84,28 @@ export function Outlets() {
         </button>
       </div>
 
-      {!isMobile && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <ListSearchInput value={q} onChange={setQ} placeholder="Search outlets…" isMobile={isMobile} />
+        <select
+          aria-label="Sort outlets"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as OutletSort)}
+          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+        >
+          <option value="name-asc">Name A–Z</option>
+          <option value="name-desc">Name Z–A</option>
+          <option value="brands">Brands</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+
+      {rows.length === 0 && (
+        <div style={{ ...card, padding: '18px 16px', fontSize: 13, color: 'var(--dim)' }}>
+          No outlets match your search.
+        </div>
+      )}
+
+      {rows.length > 0 && !isMobile && (
         <div style={{ ...card, overflowX: 'auto' }}>
           <div style={{ minWidth: 560 }}>
             <div
@@ -119,7 +159,7 @@ export function Outlets() {
         </div>
       )}
 
-      {isMobile && (
+      {rows.length > 0 && isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map((r) => (
             <div key={r.id} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>

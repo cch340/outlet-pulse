@@ -62,8 +62,13 @@ function SectionHeader({ scope, label, title }: { scope: Scope; label: string; t
 }
 
 export function Dashboard() {
-  const { openVisit } = useStore()
+  const { openVisit, go, setVisitFilter } = useStore()
   const { data } = useData()
+
+  const viewAll = (filter: 'overdue' | 'pending') => {
+    go('visits')
+    setVisitFilter(filter)
+  }
 
   const t = today()
   const todayStr = localDateStr(t)
@@ -238,6 +243,9 @@ export function Dashboard() {
                 {overdueList.map((f) => (
                   <AttentionRow key={f.id} dot="#dc2626" title={`${f.brandName} · ${f.outletName}`} sub={f.staffName ?? 'Unassigned'} date={fmt(f.date)} dateColor="#dc2626" onClick={() => openVisit(f.id)} />
                 ))}
+                {summary.overdueTotal > overdueList.length && (
+                  <ViewAllLink label={`View all ${summary.overdueTotal} overdue`} onClick={() => viewAll('overdue')} />
+                )}
               </div>
             </CollapsibleCard>
           )}
@@ -255,6 +263,9 @@ export function Dashboard() {
                 {upcomingList.map((f) => (
                   <AttentionRow key={f.id} dot="#2563eb" title={`${f.brandName} · ${f.outletName}`} sub={f.staffName ?? 'Unassigned'} date={fmt(f.date)} dateColor="var(--dim)" onClick={() => openVisit(f.id)} />
                 ))}
+                {summary.upcomingTotal > upcomingList.length && (
+                  <ViewAllLink label={`View all ${summary.upcomingTotal} upcoming`} onClick={() => viewAll('pending')} />
+                )}
               </div>
             </CollapsibleCard>
           )}
@@ -476,6 +487,32 @@ function AttentionRow({
         <div style={{ fontSize: 11.5, color: 'var(--dim)' }}>{sub}</div>
       </div>
       <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 12, fontWeight: 600, color: dateColor, whiteSpace: 'nowrap' }}>{date}</span>
+    </button>
+  )
+}
+
+function ViewAllLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        alignSelf: 'flex-start',
+        marginTop: 2,
+        border: 'none',
+        background: 'none',
+        padding: '2px 0',
+        cursor: 'pointer',
+        color: 'var(--accent)',
+        fontFamily: "'IBM Plex Sans'",
+        fontSize: 12.5,
+        fontWeight: 600,
+      }}
+    >
+      {label}
+      <Icon name="arrow_forward" size={16} />
     </button>
   )
 }

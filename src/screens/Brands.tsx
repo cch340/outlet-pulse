@@ -1,10 +1,15 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { actionBtn, card } from '../theme'
 import { Icon } from '../components/Icon'
+import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchInput'
+import { matchesQuery, compareBy } from '../data/listFilter'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
 import { useDeleteBrand, useReorderBrands } from '../data/queries/useBrandMutations'
+
+type BrandSort = 'custom' | 'name-asc' | 'name-desc' | 'outlets' | 'staff'
 
 export function Brands() {
   const { state, openBrandDetail, openBrandModal } = useStore()
@@ -14,6 +19,8 @@ export function Brands() {
   const toast = useToast()
   const confirm = useConfirm()
   const isMobile = state.isMobile
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<BrandSort>('custom')
   const ids = data.brands.map((b) => b.id)
   const move = (index: number, dir: -1 | 1) => {
     const j = index + dir
@@ -23,7 +30,7 @@ export function Brands() {
     reorderB.mutate({ ids: next }, { onError: (e) => toast.error("Couldn't reorder brands: " + e.message) })
   }
 
-  const rows = data.brands.map((b) => ({
+  const allRows = data.brands.map((b) => ({
     id: b.id,
     name: b.name,
     color: b.color,
@@ -31,6 +38,23 @@ export function Brands() {
     outletCount: data.stores.filter((s) => s.brandId === b.id).length,
     staffCount: data.staff.filter((s) => s.brandId === b.id).length,
   }))
+
+  // Reordering is only coherent in the default view; a filtered or re-sorted
+  // list has row indices that no longer map to the persisted `sort` order.
+  const reorderable = q.trim() === '' && sort === 'custom'
+  const filtered = allRows.filter((r) => matchesQuery(q, r.name, r.category))
+  const rows =
+    sort === 'custom'
+      ? filtered
+      : filtered.slice().sort(
+          sort === 'name-asc'
+            ? compareBy((r) => r.name, 'asc')
+            : sort === 'name-desc'
+              ? compareBy((r) => r.name, 'desc')
+              : sort === 'outlets'
+                ? compareBy((r) => r.outletCount, 'desc')
+                : compareBy((r) => r.staffCount, 'desc'),
+        )
 
   const del1 = async (id: string, name: string) => {
     const ok = await confirm({
@@ -78,7 +102,29 @@ export function Brands() {
         </button>
       </div>
 
-      {!isMobile && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <ListSearchInput value={q} onChange={setQ} placeholder="Search brands…" isMobile={isMobile} />
+        <select
+          aria-label="Sort brands"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as BrandSort)}
+          style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
+        >
+          <option value="custom">Custom order</option>
+          <option value="name-asc">Name A–Z</option>
+          <option value="name-desc">Name Z–A</option>
+          <option value="outlets">Outlets</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+
+      {rows.length === 0 && (
+        <div style={{ ...card, padding: '18px 16px', fontSize: 13, color: 'var(--dim)' }}>
+          No brands match your search.
+        </div>
+      )}
+
+      {rows.length > 0 && !isMobile && (
         <div style={{ ...card, overflowX: 'auto' }}>
           <div style={{ minWidth: 640 }}>
             <div
@@ -114,12 +160,16 @@ export function Brands() {
                 <div style={{ flex: 1, minWidth: 80, fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{r.outletCount}</div>
                 <div style={{ flex: 1, minWidth: 80, fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{r.staffCount}</div>
                 <div style={{ width: 300, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                  <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
-                    <Icon name="arrow_upward" size={16} />
-                  </button>
-                  <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
-                    <Icon name="arrow_downward" size={16} />
-                  </button>
+                  {reorderable && (
+                    <>
+                      <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                        <Icon name="arrow_upward" size={16} />
+                      </button>
+                      <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
+                        <Icon name="arrow_downward" size={16} />
+                      </button>
+                    </>
+                  )}
                   <button onClick={() => openBrandDetail(r.id)} style={actionBtn()}>
                     <Icon name="visibility" size={16} />
                     Detail
@@ -138,7 +188,7 @@ export function Brands() {
         </div>
       )}
 
-      {isMobile && (
+      {rows.length > 0 && isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map((r, i) => (
             <div key={r.id} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>
@@ -153,12 +203,16 @@ export function Brands() {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
-                  <Icon name="arrow_upward" size={16} />
-                </button>
-                <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
-                  <Icon name="arrow_downward" size={16} />
-                </button>
+                {reorderable && (
+                  <>
+                    <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                      <Icon name="arrow_upward" size={16} />
+                    </button>
+                    <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
+                      <Icon name="arrow_downward" size={16} />
+                    </button>
+                  </>
+                )}
                 <button onClick={() => openBrandDetail(r.id)} title="Detail" style={{ ...actionBtn(), marginLeft: 'auto' }}>
                   <Icon name="visibility" size={16} />
                 </button>
