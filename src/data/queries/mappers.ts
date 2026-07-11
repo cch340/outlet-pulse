@@ -109,6 +109,7 @@ export const rowToStore = (r: { brand_id: string; outlet_id: string }): Store =>
 })
 
 const rowToHistory = (r: StaffHistoryRow): HistoryEntry => ({
+  id: r.id,
   brandId: r.brand_id,
   outletId: r.outlet_id,
   from: r.from_label,

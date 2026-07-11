@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { queryKeys } from './keys'
 import { monthYear, planTransfer } from './transferLogic'
+import type { CurrentHistoryRowUpdate } from './postingCorrection'
 
 export function useTransferStaff() {
   const qc = useQueryClient()
@@ -48,6 +49,42 @@ export function useTransferStaff() {
         reason: input.reason || null,
       })
       if (insErr) throw insErr
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.staff }),
+  })
+}
+
+/**
+ * Fix a staff member's brand/outlet in place — used when the original posting
+ * was entered incorrectly. Unlike a transfer, this adds NO history entry: it
+ * moves the staff row and rewrites the current (open) staff_history row so the
+ * present posting matches, leaving past postings untouched.
+ */
+export function useCorrectPosting() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      staffId: string
+      brandId: string
+      outletId: string
+      currentHistoryRowUpdate: CurrentHistoryRowUpdate | null
+    }) => {
+      const { error: moveErr } = await supabase
+        .from('staff')
+        .update({ brand_id: input.brandId, outlet_id: input.outletId })
+        .eq('id', input.staffId)
+      if (moveErr) throw moveErr
+
+      if (input.currentHistoryRowUpdate) {
+        const { error: hErr } = await supabase
+          .from('staff_history')
+          .update({
+            brand_id: input.currentHistoryRowUpdate.brandId,
+            outlet_id: input.currentHistoryRowUpdate.outletId,
+          })
+          .eq('id', input.currentHistoryRowUpdate.id)
+        if (hErr) throw hErr
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.staff }),
   })

@@ -38,6 +38,7 @@ describe('rowToStaff', () => {
     expect(staff.id).toBe('s1')
     expect(staff.brandId).toBe('b1')
     expect(staff.history.map((h) => h.from)).toEqual(['Mar 2023', 'Feb 2025'])
+    expect(staff.history.map((h) => h.id)).toEqual(['h1', 'h2'])
     expect(staff.history[0].to).toBe('Feb 2025')
     expect(staff.history[1].to).toBeUndefined()
   })

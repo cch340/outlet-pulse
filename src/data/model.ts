@@ -23,6 +23,9 @@ export interface Store {
 }
 
 export interface HistoryEntry {
+  /** The staff_history row id, carried through so the current posting can be
+   *  corrected in place (see postingCorrection.ts). */
+  id: string
   brandId: string
   outletId: string
   from: string
