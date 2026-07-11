@@ -21,6 +21,7 @@ import { OutletModal } from './components/OutletModal'
 import { StaffModal } from './components/StaffModal'
 import { BrandDetailModal } from './components/BrandDetailModal'
 import { OutletDetailModal } from './components/OutletDetailModal'
+import { StaffDetailModal } from './components/StaffDetailModal'
 import { SettingsModal } from './components/SettingsModal'
 
 function Shell() {
@@ -68,6 +69,7 @@ function Shell() {
         {state.staffModal && <StaffModal />}
         {state.brandDetailId && <BrandDetailModal />}
         {state.outletDetailId && <OutletDetailModal />}
+        {state.staffDetailId && <StaffDetailModal />}
         {state.settingsOpen && <SettingsModal />}
       </div>
     </div>

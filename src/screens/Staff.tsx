@@ -26,7 +26,7 @@ const transferredBadge = (label: string, small = false) => (
 )
 
 export function Staff() {
-  const { state, setStaffBrandFilter, openTransfer, openStaffModal } = useStore()
+  const { state, setStaffBrandFilter, openTransfer, openStaffModal, openStaffDetail } = useStore()
   const del = useDeleteStaff()
   const toast = useToast()
   const confirm = useConfirm()
@@ -128,7 +128,8 @@ export function Staff() {
             {rows.map((r) => (
               <div
                 key={r.id}
-                style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)' }}
+                onClick={() => openStaffDetail(r.id)}
+                style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
               >
                 <div style={{ flex: 2.4, minWidth: 140, display: 'flex', alignItems: 'center', gap: 11 }}>
                   <Avatar initials={r.initials} size={36} />
@@ -157,7 +158,7 @@ export function Staff() {
                     <Icon name="edit" size={16} />
                     Edit
                   </button>
-                  <button onClick={() => openTransfer(r.id, r.brandId, r.outletId)} style={actionBtn()}>
+                  <button onClick={(e) => { e.stopPropagation(); openTransfer(r.id, r.brandId, r.outletId) }} style={actionBtn()}>
                     <Icon name="swap_horiz" size={16} />
                     Transfer
                   </button>
@@ -177,7 +178,7 @@ export function Staff() {
       {isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map((r) => (
-            <div key={r.id} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+            <div key={r.id} onClick={() => openStaffDetail(r.id)} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11, cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                 <Avatar initials={r.initials} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>

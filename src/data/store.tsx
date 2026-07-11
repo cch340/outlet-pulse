@@ -62,6 +62,7 @@ export interface AppState {
   q: string
   brandDetailId: string | null
   outletDetailId: string | null
+  staffDetailId: string | null
   staffBrandFilter: StaffBrandFilter
   visitFilter: VisitFilter
   // overlays
@@ -93,6 +94,7 @@ function seed(): AppState {
     q: '',
     brandDetailId: null,
     outletDetailId: null,
+    staffDetailId: null,
     staffBrandFilter: 'all',
     visitFilter: 'all',
     openVisitId: null,
@@ -118,6 +120,8 @@ export interface StoreActions {
   closeBrandDetail(): void
   openOutletDetail(id: string): void
   closeOutletDetail(): void
+  openStaffDetail(id: string): void
+  closeStaffDetail(): void
   setStaffBrandFilter(id: StaffBrandFilter): void
   setVisitFilter(f: VisitFilter): void
   openVisit(id: string): void
@@ -164,6 +168,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       closeBrandDetail: () => patch({ brandDetailId: null }),
       openOutletDetail: (outletDetailId) => patch({ outletDetailId }),
       closeOutletDetail: () => patch({ outletDetailId: null }),
+      openStaffDetail: (staffDetailId) => patch({ staffDetailId }),
+      closeStaffDetail: () => patch({ staffDetailId: null }),
       setStaffBrandFilter: (staffBrandFilter) => patch({ staffBrandFilter }),
       setVisitFilter: (visitFilter) => patch({ visitFilter }),
       openVisit: (openVisitId) => patch({ openVisitId }),
