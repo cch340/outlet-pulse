@@ -53,6 +53,7 @@ describe('parseHash', () => {
       mk({ screen: 'visits', visitFilter: 'done' }),
       mk({ screen: 'manage', manageTab: 'staff' }),
       mk({ screen: 'manage', manageTab: 'tasks' }),
+      mk({ screen: 'manage', manageTab: 'recurring' }),
     ]
     for (const c of cases) expect(parseHash(toHash(c))).toEqual(c)
   })

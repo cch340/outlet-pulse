@@ -40,6 +40,8 @@ Single-page React 18 + TypeScript + Vite app. A "staff monitor" for retail: bran
 
 SQL migrations in `supabase/migrations/`, applied manually via the Supabase SQL editor (in order). `0001_init.sql` creates the schema with **permissive** RLS; `0002_auth_rls.sql` replaces those with authenticated-only policies; `0003_per_user_scoping.sql` wipes existing data and adds per-user row scoping via an `owner_id` column (defaulting to `auth.uid()`) with RLS policies of `owner_id = auth.uid()` on every table. Each signed-in user sees and mutates only the rows it created. FK deletes are `restrict` (brands/outlets referenced by staff/stores can't be deleted), which surfaces a clear error to the user; `staff_history` and `follow_up_tasks` cascade.
 
+`0014_recurring_schedules.sql` adds recurring visit schedules (weekly/monthly): occurrences are not stored server-side but materialized into `visits` rows client-side by `useAutoGenerateVisits` (once per session) using the pure `nextOccurrence`/`dueOccurrences` logic in `src/data/recurrence.ts`, with `last_generated` on the schedule row preventing duplicate generation.
+
 ## Conventions
 
 - Extract non-trivial logic into a pure module with a `.test.ts` rather than embedding it in a component or mutation (the transfer flow is the model: `transferLogic.ts` + `transferLogic.test.ts`).

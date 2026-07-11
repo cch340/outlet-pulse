@@ -18,7 +18,7 @@ export const DEFAULT_URL_STATE: UrlState = {
 
 const SCREENS: readonly Screen[] = ['dashboard', 'stores', 'visits', 'manage']
 const VISIT_FILTERS: readonly VisitFilter[] = ['all', 'pending', 'attention', 'overdue', 'done']
-const MANAGE_TABS: readonly ManageTab[] = ['brands', 'outlets', 'stores', 'staff', 'tasks']
+const MANAGE_TABS: readonly ManageTab[] = ['brands', 'outlets', 'stores', 'staff', 'tasks', 'recurring']
 
 /** Serialize UI state to a hash like `#/visits?status=overdue&q=abc`.
  *  Defaults are omitted, and params are only emitted for the screen they

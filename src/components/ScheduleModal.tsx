@@ -5,6 +5,7 @@ import { brandById, outletById, staffForStore } from '../data/derived'
 import { chip } from '../theme'
 import { Icon } from './Icon'
 import { useCreateVisit } from '../data/queries/useVisitMutations'
+import { useCreateRecurringSchedule } from '../data/queries/useRecurringMutations'
 import { useCreateTaskTemplate } from '../data/queries/useTaskTemplateMutations'
 import { itemsFromTemplates, planSchedule, type ScheduleTaskItem } from '../data/queries/scheduleTasks'
 import { StoreCombobox } from './StoreCombobox'
@@ -27,6 +28,7 @@ export function ScheduleModal() {
   const { state, closeAdd, setAf } = useStore()
   const toast = useToast()
   const create = useCreateVisit()
+  const createRecurring = useCreateRecurringSchedule()
   const createTemplate = useCreateTaskTemplate()
   const { data } = useData()
   const [newLabel, setNewLabel] = useState('')
@@ -79,6 +81,7 @@ export function ScheduleModal() {
     const [b, o] = af.storeKey.split('|')
     if (!b || !o) return
     const plan = planSchedule(items, data.taskTemplates)
+    const repeat = af.repeat
     create.mutate(
       { brandId: b, outletId: o, staffId: af.staffId || null, date: af.date, taskLabels: plan.taskLabels },
       {
@@ -86,8 +89,29 @@ export function ScheduleModal() {
           plan.newTemplateLabels.forEach((label, i) =>
             createTemplate.mutate({ label, sort: data.taskTemplates.length + i }),
           )
+          // On a repeating schedule, record the rule. The visit just created is
+          // the first occurrence, so seed last_generated = the chosen date to
+          // avoid the auto-generator re-materializing it.
+          if (repeat !== 'none') {
+            createRecurring.mutate(
+              {
+                brandId: b,
+                outletId: o,
+                staffId: af.staffId || null,
+                frequency: repeat,
+                startDate: af.date,
+                taskLabels: plan.taskLabels,
+                lastGenerated: af.date,
+              },
+              { onError: (e) => toast.error("Couldn't save recurrence: " + e.message) },
+            )
+          }
           closeAdd()
-          toast.success(`Visit scheduled at ${bName} · ${oName}`)
+          toast.success(
+            repeat === 'none'
+              ? `Visit scheduled at ${bName} · ${oName}`
+              : `Visit scheduled · repeats ${repeat}`,
+          )
         },
         onError: (e) => toast.error("Couldn't schedule visit: " + e.message),
       },
@@ -190,6 +214,35 @@ export function ScheduleModal() {
                 }}
               />
               {dayName && <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 6 }}>{dayName}</div>}
+            </div>
+            <div style={{ flex: 1, minWidth: 150 }}>
+              <div style={fieldLabel}>Repeat</div>
+              <select
+                value={af.repeat}
+                onChange={(e) => setAf('repeat', e.target.value as typeof af.repeat)}
+                style={{
+                  width: '100%',
+                  minWidth: 0,
+                  maxWidth: '100%',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface2)',
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  fontFamily: "'IBM Plex Sans'",
+                  fontSize: 13,
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="none">Doesn't repeat</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              {af.repeat !== 'none' && (
+                <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 6 }}>
+                  Auto-creates each {af.repeat === 'weekly' ? 'week' : 'month'} when due
+                </div>
+              )}
             </div>
           </div>
           <div>

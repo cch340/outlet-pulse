@@ -35,7 +35,7 @@ function persistSettings(s: Settings): void {
 }
 
 export type Screen = 'dashboard' | 'stores' | 'visits' | 'manage'
-export type ManageTab = 'brands' | 'outlets' | 'stores' | 'staff' | 'tasks'
+export type ManageTab = 'brands' | 'outlets' | 'stores' | 'staff' | 'tasks' | 'recurring'
 export type StaffBrandFilter = 'all' | string
 export type VisitFilter = 'all' | 'pending' | 'attention' | 'overdue' | 'done'
 export type ThemeMode = 'light' | 'dark'
@@ -48,11 +48,14 @@ export interface TransferForm {
   date: string
 }
 
+export type Repeat = 'none' | 'weekly' | 'monthly'
+
 export interface AddForm {
   storeKey: string
   date: string
   staffId: string
   tasks: ScheduleTaskItem[]
+  repeat: Repeat
 }
 
 export interface AppState {
@@ -193,7 +196,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openAdd: () =>
         patch({
           addOpen: true,
-          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [] },
+          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [], repeat: 'none' },
         }),
       closeAdd: () => patch({ addOpen: false, addForm: null }),
       setAf: (k, v) => setState((s) => ({ ...s, addForm: { ...s.addForm!, [k]: v } })),
