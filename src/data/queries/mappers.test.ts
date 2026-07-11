@@ -1,9 +1,22 @@
 import { describe, it, expect } from 'vitest'
-import { rowToStaff, rowToVisit, rowToStore } from './mappers'
+import { rowToStaff, rowToVisit, rowToStore, rowToTaskPhoto } from './mappers'
 
 describe('rowToStore', () => {
   it('maps snake_case to camelCase', () => {
     expect(rowToStore({ brand_id: 'b', outlet_id: 'o' })).toEqual({ brandId: 'b', outletId: 'o' })
+  })
+})
+
+describe('rowToTaskPhoto', () => {
+  it('maps snake_case to camelCase', () => {
+    expect(
+      rowToTaskPhoto({
+        id: 'p1',
+        task_id: 't1',
+        path: 'uid/t1/f1.jpg',
+        created_at: '2026-07-11T00:00:00Z',
+      }),
+    ).toEqual({ id: 'p1', taskId: 't1', path: 'uid/t1/f1.jpg', createdAt: '2026-07-11T00:00:00Z' })
   })
 })
 

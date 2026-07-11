@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { queryKeys } from './keys'
+import { photoPathsForTasks, removeObjectsQuietly } from './useTaskPhotos'
 import type { TaskStatus } from '../model'
 
 export function useCreateVisit() {
@@ -107,8 +108,18 @@ export function useDeleteVisit() {
   const qc = useQueryClient()
   return useMutation({
     // visit_tasks.visit_id is ON DELETE CASCADE, so removing the visits row
-    // drops its tasks too (see migrations 0001 + 0004).
+    // drops its tasks too (see migrations 0001 + 0004), and task_photos rows
+    // cascade with the tasks (0016). The storage objects can't cascade in
+    // Postgres, so remove them client-side first (best-effort).
     mutationFn: async (input: { visitId: string }) => {
+      const { data: taskRows, error: tErr } = await supabase
+        .from('visit_tasks')
+        .select('id')
+        .eq('visit_id', input.visitId)
+      if (tErr) throw tErr
+      const taskIds = ((taskRows as { id: string }[]) ?? []).map((r) => r.id)
+      await removeObjectsQuietly(await photoPathsForTasks(taskIds))
+
       const { error } = await supabase.from('visits').delete().eq('id', input.visitId)
       if (error) throw error
     },
@@ -179,7 +190,10 @@ export function useAddTaskToVisits() {
 export function useRemoveVisitTask() {
   const qc = useQueryClient()
   return useMutation({
+    // task_photos rows cascade with the task (0016), but their storage objects
+    // must be removed client-side first (best-effort — orphans are tolerable).
     mutationFn: async (input: { taskId: string }) => {
+      await removeObjectsQuietly(await photoPathsForTasks([input.taskId]))
       const { error } = await supabase.from('visit_tasks').delete().eq('id', input.taskId)
       if (error) throw error
     },

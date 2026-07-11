@@ -49,6 +49,15 @@ export interface Task {
   remark: string // '' when empty
 }
 
+/** A photo attached to a checklist task, stored in the private 'task-photos'
+ *  bucket. `path` is the storage object path (see photoPaths.ts). */
+export interface TaskPhoto {
+  id: string
+  taskId: string
+  path: string
+  createdAt: string
+}
+
 export interface Visit {
   id: string
   date: string // ISO date
