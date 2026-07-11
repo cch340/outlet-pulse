@@ -9,3 +9,7 @@ dist/
 # OS / build cache
 .DS_Store
 .vite/
+
+# Playwright
+playwright-report/
+test-results/
