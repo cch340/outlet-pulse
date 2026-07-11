@@ -6,6 +6,7 @@ import type {
   Task,
   TaskTemplate,
   TaskStatus,
+  TaskPhoto,
   RecurringSchedule,
   Frequency,
 } from '../model'
@@ -86,6 +87,20 @@ export const rowToRecurringSchedule = (r: RecurringScheduleRow): RecurringSchedu
   active: r.active,
   leadDays: r.lead_days ?? 0,
   lastGenerated: r.last_generated,
+})
+
+export interface TaskPhotoRow {
+  id: string
+  task_id: string
+  path: string
+  created_at: string
+}
+
+export const rowToTaskPhoto = (r: TaskPhotoRow): TaskPhoto => ({
+  id: r.id,
+  taskId: r.task_id,
+  path: r.path,
+  createdAt: r.created_at,
 })
 
 export const rowToStore = (r: { brand_id: string; outlet_id: string }): Store => ({
