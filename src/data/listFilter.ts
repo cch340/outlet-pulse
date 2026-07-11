@@ -26,3 +26,15 @@ export function compareBy<T>(get: (t: T) => string | number, dir: 'asc' | 'desc'
     return String(av).localeCompare(String(bv), undefined, { sensitivity: 'base' }) * sign
   }
 }
+
+/**
+ * Split an array into consecutive chunks of at most `size` items. Used to keep
+ * Supabase `.in(...)` lists short enough to stay under URL-length limits. A
+ * non-positive `size` yields a single chunk containing everything.
+ */
+export function chunk<T>(arr: T[], size: number): T[][] {
+  if (size <= 0) return arr.length ? [arr.slice()] : []
+  const out: T[][] = []
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+  return out
+}

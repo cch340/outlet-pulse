@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchesQuery, compareBy } from './listFilter'
+import { matchesQuery, compareBy, chunk } from './listFilter'
 
 describe('matchesQuery', () => {
   it('matches everything on an empty query', () => {
@@ -60,5 +60,24 @@ describe('compareBy', () => {
     const items = [{ c: 2 }, { c: 10 }, { c: 1 }]
     const sorted = items.slice().sort(compareBy((x) => x.c, 'desc'))
     expect(sorted.map((x) => x.c)).toEqual([10, 2, 1])
+  })
+})
+
+describe('chunk', () => {
+  it('returns an empty array for an empty input', () => {
+    expect(chunk([], 3)).toEqual([])
+  })
+
+  it('splits into consecutive chunks of at most `size`', () => {
+    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
+  })
+
+  it('keeps a single chunk when the array fits', () => {
+    expect(chunk([1, 2, 3], 5)).toEqual([[1, 2, 3]])
+  })
+
+  it('yields the whole array as one chunk for a non-positive size', () => {
+    expect(chunk([1, 2, 3], 0)).toEqual([[1, 2, 3]])
+    expect(chunk([], 0)).toEqual([])
   })
 })

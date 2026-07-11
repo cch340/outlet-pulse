@@ -4,9 +4,12 @@ import { queryKeys } from './keys'
 import { rowToTaskPhoto, type TaskPhotoRow } from './mappers'
 import { photoPath } from '../photoPaths'
 import { resizeImageToJpeg } from '../imageResize'
-import type { TaskPhoto } from '../model'
+import { chunk } from '../listFilter'
+import type { TaskPhoto, Visit } from '../model'
 
 const BUCKET = 'task-photos'
+// Keep `.in(task_id, ...)` lists short enough to stay under URL-length limits.
+const IN_CHUNK = 500
 const SIGNED_URL_TTL_SEC = 3600
 
 /**
@@ -37,6 +40,59 @@ export function useTaskPhotos(visitId: string | null, taskIds: string[]) {
     },
   })
 }
+
+/**
+ * Build a task-id → visit-id lookup from a set of visits (only persisted tasks,
+ * i.e. those with an `id`, can carry photos).
+ */
+export function visitTaskIdMap(visits: Visit[]): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const v of visits) {
+    for (const t of v.tasks) {
+      if (t.id) map.set(t.id, v.id)
+    }
+  }
+  return map
+}
+
+/**
+ * Count photos per visit for the given task→visit mapping. Runs one chunked
+ * `select task_id from task_photos in (...)` query and folds the rows back to
+ * visit ids. Shared by the badge hook and the CSV export path.
+ */
+export async function fetchPhotoCounts(taskIdToVisitId: Map<string, string>): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+  const taskIds = [...taskIdToVisitId.keys()]
+  if (taskIds.length === 0) return counts
+  for (const ids of chunk(taskIds, IN_CHUNK)) {
+    const { data, error } = await supabase.from('task_photos').select('task_id').in('task_id', ids)
+    if (error) throw error
+    for (const row of (data as { task_id: string }[]) ?? []) {
+      const visitId = taskIdToVisitId.get(row.task_id)
+      if (visitId == null) continue
+      counts.set(visitId, (counts.get(visitId) ?? 0) + 1)
+    }
+  }
+  return counts
+}
+
+/**
+ * Photo counts for a list of visits, keyed visitId → count. Enabled only when
+ * the visits carry at least one persisted task id. Shares the ['taskPhotos']
+ * key prefix so photo upload/delete invalidations refresh the counts.
+ */
+export function usePhotoCountsForVisits(visits: Visit[]): Map<string, number> {
+  const map = visitTaskIdMap(visits)
+  const taskIds = [...map.keys()]
+  const query = useQuery({
+    queryKey: queryKeys.photoCounts(taskIds),
+    enabled: taskIds.length > 0,
+    queryFn: () => fetchPhotoCounts(map),
+  })
+  return query.data ?? EMPTY_COUNTS
+}
+
+const EMPTY_COUNTS: Map<string, number> = new Map()
 
 /** A short-lived signed URL for a private photo object. */
 export function useSignedPhotoUrl(path: string) {
