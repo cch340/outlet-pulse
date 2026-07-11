@@ -8,6 +8,7 @@ import { useSession } from '../auth/AuthProvider'
 import { useToast } from './ToastProvider'
 import { supabase } from '../lib/supabase'
 import { validateNewPassword } from '../auth/passwordValidation'
+import { hasPasswordAuth, providerNote } from '../auth/accountProviders'
 
 const sectionLabel: CSSProperties = {
   fontSize: 12,
@@ -193,7 +194,17 @@ function AccountSection() {
   const toast = useToast()
   const email = session?.user.email ?? ''
 
+  // Supabase lists linked sign-in methods on `user.identities`; fall back to
+  // `app_metadata.providers`/`provider` when identities aren't present.
+  const identities =
+    session?.user.identities ??
+    (session?.user.app_metadata.providers ?? (session?.user.app_metadata.provider ? [session.user.app_metadata.provider] : []))
+      .map((provider) => ({ provider }))
+  const canChangePassword = hasPasswordAuth(identities)
+  const note = providerNote(identities)
+
   const [open, setOpen] = useState(false)
+  const [current, setCurrent] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [err, setErr] = useState('')
@@ -201,6 +212,7 @@ function AccountSection() {
 
   const reset = () => {
     setOpen(false)
+    setCurrent('')
     setPassword('')
     setConfirm('')
     setErr('')
@@ -215,6 +227,13 @@ function AccountSection() {
       return
     }
     setBusy(true)
+    // Re-verify identity: sign in with the current password before changing it.
+    const { error: reauthError } = await supabase.auth.signInWithPassword({ email, password: current })
+    if (reauthError) {
+      setBusy(false)
+      setErr('Current password is incorrect.')
+      return
+    }
     const { error } = await supabase.auth.updateUser({ password })
     setBusy(false)
     if (error) {
@@ -244,8 +263,21 @@ function AccountSection() {
         {email}
       </div>
 
-      {open ? (
+      {!canChangePassword ? (
+        <div style={{ fontSize: 12.5, color: 'var(--dim)', marginBottom: 16 }}>{note}</div>
+      ) : open ? (
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+          <div>
+            <div style={fieldLabel}>Current password</div>
+            <input
+              type="password"
+              required
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              style={fieldInput}
+              autoComplete="current-password"
+            />
+          </div>
           <div>
             <div style={fieldLabel}>New password</div>
             <input
