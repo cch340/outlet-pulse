@@ -9,11 +9,13 @@ const AUTO_DISMISS_MS = 3500
 const VARIANT: Record<ToastVariant, { color: string; icon: string }> = {
   success: { color: '#16a34a', icon: 'check_circle' },
   error: { color: '#dc2626', icon: 'error' },
+  info: { color: 'var(--accent)', icon: 'info' },
 }
 
 export interface ToastApi {
   success(message: string): void
   error(message: string): void
+  info(message: string): void
 }
 
 const Ctx = createContext<ToastApi | null>(null)
@@ -48,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const api = useMemo<ToastApi>(
-    () => ({ success: (m) => push('success', m), error: (m) => push('error', m) }),
+    () => ({ success: (m) => push('success', m), error: (m) => push('error', m), info: (m) => push('info', m) }),
     [push],
   )
 

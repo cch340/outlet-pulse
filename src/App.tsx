@@ -4,6 +4,7 @@ import { ToastProvider } from './components/ToastProvider'
 import { ConfirmProvider } from './components/ConfirmProvider'
 import { useData } from './data/queries/useData'
 import { useAutoGenerateVisits } from './data/queries/useAutoGenerateVisits'
+import { useOverdueDigest } from './components/useOverdueDigest'
 import { useSession } from './auth/AuthProvider'
 import { Login } from './screens/Login'
 import { rootStyle, appShellStyle } from './theme'
@@ -33,6 +34,7 @@ function Shell() {
   const { isLoading, isError } = useData()
   const isMobile = state.isMobile
   useAutoGenerateVisits()
+  useOverdueDigest()
 
   if (isLoading) return <div style={{ padding: 40 }}>Loading…</div>
   if (isError) return <div style={{ padding: 40 }}>Failed to load data. Check your Supabase connection.</div>
