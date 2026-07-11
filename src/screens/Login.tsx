@@ -26,12 +26,34 @@ const label: CSSProperties = {
 }
 
 export function Login() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+
+  const switchMode = (next: 'signin' | 'signup' | 'reset') => {
+    setMode(next)
+    setErr('')
+    setMsg('')
+  }
+
+  const sendReset = async (e: FormEvent) => {
+    e.preventDefault()
+    setErr('')
+    setMsg('')
+    setBusy(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    })
+    setBusy(false)
+    if (error) {
+      setErr(error.message)
+      return
+    }
+    setMsg('Check your email for a reset link.')
+  }
 
   const oauth = async (provider: 'google') => {
     setErr('')
@@ -95,12 +117,72 @@ export function Login() {
         </div>
 
         <div style={{ fontSize: 19, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>
-          {mode === 'signin' ? 'Sign in' : 'Create account'}
+          {mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Reset password'}
         </div>
         <div style={{ fontSize: 13, color: '#78716c', marginBottom: 20 }}>
-          {mode === 'signin' ? 'Access your store monitoring dashboard' : 'Set up access to the dashboard'}
+          {mode === 'signin'
+            ? 'Access your store monitoring dashboard'
+            : mode === 'signup'
+              ? 'Set up access to the dashboard'
+              : 'We’ll email you a link to set a new password'}
         </div>
 
+        {mode === 'reset' ? (
+          <form onSubmit={sendReset} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <div style={label}>Email</div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={input}
+                autoComplete="email"
+              />
+            </div>
+
+            {err && <div style={{ fontSize: 13, color: '#dc2626' }}>{err}</div>}
+            {msg && <div style={{ fontSize: 13, color: '#16a34a' }}>{msg}</div>}
+
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                border: 'none',
+                background: ACCENT,
+                color: '#fff',
+                borderRadius: 9,
+                padding: 12,
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: busy ? 'default' : 'pointer',
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              {busy ? 'Please wait…' : 'Send reset link'}
+            </button>
+
+            <div style={{ fontSize: 13, color: '#78716c', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => switchMode('signin')}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  color: ACCENT,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                Back to sign in
+              </button>
+            </div>
+          </form>
+        ) : (
+        <>
         <button
           type="button"
           onClick={() => oauth('google')}
@@ -159,6 +241,25 @@ export function Login() {
               style={input}
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             />
+            {mode === 'signin' && (
+              <div style={{ marginTop: 8, textAlign: 'right' }}>
+                <button
+                  type="button"
+                  onClick={() => switchMode('reset')}
+                  style={{
+                    border: 'none',
+                    background: 'none',
+                    color: ACCENT,
+                    fontWeight: 600,
+                    fontSize: 12.5,
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
           </div>
 
           {err && <div style={{ fontSize: 13, color: '#dc2626' }}>{err}</div>}
@@ -188,11 +289,7 @@ export function Login() {
           {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
           <button
             type="button"
-            onClick={() => {
-              setMode(mode === 'signin' ? 'signup' : 'signin')
-              setErr('')
-              setMsg('')
-            }}
+            onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
             style={{
               border: 'none',
               background: 'none',
@@ -206,6 +303,8 @@ export function Login() {
             {mode === 'signin' ? 'Create one' : 'Sign in'}
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   )
