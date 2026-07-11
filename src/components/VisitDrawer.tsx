@@ -13,7 +13,10 @@ import { useDialogA11y } from './useDialogA11y'
 import { storeOptions } from '../data/queries/storePicker'
 import type { TaskStatus } from '../data/model'
 import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks, useDeleteVisit } from '../data/queries/useVisitMutations'
+import { useTaskPhotos } from '../data/queries/useTaskPhotos'
 import { taskHasResult, importableTemplates } from '../data/queries/visitEdit'
+import { TaskPhotoRow, PhotoLightbox } from './TaskPhotos'
+import type { TaskPhoto } from '../data/model'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
   { value: 'pending', color: '#6b7280', glyph: '–', title: 'Pending' },
@@ -36,10 +39,15 @@ export function VisitDrawer() {
   const [newTaskLabel, setNewTaskLabel] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [selectedImportIds, setSelectedImportIds] = useState<string[]>([])
+  const [lightboxPhoto, setLightboxPhoto] = useState<TaskPhoto | null>(null)
   const { data } = useData()
   const { visit: openF } = useVisit(state.openVisitId)
   const S = state
   const { dialogProps } = useDialogA11y({ onClose: closeVisit, label: 'Visit details', enabled: !!openF })
+  // Drawer tasks come from the DB (rowToVisit), so they always carry an id; the
+  // filter guards the model's optional `id` and keeps the query key stable.
+  const photoTaskIds = (openF?.tasks ?? []).map((t) => t.id).filter((id): id is string => !!id)
+  const { data: photosByTask } = useTaskPhotos(openF?.id ?? null, photoTaskIds)
   if (!openF) return null
 
   const vm = visitVM(data, openF)
@@ -99,6 +107,7 @@ export function VisitDrawer() {
   }
 
   return (
+    <>
     <div
       onClick={closeVisit}
       style={{ position: ovPos, inset: 0, zIndex: 50, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
@@ -297,6 +306,14 @@ export function VisitDrawer() {
                     color: 'var(--text)',
                   }}
                 />
+                {t.id && (
+                  <TaskPhotoRow
+                    taskId={t.id}
+                    label={t.label}
+                    photos={photosByTask?.get(t.id) ?? []}
+                    onOpenPhoto={setLightboxPhoto}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -508,5 +525,9 @@ export function VisitDrawer() {
         </div>
       </div>
     </div>
+      {lightboxPhoto && (
+        <PhotoLightbox photo={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
+      )}
+    </>
   )
 }
