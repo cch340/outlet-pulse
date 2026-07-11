@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ScheduleTaskItem } from './queries/scheduleTasks'
+import { toHash, parseHash, type UrlState } from './urlState'
 import {
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
@@ -85,18 +86,24 @@ export interface AppState {
   density: Density
 }
 
+function readUrlState(): UrlState {
+  if (typeof window === 'undefined') return parseHash('')
+  return parseHash(window.location.hash)
+}
+
 function seed(): AppState {
   const settings = readSettings()
+  const url = readUrlState()
   return {
-    activeScreen: 'dashboard',
-    manageTab: 'brands',
+    activeScreen: url.screen,
+    manageTab: url.manageTab,
     isMobile: detectMobile(),
-    q: '',
+    q: url.q,
     brandDetailId: null,
     outletDetailId: null,
     staffDetailId: null,
     staffBrandFilter: 'all',
-    visitFilter: 'all',
+    visitFilter: url.visitFilter,
     openVisitId: null,
     storeVisits: null,
     transferStaffId: null,
@@ -241,6 +248,49 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       })
     mql.addEventListener('change', onChange)
     return () => mql.removeEventListener('change', onChange)
+  }, [])
+
+  // Last hash we synced with the URL (written or read via popstate). Compared
+  // against so the write effect and the popstate listener don't ping-pong.
+  const syncedHash = useRef<string>(typeof window !== 'undefined' ? window.location.hash : '')
+
+  // Mirror the persisted UI subset into the URL hash. Screen changes push a new
+  // history entry (Back walks screens); same-screen tweaks (filter/q/tab) replace
+  // it so Back doesn't step through every keystroke.
+  useEffect(() => {
+    const hash = toHash({
+      screen: state.activeScreen,
+      visitFilter: state.visitFilter,
+      q: state.q,
+      manageTab: state.manageTab,
+    })
+    if (hash === window.location.hash) {
+      syncedHash.current = hash
+      return
+    }
+    const prevScreen = parseHash(syncedHash.current).screen
+    const url = `${window.location.pathname}${window.location.search}${hash}`
+    if (prevScreen !== state.activeScreen) history.pushState(null, '', url)
+    else history.replaceState(null, '', url)
+    syncedHash.current = hash
+  }, [state.activeScreen, state.visitFilter, state.q, state.manageTab])
+
+  // Apply Back/Forward navigation to state. Record the applied hash so the write
+  // effect above sees it as already-synced and doesn't push a duplicate entry.
+  useEffect(() => {
+    const onPop = () => {
+      const url = parseHash(window.location.hash)
+      syncedHash.current = window.location.hash
+      setState((s) => ({
+        ...s,
+        activeScreen: url.screen,
+        visitFilter: url.visitFilter,
+        q: url.q,
+        manageTab: url.manageTab,
+      }))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   return <Ctx.Provider value={{ state, ...actions }}>{children}</Ctx.Provider>
