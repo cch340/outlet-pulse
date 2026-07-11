@@ -3,10 +3,15 @@ import { useData } from '../data/queries/useData'
 import { useStore } from '../data/store'
 import { useLatestFailedTasks } from '../data/queries/useLatestFailedTasks'
 import { buildStoreGroups, type StoreRow } from '../data/queries/storeRows'
-import { today, fmt } from '../data/derived'
+import { today, fmt, localDateStr } from '../data/derived'
 import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
+import { ExportCsvButton } from '../components/ExportCsvButton'
 import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
+import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
+import { failedTaskRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
+import { downloadTextFile } from '../data/download'
 
 const selectStyle = {
   border: '1px solid var(--border)',
@@ -23,6 +28,8 @@ const selectStyle = {
 export function Stores() {
   const { data } = useData()
   const { openStoreVisits } = useStore()
+  const toast = useToast()
+  const confirm = useConfirm()
   const t = today()
   const [filterYear, setFilterYear] = useState(t.getFullYear())
   const [filterMonth, setFilterMonth] = useState(t.getMonth() + 1)
@@ -32,6 +39,25 @@ export function Stores() {
   const { rows: latestFailed, isError } = useLatestFailedTasks(month)
 
   const groups = buildStoreGroups(data, latestFailed)
+  const failedCount = latestFailed.reduce((n, v) => n + v.failed.length, 0)
+
+  const handleExport = async () => {
+    if (failedCount === 0) return
+    const period = `${MONTH_NAMES[filterMonth - 1]} ${filterYear}`
+    const ok = await confirm({
+      title: 'Export CSV',
+      message: `The CSV will contain the ${failedCount} failed task${failedCount === 1 ? '' : 's'} from visits in ${period} (the selected period).`,
+      confirmLabel: 'Export',
+    })
+    if (!ok) return
+    const matrix = failedTaskRows(latestFailed)
+    downloadTextFile(
+      exportFilename('failed-tasks', localDateStr(t)),
+      'text/csv;charset=utf-8',
+      CSV_BOM + toCsv(matrix),
+    )
+    toast.success(`Exported ${failedCount} failed task${failedCount === 1 ? '' : 's'}.`)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -50,7 +76,6 @@ export function Stores() {
         </select>
         <label
           style={{
-            marginLeft: 'auto',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -63,6 +88,12 @@ export function Stores() {
           <input type="checkbox" checked={showDetails} onChange={(e) => setShowDetails(e.target.checked)} />
           Show failed task details
         </label>
+        <ExportCsvButton
+          onClick={handleExport}
+          disabled={failedCount === 0}
+          disabledHint="No failed tasks this month"
+          title="Export this month's failed tasks as CSV"
+        />
       </div>
 
       {isError && <div style={{ fontSize: 12.5, color: '#dc2626' }}>Couldn't load latest visit status.</div>}

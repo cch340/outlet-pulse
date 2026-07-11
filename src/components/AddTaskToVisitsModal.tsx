@@ -5,6 +5,7 @@ import { useVisitsMissingLabel, MISSING_LABEL_LIMIT } from '../data/queries/useV
 import { useAddTaskToVisits } from '../data/queries/useVisitMutations'
 import { Icon } from './Icon'
 import { useToast } from './ToastProvider'
+import { useDialogA11y } from './useDialogA11y'
 
 /** Adds a single task template into multiple existing visits that don't have it yet. */
 export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClose: () => void }) {
@@ -32,6 +33,7 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
   }
 
   const ovPos = state.isMobile ? 'absolute' : 'fixed'
+  const { dialogProps } = useDialogA11y({ onClose, label: 'Add task to visits' })
 
   const checkbox = (checked: boolean) => (
     <span
@@ -57,6 +59,7 @@ export function AddTaskToVisitsModal({ label, onClose }: { label: string; onClos
       style={{ position: ovPos, inset: 0, zIndex: 70, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 520,

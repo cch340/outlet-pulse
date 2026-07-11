@@ -6,6 +6,7 @@ import { chip, tint } from '../theme'
 import { Icon } from './Icon'
 import { useTransferStaff } from '../data/queries/useStaffMutations'
 import { useToast } from './ToastProvider'
+import { useDialogA11y } from './useDialogA11y'
 
 const fieldLabel: CSSProperties = {
   fontSize: 12,
@@ -33,6 +34,11 @@ export function TransferModal() {
   const transfer = useTransferStaff()
   const { data } = useData()
   const S = state
+  const { dialogProps } = useDialogA11y({
+    onClose: closeTransfer,
+    label: 'Transfer staff',
+    enabled: !!S.transferStaffId && !!S.transferForm,
+  })
   if (!S.transferStaffId || !S.transferForm) return null
 
   const st = data.staff.find((x) => x.id === S.transferStaffId)!
@@ -49,6 +55,7 @@ export function TransferModal() {
       style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
+        {...dialogProps}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 500,

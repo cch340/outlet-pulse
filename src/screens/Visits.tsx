@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useMarkAllSuccess } from '../data/queries/useVisitMutations'
-import { useVisitsPage, useVisitStatusCounts } from '../data/queries/useVisitsPage'
-import { visitVM, today, localDateStr, TASK_STATUS_COLOR } from '../data/derived'
+import { useVisitsPage, useVisitStatusCounts, fetchVisitsForExport, EXPORT_CAP } from '../data/queries/useVisitsPage'
+import { visitVM, today, localDateStr, brandById, outletById, staffById, TASK_STATUS_COLOR } from '../data/derived'
 import { resolveDateRange, pageCount, type DatePreset } from '../data/queries/visitsQuery'
 import type { VisitFilter } from '../data/store'
 import type { Task } from '../data/model'
 import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
+import { ExportCsvButton } from '../components/ExportCsvButton'
+import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
+import { visitRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
+import { downloadTextFile } from '../data/download'
+import { rowButtonProps } from '../components/useDialogA11y'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const PAGE_SIZE = 25
@@ -76,8 +82,11 @@ export function Visits() {
   const { state, setVisitFilter, openVisit } = useStore()
   const { data } = useData()
   const markAllMutation = useMarkAllSuccess()
+  const toast = useToast()
+  const confirm = useConfirm()
   const S = state
   const isMobile = S.isMobile
+  const [exporting, setExporting] = useState(false)
 
   const [datePreset, setDatePreset] = useState<DatePreset>('all')
   const [customFrom, setCustomFrom] = useState('')
@@ -171,6 +180,56 @@ export function Visits() {
     }
   }
 
+  const handleExport = async () => {
+    if (exporting) return
+    const filtersActive =
+      S.visitFilter !== 'all' ||
+      datePreset !== 'all' ||
+      brandFilter !== 'all' ||
+      outletFilter !== 'all' ||
+      latestPerStore ||
+      search !== ''
+    const matchedNote = ` (currently ${total} visit${total === 1 ? '' : 's'})`
+    const message = filtersActive
+      ? `The CSV will contain the visits matching your current filters, up to ${EXPORT_CAP} records${matchedNote}.`
+      : `No filters are applied — this will export ALL visits, up to ${EXPORT_CAP} records${matchedNote}.`
+    const ok = await confirm({ title: 'Export CSV', message, confirmLabel: 'Export' })
+    if (!ok) return
+    setExporting(true)
+    try {
+      const { visits: all, total: matched } = await fetchVisitsForExport({
+        today: todayStr,
+        from,
+        to,
+        status: S.visitFilter,
+        latest: latestPerStore,
+        search,
+        brand,
+        outlet,
+      })
+      if (all.length === 0) {
+        toast.error('No visits match this filter.')
+        return
+      }
+      const matrix = visitRows(all, {
+        brandName: (id) => brandById(data, id).name,
+        outletName: (id) => outletById(data, id).name,
+        staffName: (id) => (id ? staffById(data, id).name : ''),
+        status: (v) => visitVM(data, v).statusLabel,
+      })
+      downloadTextFile(exportFilename('visits', todayStr), 'text/csv;charset=utf-8', CSV_BOM + toCsv(matrix))
+      if (matched > all.length) {
+        toast.error(`Exported first ${all.length} of ${matched} visits.`)
+      } else {
+        toast.success(`Exported ${all.length} visit${all.length === 1 ? '' : 's'}.`)
+      }
+    } catch {
+      toast.error("Couldn't export visits.")
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* filter toolbar */}
@@ -220,6 +279,7 @@ export function Visits() {
           <input type="checkbox" checked={allExpanded} onChange={toggleAll} />
           Expand all
         </label>
+        <ExportCsvButton onClick={handleExport} busy={exporting} title="Export the filtered visits as CSV" />
       </div>
 
       <div style={{ ...card, overflow: 'hidden' }}>
@@ -289,7 +349,7 @@ export function Visits() {
 
                   {/* right column: header (clickable) + expanded checklist */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+                    <div {...rowButtonProps(() => openVisit(f.vm.id))} onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
                       <div style={{ flex: 1.6, minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ width: 9, height: 9, borderRadius: 3, background: f.vm.brandColor, flexShrink: 0 }} />
@@ -368,7 +428,7 @@ export function Visits() {
 
                   {/* right column: header (clickable) + expanded checklist */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                    <div {...rowButtonProps(() => openVisit(f.vm.id))} onClick={() => openVisit(f.vm.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{

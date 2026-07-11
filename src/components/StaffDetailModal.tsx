@@ -49,6 +49,7 @@ export function StaffDetailModal() {
     <DetailModal
       isMobile={state.isMobile}
       onClose={closeStaffDetail}
+      label={s.name}
       title={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
           <span

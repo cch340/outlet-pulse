@@ -33,6 +33,7 @@ export function BrandDetailModal() {
     <DetailModal
       isMobile={state.isMobile}
       onClose={closeBrandDetail}
+      label={b.name}
       title={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
           <span

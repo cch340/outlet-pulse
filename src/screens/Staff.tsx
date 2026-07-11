@@ -10,6 +10,7 @@ import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchIn
 import { WhatsAppButton } from '../components/WhatsAppButton'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
+import { rowButtonProps } from '../components/useDialogA11y'
 
 const transferredBadge = (label: string, small = false) => (
   <span
@@ -170,6 +171,7 @@ export function Staff() {
             {rows.map((r) => (
               <div
                 key={r.id}
+                {...rowButtonProps(() => openStaffDetail(r.id))}
                 onClick={() => openStaffDetail(r.id)}
                 style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
               >
@@ -220,7 +222,7 @@ export function Staff() {
       {rows.length > 0 && isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map((r) => (
-            <div key={r.id} onClick={() => openStaffDetail(r.id)} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11, cursor: 'pointer' }}>
+            <div key={r.id} {...rowButtonProps(() => openStaffDetail(r.id))} onClick={() => openStaffDetail(r.id)} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11, cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                 <Avatar initials={r.initials} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>

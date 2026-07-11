@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useState, type CSSProperties, type ReactNode } from 'react'
 import { useStore } from '../data/store'
 import { Icon } from './Icon'
+import { useDialogA11y } from './useDialogA11y'
 
 export interface ConfirmOptions {
   title: string
@@ -43,6 +44,12 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   }
 
   const ovPos = state.isMobile ? 'absolute' : 'fixed'
+  const { dialogProps } = useDialogA11y({
+    onClose: () => settle(false),
+    label: pending?.title ?? 'Confirm',
+    role: 'alertdialog',
+    enabled: !!pending,
+  })
 
   return (
     <Ctx.Provider value={confirm}>
@@ -53,9 +60,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           style={{ position: ovPos, inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
         >
           <div
+            {...dialogProps}
             onClick={(e) => e.stopPropagation()}
-            role="alertdialog"
-            aria-modal="true"
             style={{ width: 420, maxWidth: '100%', background: 'var(--surface)', color: 'var(--text)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", borderRadius: 14, boxShadow: '0 30px 80px rgba(0,0,0,.3)', animation: 'pop var(--motion-dur) var(--motion-ease)' }}
           >
             <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>

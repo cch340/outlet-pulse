@@ -33,6 +33,7 @@ export function OutletDetailModal() {
     <DetailModal
       isMobile={state.isMobile}
       onClose={closeOutletDetail}
+      label={o.name}
       title={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
           <span
