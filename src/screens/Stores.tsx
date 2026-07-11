@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon'
 import { ExportCsvButton } from '../components/ExportCsvButton'
 import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
 import { useToast } from '../components/ToastProvider'
+import { useConfirm } from '../components/ConfirmProvider'
 import { failedTaskRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
 import { downloadTextFile } from '../data/download'
 
@@ -28,6 +29,7 @@ export function Stores() {
   const { data } = useData()
   const { openStoreVisits } = useStore()
   const toast = useToast()
+  const confirm = useConfirm()
   const t = today()
   const [filterYear, setFilterYear] = useState(t.getFullYear())
   const [filterMonth, setFilterMonth] = useState(t.getMonth() + 1)
@@ -39,8 +41,15 @@ export function Stores() {
   const groups = buildStoreGroups(data, latestFailed)
   const failedCount = latestFailed.reduce((n, v) => n + v.failed.length, 0)
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (failedCount === 0) return
+    const period = `${MONTH_NAMES[filterMonth - 1]} ${filterYear}`
+    const ok = await confirm({
+      title: 'Export CSV',
+      message: `The CSV will contain the ${failedCount} failed task${failedCount === 1 ? '' : 's'} from visits in ${period} (the selected period).`,
+      confirmLabel: 'Export',
+    })
+    if (!ok) return
     const matrix = failedTaskRows(latestFailed)
     downloadTextFile(
       exportFilename('failed-tasks', localDateStr(t)),
