@@ -71,6 +71,7 @@ export interface RecurringScheduleRow {
   start_date: string
   task_labels: string[]
   active: boolean
+  lead_days: number
   last_generated: string | null
 }
 
@@ -83,6 +84,7 @@ export const rowToRecurringSchedule = (r: RecurringScheduleRow): RecurringSchedu
   startDate: r.start_date,
   taskLabels: r.task_labels ?? [],
   active: r.active,
+  leadDays: r.lead_days ?? 0,
   lastGenerated: r.last_generated,
 })
 

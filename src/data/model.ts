@@ -78,5 +78,8 @@ export interface RecurringSchedule {
   startDate: string // ISO date (occurrence grid origin)
   taskLabels: string[]
   active: boolean
+  /** Days before an occurrence to materialize its visit (0–30); the visit's
+   *  date still lands on the occurrence itself. */
+  leadDays: number
   lastGenerated: string | null // ISO date, or null if never generated
 }

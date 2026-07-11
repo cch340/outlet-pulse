@@ -101,6 +101,7 @@ export function ScheduleModal() {
                 frequency: repeat,
                 startDate: af.date,
                 taskLabels: plan.taskLabels,
+                leadDays: af.leadDays,
                 lastGenerated: af.date,
               },
               { onError: (e) => toast.error("Couldn't save recurrence: " + e.message) },
@@ -219,7 +220,13 @@ export function ScheduleModal() {
               <div style={fieldLabel}>Repeat</div>
               <select
                 value={af.repeat}
-                onChange={(e) => setAf('repeat', e.target.value as typeof af.repeat)}
+                onChange={(e) => {
+                  const next = e.target.value as typeof af.repeat
+                  // Switching from non-repeating to a cadence seeds a sensible
+                  // advance-notice default; manual lead changes are preserved.
+                  if (next !== 'none' && af.repeat === 'none' && af.leadDays === 0) setAf('leadDays', 3)
+                  setAf('repeat', next)
+                }}
                 style={{
                   width: '100%',
                   minWidth: 0,
@@ -239,9 +246,36 @@ export function ScheduleModal() {
                 <option value="monthly">Monthly</option>
               </select>
               {af.repeat !== 'none' && (
-                <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 6 }}>
-                  Auto-creates each {af.repeat === 'weekly' ? 'week' : 'month'} when due
-                </div>
+                <>
+                  <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 6 }}>
+                    Auto-creates each {af.repeat === 'weekly' ? 'week' : 'month'} when due
+                  </div>
+                  <div style={{ ...fieldLabel, marginTop: 12 }}>Create in advance</div>
+                  <select
+                    value={af.leadDays}
+                    onChange={(e) => setAf('leadDays', Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface2)',
+                      borderRadius: 8,
+                      padding: '10px 12px',
+                      fontFamily: "'IBM Plex Sans'",
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value={0}>On the day</option>
+                    <option value={1}>1 day before</option>
+                    <option value={2}>2 days before</option>
+                    <option value={3}>3 days before</option>
+                    <option value={5}>5 days before</option>
+                    <option value={7}>1 week before</option>
+                  </select>
+                </>
               )}
             </div>
           </div>

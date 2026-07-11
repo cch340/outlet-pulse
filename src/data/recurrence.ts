@@ -65,9 +65,14 @@ export function nextOccurrence(s: RecurringSchedule, _todayISO: string): string 
 }
 
 /**
- * Every occurrence that is due (on or before `todayISO`) and not yet generated
- * (strictly after `lastGenerated`, or from the start date inclusive), oldest
- * first. Returns [] for an inactive schedule or a start date in the future.
+ * Every occurrence that is due and not yet generated (strictly after
+ * `lastGenerated`, or from the start date inclusive), oldest first. Returns []
+ * for an inactive schedule or an horizon that lands before the start date.
+ *
+ * An occurrence is due once it falls on or before the horizon `todayISO +
+ * leadDays` — i.e. its visit is materialized up to `leadDays` ahead of the
+ * occurrence date so staff get advance notice. The visit's date still lands on
+ * the occurrence itself (see the generator).
  *
  * Capped at `cap`: if the user was away long enough that MORE than `cap`
  * occurrences came due, only the MOST RECENT `cap` are returned — ancient
@@ -75,10 +80,11 @@ export function nextOccurrence(s: RecurringSchedule, _todayISO: string): string 
  */
 export function dueOccurrences(s: RecurringSchedule, todayISO: string, cap = 3): string[] {
   if (!s.active) return []
+  const horizon = addDays(todayISO, s.leadDays)
   const out: string[] = []
   for (let i = 0; i < MAX_STEPS; i++) {
     const d = occurrence(s.startDate, s.frequency, i)
-    if (d > todayISO) break // future occurrence: nothing more is due
+    if (d > horizon) break // beyond the lead horizon: nothing more is due yet
     if (s.lastGenerated != null && d <= s.lastGenerated) continue // already generated
     out.push(d)
     if (out.length > cap) out.shift() // keep only the most recent `cap`

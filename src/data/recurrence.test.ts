@@ -11,6 +11,7 @@ const mk = (o: Partial<RecurringSchedule> = {}): RecurringSchedule => ({
   startDate: '2026-01-01',
   taskLabels: [],
   active: true,
+  leadDays: 0,
   lastGenerated: null,
   ...o,
 })
@@ -121,5 +122,39 @@ describe('dueOccurrences', () => {
     expect(
       dueOccurrences(mk({ startDate: '2026-01-01', lastGenerated: '2026-01-22' }), '2026-01-22', 10),
     ).toEqual([])
+  })
+
+  describe('lead time (create in advance)', () => {
+    it('leadDays 3 makes an occurrence 3 days out due today', () => {
+      // occurrence Jan 4, today Jan 1, horizon Jan 4 → due
+      expect(dueOccurrences(mk({ startDate: '2026-01-04', leadDays: 3 }), '2026-01-01')).toEqual([
+        '2026-01-04',
+      ])
+    })
+
+    it('leadDays 3 does NOT make an occurrence 4 days out due', () => {
+      // occurrence Jan 5, today Jan 1, horizon Jan 4 → not yet due
+      expect(dueOccurrences(mk({ startDate: '2026-01-05', leadDays: 3 }), '2026-01-01')).toEqual([])
+    })
+
+    it('lead horizon crosses a month boundary', () => {
+      // occurrence Feb 2, today Jan 30, leadDays 3 → horizon Feb 2 → due
+      expect(dueOccurrences(mk({ startDate: '2026-02-02', leadDays: 3 }), '2026-01-30')).toEqual([
+        '2026-02-02',
+      ])
+      // one day short: horizon Feb 1 < Feb 2 → not due
+      expect(dueOccurrences(mk({ startDate: '2026-02-02', leadDays: 2 }), '2026-01-30')).toEqual([])
+    })
+
+    it('weekly leadDays 7 materializes exactly at the previous occurrence, no duplication', () => {
+      // start Jan 1 weekly, today Jan 1, leadDays 7 → horizon Jan 8 → Jan 1 & Jan 8 due
+      const s = mk({ startDate: '2026-01-01', leadDays: 7 })
+      const first = dueOccurrences(s, '2026-01-01', 10)
+      expect(first).toEqual(['2026-01-01', '2026-01-08'])
+      // after generating those, last_generated advances to Jan 8; a week later the
+      // horizon (Jan 15) yields only the fresh occurrence — no re-materialization.
+      const s2 = mk({ startDate: '2026-01-01', leadDays: 7, lastGenerated: '2026-01-08' })
+      expect(dueOccurrences(s2, '2026-01-08', 10)).toEqual(['2026-01-15'])
+    })
   })
 })

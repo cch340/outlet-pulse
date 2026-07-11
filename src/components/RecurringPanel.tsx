@@ -108,6 +108,8 @@ export function RecurringPanel() {
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 4 }}>
                   {FREQ_LABEL[s.frequency]} · {staffName} · from {fmt(s.startDate)}
+                  {s.leadDays > 0 &&
+                    ` · created ${s.leadDays === 7 ? '1 week' : `${s.leadDays} day${s.leadDays === 1 ? '' : 's'}`} ahead`}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 2 }}>
                   {s.active && next ? `Next due: ${fmt(next)}` : 'Paused — no upcoming visits'}

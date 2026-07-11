@@ -13,6 +13,8 @@ export function useCreateRecurringSchedule() {
       frequency: Frequency
       startDate: string
       taskLabels: string[]
+      /** Days before an occurrence to materialize its visit (0–30). */
+      leadDays: number
       /** Occurrence already materialized (e.g. the first visit created inline). */
       lastGenerated?: string | null
     }) => {
@@ -23,6 +25,7 @@ export function useCreateRecurringSchedule() {
         frequency: input.frequency,
         start_date: input.startDate,
         task_labels: input.taskLabels,
+        lead_days: input.leadDays,
         last_generated: input.lastGenerated ?? null,
       })
       if (error) throw error

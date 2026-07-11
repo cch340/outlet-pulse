@@ -56,6 +56,8 @@ export interface AddForm {
   staffId: string
   tasks: ScheduleTaskItem[]
   repeat: Repeat
+  /** Days before each occurrence to create its visit (only used when repeat ≠ 'none'). */
+  leadDays: number
 }
 
 export interface AppState {
@@ -196,7 +198,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openAdd: () =>
         patch({
           addOpen: true,
-          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [], repeat: 'none' },
+          addForm: { storeKey: '', date: todayISO(), staffId: '', tasks: [], repeat: 'none', leadDays: 0 },
         }),
       closeAdd: () => patch({ addOpen: false, addForm: null }),
       setAf: (k, v) => setState((s) => ({ ...s, addForm: { ...s.addForm!, [k]: v } })),
