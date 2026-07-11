@@ -103,6 +103,19 @@ export function useUpdateVisit() {
   })
 }
 
+export function useDeleteVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    // visit_tasks.visit_id is ON DELETE CASCADE, so removing the visits row
+    // drops its tasks too (see migrations 0001 + 0004).
+    mutationFn: async (input: { visitId: string }) => {
+      const { error } = await supabase.from('visits').delete().eq('id', input.visitId)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.visits }),
+  })
+}
+
 export function useAddVisitTask() {
   const qc = useQueryClient()
   return useMutation({

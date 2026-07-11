@@ -6,6 +6,10 @@ interface AuthCtx {
   session: Session | null
   loading: boolean
   signOut: () => Promise<void>
+  /** True after a `PASSWORD_RECOVERY` event (user followed a reset link). */
+  passwordRecovery: boolean
+  /** Clear the recovery flag once the password has been updated. */
+  clearPasswordRecovery: () => void
 }
 
 const Ctx = createContext<AuthCtx | null>(null)
@@ -13,13 +17,20 @@ const Ctx = createContext<AuthCtx | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+    // Supabase fires PASSWORD_RECOVERY after establishing a session from the
+    // tokens in the reset-link URL hash. Flag it so App can show the
+    // "set a new password" screen instead of the shell.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s)
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
+    })
     return () => sub.subscription.unsubscribe()
   }, [])
 
@@ -27,7 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
-  return <Ctx.Provider value={{ session, loading, signOut }}>{children}</Ctx.Provider>
+  const clearPasswordRecovery = () => setPasswordRecovery(false)
+
+  return (
+    <Ctx.Provider value={{ session, loading, signOut, passwordRecovery, clearPasswordRecovery }}>
+      {children}
+    </Ctx.Provider>
+  )
 }
 
 export function useSession(): AuthCtx {

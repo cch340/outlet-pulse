@@ -1,9 +1,14 @@
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties, type FormEvent } from 'react'
 import { useStore } from '../data/store'
 import { ACCENT_PRESETS, type ThemePref } from '../data/settings'
 import type { Density } from '../data/store'
 import { Icon } from './Icon'
 import { useDialogA11y } from './useDialogA11y'
+import { useSession } from '../auth/AuthProvider'
+import { useToast } from './ToastProvider'
+import { supabase } from '../lib/supabase'
+import { validateNewPassword } from '../auth/passwordValidation'
+import { hasPasswordAuth, providerNote } from '../auth/accountProviders'
 
 const sectionLabel: CSSProperties = {
   fontSize: 12,
@@ -36,6 +41,25 @@ const segBtn = (active: boolean): CSSProperties => ({
   color: active ? '#fff' : 'var(--text)',
   transition: 'background var(--motion-dur-fast) var(--motion-ease), color var(--motion-dur-fast) var(--motion-ease)',
 })
+
+const fieldInput: CSSProperties = {
+  width: '100%',
+  border: '1px solid var(--border)',
+  background: 'var(--surface2)',
+  borderRadius: 8,
+  padding: '10px 12px',
+  fontFamily: "'IBM Plex Sans'",
+  fontSize: 13,
+  color: 'var(--text)',
+  boxSizing: 'border-box',
+}
+
+const fieldLabel: CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--dim)',
+  marginBottom: 6,
+}
 
 const THEME_OPTS: [ThemePref, string][] = [
   ['light', 'Light'],
@@ -156,8 +180,208 @@ export function SettingsModal() {
               ))}
             </div>
           </div>
+
+          {/* Account */}
+          <AccountSection />
         </div>
       </div>
+    </div>
+  )
+}
+
+function AccountSection() {
+  const { session, signOut } = useSession()
+  const toast = useToast()
+  const email = session?.user.email ?? ''
+
+  // Supabase lists linked sign-in methods on `user.identities`; fall back to
+  // `app_metadata.providers`/`provider` when identities aren't present.
+  const identities =
+    session?.user.identities ??
+    (session?.user.app_metadata.providers ?? (session?.user.app_metadata.provider ? [session.user.app_metadata.provider] : []))
+      .map((provider) => ({ provider }))
+  const canChangePassword = hasPasswordAuth(identities)
+  const note = providerNote(identities)
+
+  const [open, setOpen] = useState(false)
+  const [current, setCurrent] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const reset = () => {
+    setOpen(false)
+    setCurrent('')
+    setPassword('')
+    setConfirm('')
+    setErr('')
+  }
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    setErr('')
+    const validation = validateNewPassword(password, confirm)
+    if (validation) {
+      setErr(validation)
+      return
+    }
+    setBusy(true)
+    // Re-verify identity: sign in with the current password before changing it.
+    const { error: reauthError } = await supabase.auth.signInWithPassword({ email, password: current })
+    if (reauthError) {
+      setBusy(false)
+      setErr('Current password is incorrect.')
+      return
+    }
+    const { error } = await supabase.auth.updateUser({ password })
+    setBusy(false)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    toast.success('Password updated.')
+    reset()
+  }
+
+  return (
+    <div>
+      <div style={sectionLabel}>Account</div>
+
+      <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>Signed in as</div>
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--text)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          marginBottom: 16,
+        }}
+      >
+        {email}
+      </div>
+
+      {!canChangePassword ? (
+        <div style={{ fontSize: 12.5, color: 'var(--dim)', marginBottom: 16 }}>{note}</div>
+      ) : open ? (
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+          <div>
+            <div style={fieldLabel}>Current password</div>
+            <input
+              type="password"
+              required
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              style={fieldInput}
+              autoComplete="current-password"
+            />
+          </div>
+          <div>
+            <div style={fieldLabel}>New password</div>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={fieldInput}
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <div style={fieldLabel}>Confirm password</div>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              style={fieldInput}
+              autoComplete="new-password"
+            />
+          </div>
+
+          {err && <div style={{ fontSize: 13, color: '#dc2626' }}>{err}</div>}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                flex: 1,
+                border: 'none',
+                background: 'var(--accent)',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '9px 12px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: busy ? 'default' : 'pointer',
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              {busy ? 'Saving…' : 'Save password'}
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              style={{
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--text)',
+                borderRadius: 8,
+                padding: '9px 12px',
+                fontFamily: "'IBM Plex Sans'",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={{
+            width: '100%',
+            border: '1px solid var(--border)',
+            background: 'var(--surface2)',
+            color: 'var(--text)',
+            borderRadius: 8,
+            padding: '10px 12px',
+            fontFamily: "'IBM Plex Sans'",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginBottom: 16,
+          }}
+        >
+          Change password
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => signOut()}
+        style={{
+          border: 'none',
+          background: 'none',
+          color: '#dc2626',
+          fontFamily: "'IBM Plex Sans'",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        Sign out
+      </button>
     </div>
   )
 }

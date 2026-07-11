@@ -12,7 +12,7 @@ import { StoreCombobox } from './StoreCombobox'
 import { useDialogA11y } from './useDialogA11y'
 import { storeOptions } from '../data/queries/storePicker'
 import type { TaskStatus } from '../data/model'
-import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks } from '../data/queries/useVisitMutations'
+import { useSetTaskStatus, useSetTaskRemark, useMarkAllSuccess, useUpdateVisit, useAddVisitTask, useRemoveVisitTask, useImportVisitTasks, useDeleteVisit } from '../data/queries/useVisitMutations'
 import { taskHasResult, importableTemplates } from '../data/queries/visitEdit'
 
 const SEGMENTS: { value: TaskStatus; color: string; glyph: string; title: string }[] = [
@@ -32,6 +32,7 @@ export function VisitDrawer() {
   const addTask = useAddVisitTask()
   const removeTask = useRemoveVisitTask()
   const importTasks = useImportVisitTasks()
+  const deleteVisit = useDeleteVisit()
   const [newTaskLabel, setNewTaskLabel] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [selectedImportIds, setSelectedImportIds] = useState<string[]>([])
@@ -52,6 +53,26 @@ export function VisitDrawer() {
     addTask.mutate(
       { visitId: openF.id, label },
       { onSuccess: () => setNewTaskLabel(''), onError: (err) => toast.error("Couldn't add task: " + err.message) },
+    )
+  }
+
+  const onDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete visit',
+      message: `${vm.title} · ${vm.dateLabel} will be permanently deleted, along with its checklist.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    deleteVisit.mutate(
+      { visitId: openF.id },
+      {
+        onSuccess: () => {
+          closeVisit()
+          toast.success('Visit deleted.')
+        },
+        onError: (e) => toast.error("Couldn't delete visit: " + e.message),
+      },
     )
   }
 
@@ -463,6 +484,27 @@ export function VisitDrawer() {
               Sets the {vm.pendingT} pending {vm.pendingT === 1 ? 'task' : 'tasks'} to success · failed tasks are kept
             </div>
           )}
+          <button
+            type="button"
+            onClick={onDelete}
+            style={{
+              alignSelf: 'center',
+              border: 'none',
+              background: 'none',
+              color: '#dc2626',
+              fontFamily: "'IBM Plex Sans'",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 8px',
+            }}
+          >
+            <Icon name="delete" size={17} />
+            Delete visit
+          </button>
         </div>
       </div>
     </div>

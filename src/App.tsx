@@ -4,8 +4,10 @@ import { ToastProvider } from './components/ToastProvider'
 import { ConfirmProvider } from './components/ConfirmProvider'
 import { useData } from './data/queries/useData'
 import { useAutoGenerateVisits } from './data/queries/useAutoGenerateVisits'
+import { useOverdueDigest } from './components/useOverdueDigest'
 import { useSession } from './auth/AuthProvider'
 import { Login } from './screens/Login'
+import { ResetPassword } from './screens/ResetPassword'
 import { rootStyle, appShellStyle } from './theme'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
@@ -33,6 +35,7 @@ function Shell() {
   const { isLoading, isError } = useData()
   const isMobile = state.isMobile
   useAutoGenerateVisits()
+  useOverdueDigest()
 
   if (isLoading) return <div style={{ padding: 40 }}>Loading…</div>
   if (isError) return <div style={{ padding: 40 }}>Failed to load data. Check your Supabase connection.</div>
@@ -100,9 +103,12 @@ function ThemedRoot() {
 }
 
 export function App() {
-  const { session, loading } = useSession()
+  const { session, loading, passwordRecovery, clearPasswordRecovery } = useSession()
 
   if (loading) return <div style={{ padding: 40, fontFamily: "'IBM Plex Sans'" }}>Loading…</div>
+  // A reset link establishes a session AND fires PASSWORD_RECOVERY. Show the
+  // dedicated set-password screen instead of the shell until the user updates.
+  if (passwordRecovery) return <ResetPassword onDone={clearPasswordRecovery} />
   if (!session) return <Login />
 
   return (

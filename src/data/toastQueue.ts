@@ -1,6 +1,6 @@
 /** Toast queue model — pure, testable logic kept out of the React layer. */
 
-export type ToastVariant = 'success' | 'error'
+export type ToastVariant = 'success' | 'error' | 'info'
 
 export interface Toast {
   id: number
