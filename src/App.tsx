@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { StoreProvider, useStore } from './data/store'
 import { ToastProvider } from './components/ToastProvider'
 import { ConfirmProvider } from './components/ConfirmProvider'
@@ -9,10 +10,12 @@ import { rootStyle, appShellStyle } from './theme'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { BottomNav } from './components/BottomNav'
-import { Dashboard } from './screens/Dashboard'
-import { Stores } from './screens/Stores'
-import { Visits } from './screens/Visits'
-import { Manage } from './screens/Manage'
+
+// Route-level code splitting: each screen loads as its own chunk on first view.
+const Dashboard = lazy(() => import('./screens/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Stores = lazy(() => import('./screens/Stores').then((m) => ({ default: m.Stores })))
+const Visits = lazy(() => import('./screens/Visits').then((m) => ({ default: m.Visits })))
+const Manage = lazy(() => import('./screens/Manage').then((m) => ({ default: m.Manage })))
 import { StoreVisitsDrawer } from './components/StoreVisitsDrawer'
 import { VisitDrawer } from './components/VisitDrawer'
 import { TransferModal } from './components/TransferModal'
@@ -52,10 +55,12 @@ function Shell() {
           <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--pad)' }}>
             {/* Keyed by activeScreen so the fadein re-runs each screen switch. */}
             <div key={state.activeScreen} style={{ maxWidth: 1300, margin: '0 auto', animation: 'fadein var(--motion-dur) var(--motion-ease)' }}>
-              {state.activeScreen === 'dashboard' && <Dashboard />}
-              {state.activeScreen === 'stores' && <Stores />}
-              {state.activeScreen === 'visits' && <Visits />}
-              {state.activeScreen === 'manage' && <Manage />}
+              <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Loading…</div>}>
+                {state.activeScreen === 'dashboard' && <Dashboard />}
+                {state.activeScreen === 'stores' && <Stores />}
+                {state.activeScreen === 'visits' && <Visits />}
+                {state.activeScreen === 'manage' && <Manage />}
+              </Suspense>
             </div>
           </main>
           {isMobile && <BottomNav />}

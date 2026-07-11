@@ -6,7 +6,15 @@ import { App } from './App'
 import { AuthProvider } from './auth/AuthProvider'
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { refetchOnWindowFocus: false } },
+  defaultOptions: {
+    queries: {
+      // Treat data as fresh for 1 min so screen switches (and the overdue
+      // badge) reuse cache instead of refetching on every mount. Mutations
+      // still invalidate their keys, which refetches active queries.
+      staleTime: 60_000,
+      refetchOnWindowFocus: false,
+    },
+  },
 })
 
 createRoot(document.getElementById('root')!).render(
