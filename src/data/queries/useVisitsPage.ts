@@ -18,6 +18,47 @@ export interface VisitsPageParams {
   offset: number
 }
 
+/** Run the `visits_page` RPC then hydrate + order the matching visit rows. */
+async function fetchVisitsPage(p: VisitsPageParams): Promise<{ visits: Visit[]; total: number }> {
+  const { data: pageRows, error } = await supabase.rpc('visits_page', {
+    p_today: p.today,
+    p_from: p.from,
+    p_to: p.to,
+    p_status: p.status,
+    p_latest: p.latest,
+    p_search: p.search,
+    p_brand: p.brand,
+    p_outlet: p.outlet,
+    p_limit: p.limit,
+    p_offset: p.offset,
+  })
+  if (error) throw error
+  const rows = (pageRows ?? []) as { id: string; total_count: number }[]
+  if (rows.length === 0) return { visits: [] as Visit[], total: 0 }
+  const ids = rows.map((r) => r.id)
+  const total = Number(rows[0].total_count)
+  const { data: vRows, error: vErr } = await supabase
+    .from('visits')
+    .select('*, visit_tasks(*)')
+    .in('id', ids)
+  if (vErr) throw vErr
+  const visits = orderByIds((vRows ?? []).map(rowToVisit), ids)
+  return { visits, total }
+}
+
+/** Max visits a single CSV export will fetch/emit. */
+export const EXPORT_CAP = 2000
+
+export type ExportParams = Omit<VisitsPageParams, 'limit' | 'offset'>
+
+/**
+ * Fetch all visits matching the current filters for a CSV export (capped at
+ * {@link EXPORT_CAP}). Reuses the same RPC + row hydration as the paged view.
+ */
+export async function fetchVisitsForExport(p: ExportParams): Promise<{ visits: Visit[]; total: number }> {
+  return fetchVisitsPage({ ...p, limit: EXPORT_CAP, offset: 0 })
+}
+
 export function useVisitsPage(p: VisitsPageParams): {
   visits: Visit[]
   total: number
@@ -27,32 +68,7 @@ export function useVisitsPage(p: VisitsPageParams): {
   const query = useQuery({
     queryKey: queryKeys.visitsPage(p),
     placeholderData: keepPreviousData,
-    queryFn: async () => {
-      const { data: pageRows, error } = await supabase.rpc('visits_page', {
-        p_today: p.today,
-        p_from: p.from,
-        p_to: p.to,
-        p_status: p.status,
-        p_latest: p.latest,
-        p_search: p.search,
-        p_brand: p.brand,
-        p_outlet: p.outlet,
-        p_limit: p.limit,
-        p_offset: p.offset,
-      })
-      if (error) throw error
-      const rows = (pageRows ?? []) as { id: string; total_count: number }[]
-      if (rows.length === 0) return { visits: [] as Visit[], total: 0 }
-      const ids = rows.map((r) => r.id)
-      const total = Number(rows[0].total_count)
-      const { data: vRows, error: vErr } = await supabase
-        .from('visits')
-        .select('*, visit_tasks(*)')
-        .in('id', ids)
-      if (vErr) throw vErr
-      const visits = orderByIds((vRows ?? []).map(rowToVisit), ids)
-      return { visits, total }
-    },
+    queryFn: () => fetchVisitsPage(p),
   })
   return {
     visits: query.data?.visits ?? [],

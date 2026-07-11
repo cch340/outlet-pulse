@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useData } from '../data/queries/useData'
 import { useMarkAllSuccess } from '../data/queries/useVisitMutations'
-import { useVisitsPage, useVisitStatusCounts } from '../data/queries/useVisitsPage'
-import { visitVM, today, localDateStr, TASK_STATUS_COLOR } from '../data/derived'
+import { useVisitsPage, useVisitStatusCounts, fetchVisitsForExport } from '../data/queries/useVisitsPage'
+import { visitVM, today, localDateStr, brandById, outletById, staffById, TASK_STATUS_COLOR } from '../data/derived'
 import { resolveDateRange, pageCount, type DatePreset } from '../data/queries/visitsQuery'
 import type { VisitFilter } from '../data/store'
 import type { Task } from '../data/model'
 import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
+import { useToast } from '../components/ToastProvider'
+import { visitRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
+import { downloadTextFile } from '../data/download'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const PAGE_SIZE = 25
@@ -76,8 +79,10 @@ export function Visits() {
   const { state, setVisitFilter, openVisit } = useStore()
   const { data } = useData()
   const markAllMutation = useMarkAllSuccess()
+  const toast = useToast()
   const S = state
   const isMobile = S.isMobile
+  const [exporting, setExporting] = useState(false)
 
   const [datePreset, setDatePreset] = useState<DatePreset>('all')
   const [customFrom, setCustomFrom] = useState('')
@@ -171,6 +176,43 @@ export function Visits() {
     }
   }
 
+  const handleExport = async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const { visits: all, total: matched } = await fetchVisitsForExport({
+        today: todayStr,
+        from,
+        to,
+        status: S.visitFilter,
+        latest: latestPerStore,
+        search,
+        brand,
+        outlet,
+      })
+      if (all.length === 0) {
+        toast.error('No visits match this filter.')
+        return
+      }
+      const matrix = visitRows(all, {
+        brandName: (id) => brandById(data, id).name,
+        outletName: (id) => outletById(data, id).name,
+        staffName: (id) => (id ? staffById(data, id).name : ''),
+        status: (v) => visitVM(data, v).statusLabel,
+      })
+      downloadTextFile(exportFilename('visits', todayStr), 'text/csv;charset=utf-8', CSV_BOM + toCsv(matrix))
+      if (matched > all.length) {
+        toast.error(`Exported first ${all.length} of ${matched} visits.`)
+      } else {
+        toast.success(`Exported ${all.length} visit${all.length === 1 ? '' : 's'}.`)
+      }
+    } catch {
+      toast.error("Couldn't export visits.")
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* filter toolbar */}
@@ -220,6 +262,32 @@ export function Visits() {
           <input type="checkbox" checked={allExpanded} onChange={toggleAll} />
           Expand all
         </label>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+          aria-label="Export CSV"
+          title="Export the filtered visits as CSV"
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text)',
+            borderRadius: 8,
+            padding: '6px 11px',
+            fontFamily: "'IBM Plex Sans'",
+            fontSize: 12.5,
+            fontWeight: 600,
+            cursor: exporting ? 'not-allowed' : 'pointer',
+            opacity: exporting ? 0.55 : 1,
+          }}
+        >
+          <Icon name={exporting ? 'progress_activity' : 'download'} size={17} />
+          {!isMobile && (exporting ? 'Exporting…' : 'Export CSV')}
+        </button>
       </div>
 
       <div style={{ ...card, overflow: 'hidden' }}>

@@ -3,10 +3,13 @@ import { useData } from '../data/queries/useData'
 import { useStore } from '../data/store'
 import { useLatestFailedTasks } from '../data/queries/useLatestFailedTasks'
 import { buildStoreGroups, type StoreRow } from '../data/queries/storeRows'
-import { today, fmt } from '../data/derived'
+import { today, fmt, localDateStr } from '../data/derived'
 import { card, pill } from '../theme'
 import { Icon } from '../components/Icon'
 import { periodParams, yearOptions, MONTH_NAMES } from './dashboardPeriod'
+import { useToast } from '../components/ToastProvider'
+import { failedTaskRows, toCsv, exportFilename, CSV_BOM } from '../data/csvExport'
+import { downloadTextFile } from '../data/download'
 
 const selectStyle = {
   border: '1px solid var(--border)',
@@ -23,6 +26,7 @@ const selectStyle = {
 export function Stores() {
   const { data } = useData()
   const { openStoreVisits } = useStore()
+  const toast = useToast()
   const t = today()
   const [filterYear, setFilterYear] = useState(t.getFullYear())
   const [filterMonth, setFilterMonth] = useState(t.getMonth() + 1)
@@ -32,6 +36,18 @@ export function Stores() {
   const { rows: latestFailed, isError } = useLatestFailedTasks(month)
 
   const groups = buildStoreGroups(data, latestFailed)
+  const failedCount = latestFailed.reduce((n, v) => n + v.failed.length, 0)
+
+  const handleExport = () => {
+    if (failedCount === 0) return
+    const matrix = failedTaskRows(latestFailed)
+    downloadTextFile(
+      exportFilename('failed-tasks', localDateStr(t)),
+      'text/csv;charset=utf-8',
+      CSV_BOM + toCsv(matrix),
+    )
+    toast.success(`Exported ${failedCount} failed task${failedCount === 1 ? '' : 's'}.`)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -48,9 +64,32 @@ export function Stores() {
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
-        <label
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={failedCount === 0}
+          title="Export this month's failed tasks as CSV"
           style={{
             marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            border: 'none',
+            background: 'none',
+            padding: '2px 0',
+            fontFamily: "'IBM Plex Sans'",
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: 'var(--accent)',
+            cursor: failedCount === 0 ? 'not-allowed' : 'pointer',
+            opacity: failedCount === 0 ? 0.45 : 1,
+          }}
+        >
+          <Icon name="download" size={16} />
+          Export CSV
+        </button>
+        <label
+          style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
