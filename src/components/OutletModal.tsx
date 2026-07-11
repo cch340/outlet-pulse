@@ -23,7 +23,7 @@ export function OutletModal() {
     if (!name.trim()) return
     if (m.mode === 'add') {
       create.mutate(
-        { name: name.trim(), location: location.trim() },
+        { name: name.trim(), location: location.trim(), sort: data.outlets.length },
         {
           onSuccess: () => { closeOutletModal(); toast.success(`Outlet "${name.trim()}" created`) },
           onError: (e) => toast.error("Couldn't create outlet: " + e.message),

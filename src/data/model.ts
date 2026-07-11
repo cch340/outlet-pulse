@@ -13,6 +13,7 @@ export interface Outlet {
   id: string
   name: string
   location: string
+  sort: number
 }
 
 /** JOIN row: a brand operating in an outlet. */

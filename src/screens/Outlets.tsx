@@ -7,19 +7,28 @@ import { ListSearchInput, listSortSelectStyle } from '../components/ListSearchIn
 import { matchesQuery, compareBy } from '../data/listFilter'
 import { useToast } from '../components/ToastProvider'
 import { useConfirm } from '../components/ConfirmProvider'
-import { useDeleteOutlet } from '../data/queries/useOutletMutations'
+import { useDeleteOutlet, useReorderOutlets } from '../data/queries/useOutletMutations'
 
-type OutletSort = 'name-asc' | 'name-desc' | 'brands' | 'staff'
+type OutletSort = 'custom' | 'name-asc' | 'name-desc' | 'brands' | 'staff'
 
 export function Outlets() {
   const { state, openOutletDetail, openOutletModal } = useStore()
   const { data } = useData()
   const del = useDeleteOutlet()
+  const reorderO = useReorderOutlets()
   const toast = useToast()
   const confirm = useConfirm()
   const isMobile = state.isMobile
   const [q, setQ] = useState('')
-  const [sort, setSort] = useState<OutletSort>('name-asc')
+  const [sort, setSort] = useState<OutletSort>('custom')
+  const ids = data.outlets.map((o) => o.id)
+  const move = (index: number, dir: -1 | 1) => {
+    const j = index + dir
+    if (j < 0 || j >= ids.length) return
+    const next = ids.slice()
+    ;[next[index], next[j]] = [next[j], next[index]]
+    reorderO.mutate({ ids: next }, { onError: (e) => toast.error("Couldn't reorder outlets: " + e.message) })
+  }
 
   const allRows = data.outlets.map((o) => ({
     id: o.id,
@@ -29,17 +38,22 @@ export function Outlets() {
     staffCount: data.staff.filter((s) => s.outletId === o.id).length,
   }))
 
-  const rows = allRows
-    .filter((r) => matchesQuery(q, r.name, r.location))
-    .sort(
-      sort === 'name-asc'
-        ? compareBy((r) => r.name, 'asc')
-        : sort === 'name-desc'
-          ? compareBy((r) => r.name, 'desc')
-          : sort === 'brands'
-            ? compareBy((r) => r.brandCount, 'desc')
-            : compareBy((r) => r.staffCount, 'desc'),
-    )
+  // Reordering is only coherent in the default view; a filtered or re-sorted
+  // list has row indices that no longer map to the persisted `sort` order.
+  const reorderable = q.trim() === '' && sort === 'custom'
+  const filtered = allRows.filter((r) => matchesQuery(q, r.name, r.location))
+  const rows =
+    sort === 'custom'
+      ? filtered
+      : filtered.slice().sort(
+          sort === 'name-asc'
+            ? compareBy((r) => r.name, 'asc')
+            : sort === 'name-desc'
+              ? compareBy((r) => r.name, 'desc')
+              : sort === 'brands'
+                ? compareBy((r) => r.brandCount, 'desc')
+                : compareBy((r) => r.staffCount, 'desc'),
+        )
 
   const del1 = async (id: string, name: string) => {
     const ok = await confirm({
@@ -92,6 +106,7 @@ export function Outlets() {
           onChange={(e) => setSort(e.target.value as OutletSort)}
           style={{ ...listSortSelectStyle, marginLeft: isMobile ? undefined : 'auto' }}
         >
+          <option value="custom">Custom order</option>
           <option value="name-asc">Name A–Z</option>
           <option value="name-desc">Name Z–A</option>
           <option value="brands">Brands</option>
@@ -107,7 +122,7 @@ export function Outlets() {
 
       {rows.length > 0 && !isMobile && (
         <div style={{ ...card, overflowX: 'auto' }}>
-          <div style={{ minWidth: 560 }}>
+          <div style={{ minWidth: 640 }}>
             <div
               style={{
                 display: 'flex',
@@ -124,9 +139,9 @@ export function Outlets() {
               <div style={{ flex: 2.4, minWidth: 160 }}>Outlet</div>
               <div style={{ flex: 1, minWidth: 80 }}>Brands</div>
               <div style={{ flex: 1, minWidth: 80 }}>Staff</div>
-              <div style={{ width: 230, textAlign: 'right' }}>Action</div>
+              <div style={{ width: 300, textAlign: 'right' }}>Action</div>
             </div>
-            {rows.map((r) => (
+            {rows.map((r, i) => (
               <div
                 key={r.id}
                 style={{ display: 'flex', alignItems: 'center', padding: 'var(--rowpad)', paddingLeft: 16, paddingRight: 16, borderBottom: '1px solid var(--border)' }}
@@ -140,7 +155,17 @@ export function Outlets() {
                 </div>
                 <div style={{ flex: 1, minWidth: 80, fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{r.brandCount}</div>
                 <div style={{ flex: 1, minWidth: 80, fontFamily: "'IBM Plex Mono'", fontSize: 13, fontWeight: 600 }}>{r.staffCount}</div>
-                <div style={{ width: 230, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                <div style={{ width: 300, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                  {reorderable && (
+                    <>
+                      <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                        <Icon name="arrow_upward" size={16} />
+                      </button>
+                      <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
+                        <Icon name="arrow_downward" size={16} />
+                      </button>
+                    </>
+                  )}
                   <button onClick={() => openOutletDetail(r.id)} style={actionBtn()}>
                     <Icon name="visibility" size={16} />
                     Detail
@@ -161,7 +186,7 @@ export function Outlets() {
 
       {rows.length > 0 && isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {rows.map((r) => (
+          {rows.map((r, i) => (
             <div key={r.id} style={{ ...card, padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                 <OutletIcon size={38} />
@@ -174,6 +199,16 @@ export function Outlets() {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                {reorderable && (
+                  <>
+                    <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ ...actionBtn(), cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}>
+                      <Icon name="arrow_upward" size={16} />
+                    </button>
+                    <button onClick={() => move(i, 1)} disabled={i === ids.length - 1} title="Move down" style={{ ...actionBtn(), cursor: i === ids.length - 1 ? 'default' : 'pointer', opacity: i === ids.length - 1 ? 0.3 : 1 }}>
+                      <Icon name="arrow_downward" size={16} />
+                    </button>
+                  </>
+                )}
                 <button onClick={() => openOutletDetail(r.id)} title="Detail" style={{ ...actionBtn(), marginLeft: 'auto' }}>
                   <Icon name="visibility" size={16} />
                 </button>
