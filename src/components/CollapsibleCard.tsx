@@ -52,10 +52,10 @@ export function CollapsibleCard({
           name="expand_more"
           size={20}
           color="var(--dim)"
-          style={{ marginLeft: 'auto', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}
+          style={{ marginLeft: 'auto', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform var(--motion-dur-fast) var(--motion-ease)' }}
         />
       </button>
-      {open && <div style={{ marginTop: 14, animation: 'fadein .2s ease' }}>{children}</div>}
+      {open && <div style={{ marginTop: 14, animation: 'fadein var(--motion-dur) var(--motion-ease)' }}>{children}</div>}
     </div>
   )
 }

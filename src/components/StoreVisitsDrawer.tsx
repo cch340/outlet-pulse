@@ -33,7 +33,7 @@ export function StoreVisitsDrawer() {
   return (
     <div
       onClick={closeStoreVisits}
-      style={{ position: ovPos, inset: 0, zIndex: 45, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop .2s ease' }}
+      style={{ position: ovPos, inset: 0, zIndex: 45, background: 'rgba(0,0,0,.42)', display: 'flex', justifyContent: 'flex-end', animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -45,7 +45,7 @@ export function StoreVisitsDrawer() {
           display: 'flex',
           flexDirection: 'column',
           borderLeft: '1px solid var(--border)',
-          animation: 'slidein .22s ease',
+          animation: 'slidein var(--motion-dur) var(--motion-ease)',
         }}
       >
         <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>

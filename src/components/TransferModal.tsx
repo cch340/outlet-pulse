@@ -44,7 +44,7 @@ export function TransferModal() {
   return (
     <div
       onClick={closeTransfer}
-      style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop .2s ease' }}
+      style={{ position: ovPos, inset: 0, zIndex: 60, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'backdrop var(--motion-dur) var(--motion-ease)' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -56,7 +56,7 @@ export function TransferModal() {
           background: 'var(--surface)',
           borderRadius: 14,
           boxShadow: '0 30px 80px rgba(0,0,0,.3)',
-          animation: 'pop .18s ease',
+          animation: 'pop var(--motion-dur) var(--motion-ease)',
         }}
       >
         {/* header */}
