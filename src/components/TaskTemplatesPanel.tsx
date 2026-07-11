@@ -5,6 +5,7 @@ import { actionBtn, card } from '../theme'
 import { Icon } from './Icon'
 import { AddTaskToVisitsModal } from './AddTaskToVisitsModal'
 import { useToast } from './ToastProvider'
+import { useConfirm } from './ConfirmProvider'
 import {
   useCreateTaskTemplate,
   useRenameTaskTemplate,
@@ -16,6 +17,7 @@ export function TaskTemplatesPanel() {
   const { state } = useStore()
   const isMobile = state.isMobile
   const toast = useToast()
+  const confirm = useConfirm()
   const { data } = useData()
   const createT = useCreateTaskTemplate()
   const renameT = useRenameTaskTemplate()
@@ -40,6 +42,20 @@ export function TaskTemplatesPanel() {
     const next = ids.slice()
     ;[next[index], next[j]] = [next[j], next[index]]
     reorderT.mutate({ ids: next }, { onError: (e) => toast.error("Couldn't reorder tasks: " + e.message) })
+  }
+
+  const remove = async (id: string, label: string) => {
+    const ok = await confirm({
+      title: 'Delete task template?',
+      message: `"${label}" will be removed from your reusable checks. Existing visits keep their tasks.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    deleteT.mutate(
+      { id },
+      { onSuccess: () => toast.success(`Task "${label}" deleted`), onError: (err) => toast.error("Couldn't delete task: " + err.message) },
+    )
   }
 
   const inputStyle = {
@@ -143,7 +159,7 @@ export function TaskTemplatesPanel() {
                 <Icon name="add_task" size={16} />
               </button>
               <button
-                onClick={() => deleteT.mutate({ id: t.id }, { onSuccess: () => toast.success(`Task "${t.label}" deleted`), onError: (err) => toast.error("Couldn't delete task: " + err.message) })}
+                onClick={() => remove(t.id, t.label)}
                 title="Delete"
                 style={actionBtn({ danger: true })}
               >

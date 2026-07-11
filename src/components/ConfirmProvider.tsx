@@ -56,7 +56,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             onClick={(e) => e.stopPropagation()}
             role="alertdialog"
             aria-modal="true"
-            style={{ width: 420, maxWidth: '100%', background: 'var(--surface)', borderRadius: 14, boxShadow: '0 30px 80px rgba(0,0,0,.3)', animation: 'pop var(--motion-dur) var(--motion-ease)' }}
+            style={{ width: 420, maxWidth: '100%', background: 'var(--surface)', color: 'var(--text)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", borderRadius: 14, boxShadow: '0 30px 80px rgba(0,0,0,.3)', animation: 'pop var(--motion-dur) var(--motion-ease)' }}
           >
             <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

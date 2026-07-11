@@ -33,8 +33,7 @@ function Shell() {
   if (isError) return <div style={{ padding: 40 }}>Failed to load data. Check your Supabase connection.</div>
 
   return (
-    <div style={rootStyle(state)}>
-      <div style={appShellStyle(isMobile)}>
+    <div style={appShellStyle(isMobile)}>
         {!isMobile && <Sidebar />}
 
         <div
@@ -71,7 +70,24 @@ function Shell() {
         {state.outletDetailId && <OutletDetailModal />}
         {state.staffDetailId && <StaffDetailModal />}
         {state.settingsOpen && <SettingsModal />}
-      </div>
+    </div>
+  )
+}
+
+/**
+ * Wraps the app UI in the themed `rootStyle` root so the CSS variables + app font
+ * apply to everything inside — crucially including the Toast/Confirm provider overlays,
+ * which render alongside Shell. Must live inside StoreProvider to read `state`.
+ */
+function ThemedRoot() {
+  const { state } = useStore()
+  return (
+    <div style={rootStyle(state)}>
+      <ToastProvider>
+        <ConfirmProvider>
+          <Shell />
+        </ConfirmProvider>
+      </ToastProvider>
     </div>
   )
 }
@@ -84,11 +100,7 @@ export function App() {
 
   return (
     <StoreProvider>
-      <ToastProvider>
-        <ConfirmProvider>
-          <Shell />
-        </ConfirmProvider>
-      </ToastProvider>
+      <ThemedRoot />
     </StoreProvider>
   )
 }
