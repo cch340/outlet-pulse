@@ -39,4 +39,20 @@ export default tseslint.config(
       'react-refresh/only-export-components': 'warn',
     },
   },
+  {
+    // Vercel serverless functions — plain Node/TypeScript, so none of the React
+    // presets above apply, but they should still be linted rather than skipped.
+    files: ['api/**/*.ts'],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
 )

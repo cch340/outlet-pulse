@@ -110,6 +110,8 @@ src/
   lib/          Supabase client
   screens/      Top-level screens (Dashboard, Visits, Staff, Brands, …)
   theme.ts      Design tokens / CSS variables
+api/
+  keepalive.ts  Vercel cron function (Supabase keep-alive)
 supabase/
   migrations/   Ordered SQL migrations (applied manually)
 tests/e2e/      Playwright end-to-end tests
@@ -123,34 +125,32 @@ project.
 
 ### Keeping the Supabase project awake
 
-Supabase pauses Free plan projects after 7 days without database activity. Keeping it awake
-means running a real query on a schedule — an unauthenticated ping is rejected at the API
-gateway with a `401` and never reaches Postgres, so it does not count as activity.
+Supabase pauses Free plan projects after 7 days without database activity. `api/keepalive.ts`
+runs on a daily Vercel cron (the `crons` entry in `vercel.json`) and issues one real PostgREST
+query against `brands`, which resets that window.
 
-This runs as an external UptimeRobot monitor rather than a CI job, because GitHub disables
-scheduled workflows in repos with no commits for 60 days and this project is in maintenance.
+The query has to be authenticated: an unauthenticated request is rejected at the Supabase API
+gateway with a `401` and never reaches Postgres, so it would not count as activity. Per-user
+RLS means the anon key matches no rows and the response is an empty array — that is expected.
+What matters is that the query reaches the database.
 
-**Monitor configuration** (UptimeRobot → Add New Monitor):
+A Vercel cron was chosen over a scheduled GitHub Action or an external uptime monitor because
+both of those depend on your own activity: GitHub disables cron workflows in repos with no
+commits for 60 days, and UptimeRobot pauses monitors on free accounts after 90 days without a
+login. A cron keeps running as long as the project stays deployed, which suits maintenance.
 
-| Field | Value |
+**Environment variables** (Vercel → Settings → Environment Variables, Production):
+
+| Variable | Notes |
 | --- | --- |
-| Monitor type | HTTP(s) |
-| URL | `https://<project-ref>.supabase.co/rest/v1/brands?select=id&limit=1&apikey=<publishable-key>` |
-| Monitoring interval | 60 minutes |
+| `CRON_SECRET` | Required. Any random string. Vercel sends it as `Authorization: Bearer <secret>` on cron invocations; the handler rejects anything else, so an unset secret makes the endpoint fail closed rather than publicly callable. |
+| `SUPABASE_URL` | Optional — falls back to the existing `VITE_SUPABASE_URL`. |
+| `SUPABASE_ANON_KEY` | Optional — falls back to the existing `VITE_SUPABASE_ANON_KEY`. |
 
-A healthy check returns `200` with an empty array. RLS scopes every table by
-`owner_id = auth.uid()`, so an unauthenticated request matches no rows — that is expected;
-what matters is that the query reaches Postgres. Because the monitor alerts on any non-2xx
-response, a rotated key or a paused project surfaces as a downtime email instead of failing
-silently.
-
-The key goes in the query string because UptimeRobot only supports custom request headers on
-paid plans. That is acceptable here: the publishable key is public by design (it ships in the
-client bundle) and grants no row access on its own. Rotating it means updating the monitor URL.
-
-**Caveats:** UptimeRobot pauses monitors on free accounts after 90 days without a login.
-Upgrading Supabase to the Pro plan removes inactivity pausing entirely and is the only
-guaranteed fix.
+Hobby-plan crons run at most once a day and fire at some point within the scheduled hour, which
+is ample for a 7-day window. The function returns a non-2xx on failure, visible under the
+project's cron logs. Upgrading Supabase to the Pro plan removes inactivity pausing entirely and
+is the only guaranteed fix.
 
 ## Conventions
 

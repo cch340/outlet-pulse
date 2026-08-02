@@ -8,12 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` — type-check (`tsc -b`) then production `vite build`. The build fails on unused locals/params (`tsconfig` has `noUnusedLocals`/`noUnusedParameters`).
 - `npm test` — run the Vitest suite once (`vitest run`).
 - Run a single test file: `npx vitest run src/data/queries/transferLogic.test.ts`. Watch a file: `npx vitest src/data/queries/mappers.test.ts`.
-- `npm run lint` — ESLint (flat config in `eslint.config.js`; scoped to `src/**`, honors the `_`-prefix intentional-unused convention).
+- `npm run lint` — ESLint (flat config in `eslint.config.js`; scoped to `src/**` and `api/**`, honors the `_`-prefix intentional-unused convention).
 - `npm run test:e2e` — Playwright smoke suite in `tests/e2e/` (chromium). Supabase is stubbed (`tests/e2e/support/stubSupabase.ts`); the `webServer` starts the dev server with dummy env, so no real backend is contacted.
 
 Vitest runs in the `node` environment and only matches `src/**/*.test.ts` (see `vitest.config.ts`); Playwright owns `tests/e2e` only. There are no DOM/component unit tests — logic is extracted into pure, testable modules (e.g. `transferLogic.ts`, `mappers.ts`) precisely so it can be unit-tested without React.
 
-**CI** (`.github/workflows/ci.yml`) runs on PRs and pushes to `main`: one job does `npm ci` → `test` → `lint` → `build`, and a parallel job runs the Playwright e2e suite. Supabase Free plan pausing (7 days of no database activity) is kept at bay by an **external UptimeRobot monitor**, not a scheduled workflow — GitHub disables cron workflows in repos with no commits for 60 days, and this project is in maintenance. See the README for the monitor URL shape; don't re-add a keepalive workflow.
+**CI** (`.github/workflows/ci.yml`) runs on PRs and pushes to `main`: one job does `npm ci` → `test` → `lint` → `build`, and a parallel job runs the Playwright e2e suite. Supabase Free plan pausing (7 days of no database activity) is kept at bay by a **daily Vercel cron** (`api/keepalive.ts` + the `crons` entry in `vercel.json`), deliberately not a scheduled workflow — GitHub disables cron workflows in repos with no commits for 60 days, and this project is in maintenance. Don't re-add a keepalive workflow. The cron query must stay authenticated: an unauthenticated request is rejected at the Supabase gateway with a 401 and never reaches Postgres, so it would not count as activity.
 
 ## Environment
 
