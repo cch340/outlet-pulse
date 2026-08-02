@@ -121,6 +121,22 @@ Deployed on Vercel. `vercel.json` rewrites all routes to `/index.html` for SPA r
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables in the Vercel
 project.
 
+### Keeping the Supabase project awake
+
+Supabase pauses Free plan projects after 7 days without database activity.
+`.github/workflows/keepalive.yml` runs a daily `select` against `brands` to reset that
+window. It needs two repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+| --- | --- |
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_ANON_KEY` | the anon/publishable key |
+
+Trigger it once manually from the Actions tab to confirm it returns HTTP 200. Note that
+GitHub disables scheduled workflows in repos with no commits for 60 days — if that happens,
+re-enable it from the Actions tab. Upgrading to the Pro plan removes inactivity pausing
+entirely and is the only guaranteed fix.
+
 ## Conventions
 
 - Extract non-trivial logic into a pure module with a `.test.ts` rather than embedding it in
