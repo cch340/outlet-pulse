@@ -123,19 +123,34 @@ project.
 
 ### Keeping the Supabase project awake
 
-Supabase pauses Free plan projects after 7 days without database activity.
-`.github/workflows/keepalive.yml` runs a daily `select` against `brands` to reset that
-window. It needs two repository secrets (Settings → Secrets and variables → Actions):
+Supabase pauses Free plan projects after 7 days without database activity. Keeping it awake
+means running a real query on a schedule — an unauthenticated ping is rejected at the API
+gateway with a `401` and never reaches Postgres, so it does not count as activity.
 
-| Secret | Value |
+This runs as an external UptimeRobot monitor rather than a CI job, because GitHub disables
+scheduled workflows in repos with no commits for 60 days and this project is in maintenance.
+
+**Monitor configuration** (UptimeRobot → Add New Monitor):
+
+| Field | Value |
 | --- | --- |
-| `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
-| `SUPABASE_ANON_KEY` | the anon/publishable key |
+| Monitor type | HTTP(s) |
+| URL | `https://<project-ref>.supabase.co/rest/v1/brands?select=id&limit=1&apikey=<publishable-key>` |
+| Monitoring interval | 60 minutes |
 
-Trigger it once manually from the Actions tab to confirm it returns HTTP 200. Note that
-GitHub disables scheduled workflows in repos with no commits for 60 days — if that happens,
-re-enable it from the Actions tab. Upgrading to the Pro plan removes inactivity pausing
-entirely and is the only guaranteed fix.
+A healthy check returns `200` with an empty array. RLS scopes every table by
+`owner_id = auth.uid()`, so an unauthenticated request matches no rows — that is expected;
+what matters is that the query reaches Postgres. Because the monitor alerts on any non-2xx
+response, a rotated key or a paused project surfaces as a downtime email instead of failing
+silently.
+
+The key goes in the query string because UptimeRobot only supports custom request headers on
+paid plans. That is acceptable here: the publishable key is public by design (it ships in the
+client bundle) and grants no row access on its own. Rotating it means updating the monitor URL.
+
+**Caveats:** UptimeRobot pauses monitors on free accounts after 90 days without a login.
+Upgrading Supabase to the Pro plan removes inactivity pausing entirely and is the only
+guaranteed fix.
 
 ## Conventions
 

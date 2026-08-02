@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Vitest runs in the `node` environment and only matches `src/**/*.test.ts` (see `vitest.config.ts`); Playwright owns `tests/e2e` only. There are no DOM/component unit tests — logic is extracted into pure, testable modules (e.g. `transferLogic.ts`, `mappers.ts`) precisely so it can be unit-tested without React.
 
-**CI** (`.github/workflows/ci.yml`) runs on PRs and pushes to `main`: one job does `npm ci` → `test` → `lint` → `build`, and a parallel job runs the Playwright e2e suite. A second workflow (`.github/workflows/keepalive.yml`) runs a daily REST query against `brands` so Supabase doesn't pause the Free plan project for 7 days of inactivity; it needs `SUPABASE_URL`/`SUPABASE_ANON_KEY` repository secrets.
+**CI** (`.github/workflows/ci.yml`) runs on PRs and pushes to `main`: one job does `npm ci` → `test` → `lint` → `build`, and a parallel job runs the Playwright e2e suite. Supabase Free plan pausing (7 days of no database activity) is kept at bay by an **external UptimeRobot monitor**, not a scheduled workflow — GitHub disables cron workflows in repos with no commits for 60 days, and this project is in maintenance. See the README for the monitor URL shape; don't re-add a keepalive workflow.
 
 ## Environment
 
